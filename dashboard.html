@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — WorkStatus</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    body { display: block; padding: 0; }
+    .wrap { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    .top {
+      background: #fff; padding: 18px 22px; border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08); margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .top h2 { margin: 0; color: #0f172a; font-size: 20px; }
+    .top .role {
+      background: #dbeafe; color: #1d4ed8; padding: 6px 12px;
+      border-radius: 20px; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; margin-right: 12px;
+    }
+    .top button {
+      background: #dc2626; color: #fff; border: none;
+      padding: 10px 18px; border-radius: 8px; cursor: pointer;
+      font-weight: 600; width: auto;
+    }
+    .top button:hover { background: #b91c1c; }
+    .card {
+      background: #fff; padding: 22px; border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+    .card h3 { margin-top: 0; color: #0f172a; }
+    .card p { color: #475569; line-height: 1.6; margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h2 id="welcome">Loading...</h2>
+      <div style="display:flex; align-items:center;">
+        <span class="role" id="roleBadge">—</span>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>👋 Welcome to WorkStatus</h3>
+      <p id="roleMessage">Please wait...</p>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/";
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    document.getElementById("welcome").textContent = `Hi, ${user.name || user.username}`;
+    document.getElementById("roleBadge").textContent = user.role;
+
+    const messages = {
+      super_admin: "You have full control of the system — you can create admins, managers, and users.",
+      admin: "You manage a work area — you'll be able to create tasks and assign them.",
+      manager: "You can create and assign tasks to users in your team.",
+      user: "You'll see tasks assigned to you here and update their status."
+    };
+    document.getElementById("roleMessage").textContent =
+      messages[user.role] || "Logged in successfully.";
+
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    }
+  </script>
+</body>
+</html>
