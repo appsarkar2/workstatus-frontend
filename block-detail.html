@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1e40af" />
+  <title>Block Detail — WorkStatus</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="app-body">
+
+  <!-- ═══════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <button class="icon-btn" onclick="goBack()" title="Back">←</button>
+      <div class="logo" id="headerTitle">Block</div>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" title="Filter">⚙️</button>
+      <button class="icon-btn" title="Notifications">🔔</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BLOCK HEADER CARD
+       ═══════════════════════════════════════════════════════ -->
+  <section class="block-header-card" id="blockHeaderCard">
+    <div class="block-header-icon" id="blockIcon">📦</div>
+    <div class="block-header-info">
+      <div class="block-header-name" id="blockName">Bulk Connection</div>
+      <div class="block-header-sub" id="blockSub">Manage all bulk connections</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       STATS CARDS
+       ═══════════════════════════════════════════════════════ -->
+  <section class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card stat-pending">
+      <div class="stat-num" id="statPending">0</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card stat-progress">
+      <div class="stat-num" id="statProgress">0</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card stat-completed">
+      <div class="stat-num" id="statCompleted">0</div>
+      <div class="stat-label">Completed</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SEARCH
+       ═══════════════════════════════════════════════════════ -->
+  <section class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search tasks..." />
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TASK LIST
+       ═══════════════════════════════════════════════════════ -->
+  <section class="tasks-section">
+    <div class="section-header">
+      <h2 class="section-title">Tasks</h2>
+      <button class="small-btn" onclick="comingSoon()">+ New</button>
+    </div>
+
+    <div id="taskList" class="task-list">
+      <!-- Empty state -->
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">No tasks yet</div>
+        <div class="empty-sub">Tasks for this block will appear here</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FLOATING + BUTTON
+       ═══════════════════════════════════════════════════════ -->
+  <button class="fab" onclick="comingSoon('New task')" title="New task">+</button>
+
+  <script>
+    // ═══════════════════════════════════════════════════════
+    // AUTH GUARD
+    // ═══════════════════════════════════════════════════════
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/";
+
+    // ═══════════════════════════════════════════════════════
+    // GET BLOCK ID FROM URL (?block=bulk_connection)
+    // ═══════════════════════════════════════════════════════
+    const params = new URLSearchParams(window.location.search);
+    const blockId = params.get("block") || "bulk_connection";
+
+    // ═══════════════════════════════════════════════════════
+    // BLOCK METADATA (same as dashboard)
+    // ═══════════════════════════════════════════════════════
+    const BLOCK_META = {
+      disconnection:   { icon: "⚡", name: "Disconnection",   sub: "Disconnect defaulter consumers" },
+      new_connection:  { icon: "🔌", name: "New Connection",  sub: "Process new connections" },
+      bulk_connection: { icon: "📦", name: "Bulk Connection", sub: "Manage bulk connections" },
+      transformer:     { icon: "🔧", name: "Transformer",     sub: "Transformer maintenance" },
+      meter_replace:   { icon: "📊", name: "Meter Replace",   sub: "Replace meters" },
+      reports:         { icon: "📈", name: "Reports",         sub: "Analytics and exports" },
+      uploads:         { icon: "📤", name: "Uploads",         sub: "Upload data files" },
+    };
+
+    const meta = BLOCK_META[blockId] || { icon: "📦", name: "Block", sub: "" };
+
+    // ═══════════════════════════════════════════════════════
+    // POPULATE PAGE
+    // ═══════════════════════════════════════════════════════
+    document.getElementById("blockIcon").textContent = meta.icon;
+    document.getElementById("blockName").textContent = meta.name;
+    document.getElementById("blockSub").textContent = meta.sub;
+    document.getElementById("headerTitle").textContent = meta.name;
+    document.title = `${meta.name} — WorkStatus`;
+
+    // ═══════════════════════════════════════════════════════
+    // STATS (placeholder zeros until backend is ready)
+    // ═══════════════════════════════════════════════════════
+    document.getElementById("statTotal").textContent = "0";
+    document.getElementById("statPending").textContent = "0";
+    document.getElementById("statProgress").textContent = "0";
+    document.getElementById("statCompleted").textContent = "0";
+
+    // ═══════════════════════════════════════════════════════
+    // SEARCH FILTER
+    // ═══════════════════════════════════════════════════════
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll(".task-item").forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(q) ? "" : "none";
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════════════
+    function goBack() {
+      window.location.href = "/dashboard.html";
+    }
+
+    function comingSoon(label) {
+      alert(`🚧 ${label || "This feature"} is coming soon!\n\nWe're building it step by step.`);
+    }
+  </script>
+</body>
+</html>
