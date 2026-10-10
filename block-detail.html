@@ -4,113 +4,80 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#1e40af" />
-  <title>Block Detail — WorkStatus</title>
-  <link rel="manifest" href="/manifest.json" />
+  <title>Block — WorkStatus</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body class="app-body">
 
-  <!-- ═══════════════════════════════════════════════════════
-       HEADER
-       ═══════════════════════════════════════════════════════ -->
   <header class="app-header">
     <div class="header-left">
-      <button class="icon-btn" onclick="goBack()" title="Back">←</button>
+      <button class="icon-btn" onclick="goBack()">←</button>
       <div class="logo" id="headerTitle">Block</div>
     </div>
     <div class="header-right">
-      <button class="icon-btn" title="Filter">⚙️</button>
+      <button class="icon-btn" onclick="refreshList()" title="Refresh">🔄</button>
       <button class="icon-btn" title="Notifications">🔔</button>
     </div>
   </header>
 
-  <!-- ═══════════════════════════════════════════════════════
-       BLOCK HEADER CARD
-       ═══════════════════════════════════════════════════════ -->
-  <section class="block-header-card" id="blockHeaderCard">
+  <section class="block-header-card">
     <div class="block-header-icon" id="blockIcon">📦</div>
     <div class="block-header-info">
       <div class="block-header-name" id="blockName">Bulk Connection</div>
-      <div class="block-header-sub" id="blockSub">Manage all bulk connections</div>
+      <div class="block-header-sub" id="blockSub">Manage applications</div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       STATS CARDS
-       ═══════════════════════════════════════════════════════ -->
   <section class="stats-row">
     <div class="stat-card">
-      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-num" id="statTotal">—</div>
       <div class="stat-label">Total</div>
     </div>
     <div class="stat-card stat-pending">
-      <div class="stat-num" id="statPending">0</div>
+      <div class="stat-num" id="statPending">—</div>
       <div class="stat-label">Pending</div>
     </div>
     <div class="stat-card stat-progress">
-      <div class="stat-num" id="statProgress">0</div>
+      <div class="stat-num" id="statProgress">—</div>
       <div class="stat-label">In Progress</div>
     </div>
     <div class="stat-card stat-completed">
-      <div class="stat-num" id="statCompleted">0</div>
+      <div class="stat-num" id="statCompleted">—</div>
       <div class="stat-label">Completed</div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       SEARCH
-       ═══════════════════════════════════════════════════════ -->
   <section class="search-wrap">
     <div class="search-box">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Search tasks..." />
+      <input type="text" id="searchInput" placeholder="Search by application no or name..." />
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       TASK LIST
-       ═══════════════════════════════════════════════════════ -->
   <section class="tasks-section">
     <div class="section-header">
-      <h2 class="section-title">Tasks</h2>
-      <button class="small-btn" onclick="comingSoon()">+ New</button>
+      <h2 class="section-title">Applications</h2>
+      <button class="small-btn" onclick="goNew()">+ New</button>
     </div>
-
-    <div id="taskList" class="task-list">
-      <!-- Empty state -->
+    <div id="appList" class="task-list">
       <div class="empty-state">
-        <div class="empty-icon">📭</div>
-        <div class="empty-title">No tasks yet</div>
-        <div class="empty-sub">Tasks for this block will appear here</div>
+        <div class="empty-icon">⏳</div>
+        <div class="empty-title">Loading applications...</div>
       </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       FLOATING + BUTTON
-       ═══════════════════════════════════════════════════════ -->
-  <button class="fab" onclick="comingSoon('New task')" title="New task">+</button>
+  <button class="fab" onclick="goNew()" title="New application">+</button>
 
+  <script src="/js/api.js"></script>
   <script>
-    // ═══════════════════════════════════════════════════════
-    // AUTH GUARD
-    // ═══════════════════════════════════════════════════════
-    const token = localStorage.getItem("token");
-    if (!token) window.location.href = "/";
-
-    // ═══════════════════════════════════════════════════════
-    // GET BLOCK ID FROM URL (?block=bulk_connection)
-    // ═══════════════════════════════════════════════════════
     const params = new URLSearchParams(window.location.search);
     const blockId = params.get("block") || "bulk_connection";
 
-    // ═══════════════════════════════════════════════════════
-    // BLOCK METADATA (same as dashboard)
-    // ═══════════════════════════════════════════════════════
     const BLOCK_META = {
+      bulk_connection: { icon: "📦", name: "Bulk Connection", sub: "Manage bulk connection applications" },
       disconnection:   { icon: "⚡", name: "Disconnection",   sub: "Disconnect defaulter consumers" },
       new_connection:  { icon: "🔌", name: "New Connection",  sub: "Process new connections" },
-      bulk_connection: { icon: "📦", name: "Bulk Connection", sub: "Manage bulk connections" },
       transformer:     { icon: "🔧", name: "Transformer",     sub: "Transformer maintenance" },
       meter_replace:   { icon: "📊", name: "Meter Replace",   sub: "Replace meters" },
       reports:         { icon: "📈", name: "Reports",         sub: "Analytics and exports" },
@@ -118,45 +85,108 @@
     };
 
     const meta = BLOCK_META[blockId] || { icon: "📦", name: "Block", sub: "" };
-
-    // ═══════════════════════════════════════════════════════
-    // POPULATE PAGE
-    // ═══════════════════════════════════════════════════════
     document.getElementById("blockIcon").textContent = meta.icon;
     document.getElementById("blockName").textContent = meta.name;
     document.getElementById("blockSub").textContent = meta.sub;
     document.getElementById("headerTitle").textContent = meta.name;
     document.title = `${meta.name} — WorkStatus`;
 
-    // ═══════════════════════════════════════════════════════
-    // STATS (placeholder zeros until backend is ready)
-    // ═══════════════════════════════════════════════════════
-    document.getElementById("statTotal").textContent = "0";
-    document.getElementById("statPending").textContent = "0";
-    document.getElementById("statProgress").textContent = "0";
-    document.getElementById("statCompleted").textContent = "0";
+    let allApps = [];
 
-    // ═══════════════════════════════════════════════════════
-    // SEARCH FILTER
-    // ═══════════════════════════════════════════════════════
+    async function loadStats() {
+      try {
+        const s = await BlocksAPI.getStats();
+        document.getElementById("statTotal").textContent = s.total ?? 0;
+        document.getElementById("statPending").textContent = s.in_progress ?? 0;
+        document.getElementById("statProgress").textContent = s.in_progress ?? 0;
+        document.getElementById("statCompleted").textContent = s.completed ?? 0;
+      } catch (e) {
+        console.error("Stats error:", e.message);
+      }
+    }
+
+    async function loadApps() {
+      const list = document.getElementById("appList");
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <div class="empty-title">Loading...</div>
+      </div>`;
+
+      try {
+        const data = await BlocksAPI.list();
+        allApps = data.items || [];
+        renderApps(allApps);
+      } catch (e) {
+        list.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-title">Failed to load</div>
+          <div class="empty-sub">${e.message}</div>
+        </div>`;
+      }
+    }
+
+    function renderApps(apps) {
+      const list = document.getElementById("appList");
+      if (!apps.length) {
+        list.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">No applications yet</div>
+          <div class="empty-sub">Click "+ New" to add one</div>
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = apps.map((a) => {
+        const stage = a.current_stage || 1;
+        const total = 13;
+        const pct = Math.round((stage / total) * 100);
+        const statusClass =
+          a.status === "completed" ? "completed" :
+          a.status === "rejected"  ? "rejected"  : "in_progress";
+        const statusIcon =
+          a.status === "completed" ? "✅" :
+          a.status === "rejected"  ? "❌" : "🔄";
+
+        return `
+          <div class="task-item app-card" onclick="openApp('${a._id}')">
+            <div class="app-card-top">
+              <div class="task-title">${escapeHtml(a.application_no)} — ${escapeHtml(a.applicant?.name || "—")}</div>
+              <span class="task-badge ${statusClass}">${statusIcon} ${a.status.replace("_", " ")}</span>
+            </div>
+            <div class="task-sub">
+              📍 ${escapeHtml(a.division || "—")} · 📊 Stage ${stage} of ${total}
+            </div>
+            <div class="task-sub">
+              👤 ${escapeHtml(a.assigned_to || "Unassigned")} · 🕒 ${timeAgo(a.updated_at || a.created_at)}
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+        `;
+      }).join("");
+    }
+
     document.getElementById("searchInput").addEventListener("input", (e) => {
       const q = e.target.value.toLowerCase();
-      document.querySelectorAll(".task-item").forEach(item => {
-        const text = item.textContent.toLowerCase();
-        item.style.display = text.includes(q) ? "" : "none";
-      });
+      const filtered = allApps.filter(a =>
+        (a.application_no || "").toLowerCase().includes(q) ||
+        (a.applicant?.name || "").toLowerCase().includes(q)
+      );
+      renderApps(filtered);
     });
 
-    // ═══════════════════════════════════════════════════════
-    // HELPERS
-    // ═══════════════════════════════════════════════════════
-    function goBack() {
-      window.location.href = "/dashboard.html";
+    function goBack() { window.location.href = "/dashboard.html"; }
+    function goNew() { window.location.href = `/application-new.html?block=${blockId}`; }
+    function openApp(id) { window.location.href = `/application-detail.html?id=${id}`; }
+    function refreshList() { loadStats(); loadApps(); }
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
     }
 
-    function comingSoon(label) {
-      alert(`🚧 ${label || "This feature"} is coming soon!\n\nWe're building it step by step.`);
-    }
+    loadStats();
+    loadApps();
   </script>
 </body>
 </html>

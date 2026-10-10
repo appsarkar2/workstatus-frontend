@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Application — WorkStatus</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="app-body">
+
+  <header class="app-header">
+    <div class="header-left">
+      <button class="icon-btn" onclick="goBack()">←</button>
+      <div class="logo">New Application</div>
+    </div>
+  </header>
+
+  <form id="newForm" class="form-wrap">
+
+    <div class="form-section">
+      <h3 class="form-section-title">👤 Applicant Details</h3>
+      <label>Applicant Name *</label>
+      <input id="f_name" required />
+      <label>Contact Number</label>
+      <input id="f_contact" />
+      <label>Email</label>
+      <input id="f_email" type="email" />
+      <label>Address</label>
+      <textarea id="f_address" rows="2"></textarea>
+    </div>
+
+    <div class="form-section">
+      <h3 class="form-section-title">📋 Application Details</h3>
+      <label>Application No *</label>
+      <input id="f_app_no" required placeholder="BC-2026-001" />
+      <label>Application Date</label>
+      <input id="f_app_date" type="date" />
+      <label>Division</label>
+      <input id="f_division" placeholder="Siliguri Town Division" />
+      <label>Type</label>
+      <select id="f_type">
+        <option value="LT Bulk">LT Bulk</option>
+        <option value="HT Bulk">HT Bulk</option>
+      </select>
+    </div>
+
+    <div class="form-section">
+      <h3 class="form-section-title">📎 Documents Received</h3>
+      <div id="docsList" class="docs-checklist"></div>
+    </div>
+
+    <div class="form-section">
+      <h3 class="form-section-title">👤 Assignment</h3>
+      <label>Assign To (username)</label>
+      <input id="f_assigned" placeholder="e.g. manager1" />
+      <label>Initial Remarks</label>
+      <textarea id="f_remarks" rows="2"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" onclick="goBack()">Cancel</button>
+      <button type="submit" class="btn-primary" id="submitBtn">Save Application</button>
+    </div>
+
+  </form>
+
+  <script src="/js/api.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const blockId = params.get("block") || "bulk_connection";
+    document.getElementById("f_app_date").valueAsDate = new Date();
+
+    async function loadConfig() {
+      try {
+        const cfg = await BlocksAPI.getConfig();
+        const docs = cfg.documents_required || [];
+        document.getElementById("docsList").innerHTML = docs.map(d => `
+          <label class="doc-item">
+            <input type="checkbox" data-doc="${d.key}" />
+            <span>${d.label}</span>
+          </label>
+        `).join("");
+      } catch (e) {
+        showToast("Config load failed: " + e.message, "error");
+      }
+    }
+    loadConfig();
+
+    document.getElementById("newForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      const documents = {};
+      document.querySelectorAll('#docsList input[type="checkbox"]').forEach(cb => {
+        documents[cb.dataset.doc] = cb.checked;
+      });
+
+      const body = {
+        application_no: document.getElementById("f_app_no").value.trim(),
+        applicant: {
+          name: document.getElementById("f_name").value.trim(),
+          contact: document.getElementById("f_contact").value.trim(),
+          email: document.getElementById("f_email").value.trim(),
+          address: document.getElementById("f_address").value.trim(),
+          type: document.getElementById("f_type").value,
+        },
+        division: document.getElementById("f_division").value.trim(),
+        application_date: document.getElementById("f_app_date").value || null,
+        documents: documents,
+        assigned_to: document.getElementById("f_assigned").value.trim() || null,
+        remarks: document.getElementById("f_remarks").value.trim(),
+      };
+
+      try {
+        const res = await BlocksAPI.create(body);
+        showToast("Application created ✅", "success");
+        setTimeout(() => {
+          window.location.href = `/application-detail.html?id=${res.id}`;
+        }, 800);
+      } catch (err) {
+        showToast(err.message, "error");
+        btn.disabled = false;
+        btn.textContent = "Save Application";
+      }
+    });
+
+    function goBack() {
+      window.location.href = `/block-detail.html?block=${blockId}`;
+    }
+  </script>
+</body>
+</html>
