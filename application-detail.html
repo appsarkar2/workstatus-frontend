@@ -96,13 +96,17 @@
         a.status === "completed" ? "✅" :
         a.status === "rejected"  ? "❌" : "🔄";
 
+      const totalStages = (a.stages && a.stages.length) ||
+                          (currentConfig && currentConfig.stages && currentConfig.stages.length) ||
+                          0;
+
       document.getElementById("appHeader").innerHTML = `
         <div class="app-header-top">
           <div class="app-header-name">${escapeHtml(a.applicant?.name || "—")}</div>
           <span class="task-badge ${statusClass}">${statusIcon} ${a.status.replace("_", " ")}</span>
         </div>
         <div class="app-header-meta">
-          Application No: <b>${escapeHtml(a.application_no)}</b> · Stage <b>${a.current_stage}</b> of 13
+          Application No: <b>${escapeHtml(a.application_no)}</b> · Stage <b>${a.current_stage}</b> of ${totalStages}
         </div>
       `;
 
@@ -117,7 +121,7 @@
       document.getElementById("d_updated").textContent = timeAgo(a.updated_at || a.created_at);
 
       document.getElementById("progressWrap").style.display = "";
-      const total = a.stages?.length || 13;
+      const total = (a.stages && a.stages.length) || totalStages || 1;
       const completed = (a.stages || []).filter(s => s.status === "completed").length;
       const pct = Math.round((completed / total) * 100);
       document.getElementById("d_pct").textContent = pct + "%";
@@ -173,7 +177,13 @@
     }
 
     async function markComplete(stageNo) {
-      const remarks = prompt(`Remarks for Stage ${stageNo} (optional):`) || "";
+      const remarks = await showPrompt({
+        title: `Complete Stage ${stageNo}`,
+        placeholder: "Add remarks (optional)...",
+        confirmText: "Mark Complete",
+        multiline: true,
+      });
+      if (remarks === null) return; // user cancelled
       try {
         await BlocksAPI.updateStage(appId, {
           stage_no: stageNo,
@@ -188,15 +198,20 @@
     }
 
     async function addRemark(stageNo) {
-      const remark = prompt("Add remark:");
-      if (!remark) return;
+      const remark = await showPrompt({
+        title: `Add Remark to Stage ${stageNo}`,
+        placeholder: "Enter your remark...",
+        confirmText: "Save",
+        multiline: true,
+      });
+      if (remark === null || !remark.trim()) return;
       try {
         await BlocksAPI.updateStage(appId, {
           stage_no: stageNo,
           status: "in_progress",
           remarks: remark,
         });
-        showToast("Remark added", "success");
+        showToast("Remark added ✅", "success");
         await loadApp();
       } catch (e) {
         showToast(e.message, "error");
