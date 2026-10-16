@@ -1,0 +1,36 @@
+/* ═══════════════════════════════════════════════════════════════
+   WORKSTATUS — PAGE-SPECIFIC OVERRIDES
+   Anything that doesn't fit base/layout/components/modals.
+   Use this sparingly — most styles should be components.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ---------- Block detail header card ---------- */
+.block-header-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 18px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
+  border: 1px solid #e9d5ff;
+  border-radius: var(--radius-lg);
+}
+.block-header-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #ede9fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+.block-header-info { flex: 1; min-width: 0; }
+.block-header-name { font-size: 18px; font-weight: 800; color: var(--color-text); }
+.block-header-sub  { font-size: 13px; color: var(--color-text-muted); margin-top: 2px; }
+
+/* ---------- Small buttons on stage actions ---------- */
+.stage-actions .small-btn { padding: 8px 14px; font-size: 12px; }
+
+/* ---------- Form-wrap specific layout ---------- */
+.form-wrap { padding: 16px 18px 100px; }
