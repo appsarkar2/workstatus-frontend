@@ -6,159 +6,164 @@
   <meta name="theme-color" content="#1e40af" />
   <title>Block — WorkStatus</title>
   <link rel="stylesheet" href="/css/base.css" />
-<link rel="stylesheet" href="/css/layout.css" />
-<link rel="stylesheet" href="/css/components.css" />
-<link rel="stylesheet" href="/css/modals.css" />
-<link rel="stylesheet" href="/css/pages.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
 </head>
 <body class="app-body">
 
-  <header class="app-header">
-    <div class="header-left">
-      <button class="icon-btn" onclick="goBack()">←</button>
-      <div class="logo" id="headerTitle">Block</div>
-    </div>
-    <div class="header-right">
-      <button class="icon-btn" onclick="refreshList()" title="Refresh">🔄</button>
-      <button class="icon-btn" title="Notifications">🔔</button>
-    </div>
-  </header>
+  <div id="app"></div>
 
-  <section class="block-header-card">
-    <div class="block-header-icon" id="blockIcon">📦</div>
-    <div class="block-header-info">
-      <div class="block-header-name" id="blockName">Bulk Connection</div>
-      <div class="block-header-sub" id="blockSub">Manage applications</div>
-    </div>
-  </section>
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
 
-  <section class="stats-row">
-    <div class="stat-card">
-      <div class="stat-num" id="statTotal">—</div>
-      <div class="stat-label">Total</div>
-    </div>
-    <div class="stat-card stat-pending">
-      <div class="stat-num" id="statPending">—</div>
-      <div class="stat-label">Pending</div>
-    </div>
-    <div class="stat-card stat-progress">
-      <div class="stat-num" id="statProgress">—</div>
-      <div class="stat-label">In Progress</div>
-    </div>
-    <div class="stat-card stat-completed">
-      <div class="stat-num" id="statCompleted">—</div>
-      <div class="stat-label">Completed</div>
-    </div>
-  </section>
-
-  <section class="search-wrap">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Search by application no or name..." />
-    </div>
-  </section>
-
-  <section class="tasks-section">
-    <div class="section-header">
-      <h2 class="section-title">Applications</h2>
-      <button class="small-btn" onclick="goNew()">+ New</button>
-    </div>
-    <div id="appList" class="task-list">
-      <div class="empty-state">
-        <div class="empty-icon">⏳</div>
-        <div class="empty-title">Loading applications...</div>
-      </div>
-    </div>
-  </section>
-
-  <button class="fab" onclick="goNew()" title="New application">+</button>
-
-  <script src="/js/api.js"></script>
   <script>
-    const params = new URLSearchParams(window.location.search);
+    // ── Read block ID from URL ──
+    const params  = new URLSearchParams(window.location.search);
     const blockId = params.get("block") || "bulk_connection";
 
-    const BLOCK_META = {
-      bulk_connection: { icon: "📦", name: "Bulk Connection", sub: "Manage bulk connection applications" },
-      disconnection:   { icon: "⚡", name: "Disconnection",   sub: "Disconnect defaulter consumers" },
-      new_connection:  { icon: "🔌", name: "New Connection",  sub: "Process new connections" },
-      transformer:     { icon: "🔧", name: "Transformer",     sub: "Transformer maintenance" },
-      meter_replace:   { icon: "📊", name: "Meter Replace",   sub: "Replace meters" },
-      reports:         { icon: "📈", name: "Reports",         sub: "Analytics and exports" },
-      uploads:         { icon: "📤", name: "Uploads",         sub: "Upload data files" },
+    // ── Create block API client (works for any block) ──
+    const blockApi = BlockAPI(blockId);
+
+    // ── Render page shell first (loading state) ──
+    const app = document.getElementById("app");
+
+    app.innerHTML = `
+      ${header({
+        title: "Block",
+        back: true,
+        backUrl: "/dashboard.html",
+        actions: [
+          { icon: "🔄", onClick: "refreshList()", title: "Refresh" },
+          { icon: "🔔", onClick: "showToast('Notifications coming soon','info')", title: "Notifications" }
+        ]
+      })}
+
+      <section class="block-header-card">
+        <div class="block-header-icon" id="blockIcon">📦</div>
+        <div class="block-header-info">
+          <div class="block-header-name" id="blockName">Loading...</div>
+          <div class="block-header-sub" id="blockSub">Please wait</div>
+        </div>
+      </section>
+
+      <section class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num" id="statTotal">—</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card stat-pending">
+          <div class="stat-num" id="statPending">—</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card stat-progress">
+          <div class="stat-num" id="statProgress">—</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card stat-completed">
+          <div class="stat-num" id="statCompleted">—</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </section>
+
+      ${searchBar("searchInput", "Search by application no or name...")}
+
+      <section class="tasks-section">
+        <div class="section-header">
+          <h2 class="section-title">Applications</h2>
+          <button class="small-btn" onclick="goNew()">+ New</button>
+        </div>
+        <div id="appList" class="task-list">
+          ${emptyState("⏳", "Loading applications...")}
+        </div>
+      </section>
+
+      ${fab("+", "goNew()", "New application")}
+    `;
+
+    // ── Icon mapping (backend config icon names → emoji) ──
+    const ICON_MAP = {
+      box: "📦", bolt: "⚡", plug: "🔌",
+      wrench: "🔧", chart: "📊", upload: "📤",
     };
 
-    const meta = BLOCK_META[blockId] || { icon: "📦", name: "Block", sub: "" };
-    document.getElementById("blockIcon").textContent = meta.icon;
-    document.getElementById("blockName").textContent = meta.name;
-    document.getElementById("blockSub").textContent = meta.sub;
-    document.getElementById("headerTitle").textContent = meta.name;
-    document.title = `${meta.name} — WorkStatus`;
-
+    // ── State ──
     let allApps = [];
+    let blockMeta = null;
 
+    // ── Load block config (name, icon, color) ──
+    async function loadBlockMeta() {
+      try {
+        const cfg = await blockApi.getConfig();
+        blockMeta = cfg;
+
+        document.getElementById("blockIcon").textContent = ICON_MAP[cfg.icon] || "📦";
+        document.getElementById("blockName").textContent = cfg.name || "Block";
+        document.getElementById("blockSub").textContent  = `Manage ${cfg.name || "block"} applications`;
+        document.getElementById("headerTitle") && (document.getElementById("headerTitle").textContent = cfg.name);
+        document.title = `${cfg.name} — WorkStatus`;
+      } catch (e) {
+        // Fallback: use block ID as name
+        document.getElementById("blockName").textContent = blockId.replace(/_/g, " ");
+        document.getElementById("blockSub").textContent  = "Manage applications";
+        console.warn("Could not load block config:", e.message);
+      }
+    }
+
+    // ── Load stats ──
     async function loadStats() {
       try {
-        const s = await BlocksAPI.getStats();
-        document.getElementById("statTotal").textContent = s.total ?? 0;
-        document.getElementById("statPending").textContent = s.in_progress ?? 0;
-        document.getElementById("statProgress").textContent = s.in_progress ?? 0;
-        document.getElementById("statCompleted").textContent = s.completed ?? 0;
+        const s = await blockApi.getStats();
+        document.getElementById("statTotal").textContent     = s.total       ?? 0;
+        document.getElementById("statPending").textContent   = s.in_progress ?? 0;
+        document.getElementById("statProgress").textContent  = s.in_progress ?? 0;
+        document.getElementById("statCompleted").textContent = s.completed   ?? 0;
       } catch (e) {
         console.error("Stats error:", e.message);
       }
     }
 
+    // ── Load applications ──
     async function loadApps() {
       const list = document.getElementById("appList");
-      list.innerHTML = `<div class="empty-state">
-        <div class="empty-icon">⏳</div>
-        <div class="empty-title">Loading...</div>
-      </div>`;
+      list.innerHTML = emptyState("⏳", "Loading...");
 
       try {
-        const data = await BlocksAPI.list();
+        const data = await blockApi.list();
         allApps = data.items || [];
         renderApps(allApps);
       } catch (e) {
-        list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon">⚠️</div>
-          <div class="empty-title">Failed to load</div>
-          <div class="empty-sub">${e.message}</div>
-        </div>`;
+        list.innerHTML = emptyState("⚠️", "Failed to load", e.message);
       }
     }
 
+    // ── Render application list ──
     function renderApps(apps) {
       const list = document.getElementById("appList");
+
       if (!apps.length) {
-        list.innerHTML = `<div class="empty-state">
-          <div class="empty-icon">📭</div>
-          <div class="empty-title">No applications yet</div>
-          <div class="empty-sub">Click "+ New" to add one</div>
-        </div>`;
+        list.innerHTML = emptyState("📭", "No applications yet", 'Click "+ New" to add one');
         return;
       }
 
+      const totalStages = (blockMeta?.stages?.length) || 13;
+
       list.innerHTML = apps.map((a) => {
         const stage = a.current_stage || 1;
-        const total = 13;
-        const pct = Math.round((stage / total) * 100);
-        const statusClass =
-          a.status === "completed" ? "completed" :
-          a.status === "rejected"  ? "rejected"  : "in_progress";
-        const statusIcon =
-          a.status === "completed" ? "✅" :
-          a.status === "rejected"  ? "❌" : "🔄";
+        const pct   = Math.round((stage / totalStages) * 100);
 
         return `
           <div class="task-item app-card" onclick="openApp('${a._id}')">
             <div class="app-card-top">
               <div class="task-title">${escapeHtml(a.application_no)} — ${escapeHtml(a.applicant?.name || "—")}</div>
-              <span class="task-badge ${statusClass}">${statusIcon} ${a.status.replace("_", " ")}</span>
+              ${statusBadge(a.status)}
             </div>
             <div class="task-sub">
-              📍 ${escapeHtml(a.division || "—")} · 📊 Stage ${stage} of ${total}
+              📍 ${escapeHtml(a.division || "—")} · 📊 Stage ${stage} of ${totalStages}
             </div>
             <div class="task-sub">
               👤 ${escapeHtml(a.assigned_to || "Unassigned")} · 🕒 ${timeAgo(a.updated_at || a.created_at)}
@@ -169,7 +174,9 @@
       }).join("");
     }
 
-    document.getElementById("searchInput").addEventListener("input", (e) => {
+    // ── Search filter ──
+    document.addEventListener("input", (e) => {
+      if (e.target.id !== "searchInput") return;
       const q = e.target.value.toLowerCase();
       const filtered = allApps.filter(a =>
         (a.application_no || "").toLowerCase().includes(q) ||
@@ -178,17 +185,21 @@
       renderApps(filtered);
     });
 
-    function goBack() { window.location.href = "/dashboard.html"; }
-    function goNew() { window.location.href = `/application-new.html?block=${blockId}`; }
-    function openApp(id) { window.location.href = `/application-detail.html?id=${id}`; }
-    function refreshList() { loadStats(); loadApps(); }
-
-    function escapeHtml(s) {
-      return String(s || "").replace(/[&<>"']/g, c => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-      }[c]));
+    // ── Navigation ──
+    function goNew() {
+      window.location.href = `/application-new.html?block=${encodeURIComponent(blockId)}`;
+    }
+    function openApp(id) {
+      window.location.href = `/application-detail.html?block=${encodeURIComponent(blockId)}&id=${id}`;
+    }
+    function refreshList() {
+      loadBlockMeta();
+      loadStats();
+      loadApps();
     }
 
+    // ── Boot ──
+    loadBlockMeta();
     loadStats();
     loadApps();
   </script>

@@ -5,134 +5,195 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>New Application — WorkStatus</title>
   <link rel="stylesheet" href="/css/base.css" />
-<link rel="stylesheet" href="/css/layout.css" />
-<link rel="stylesheet" href="/css/components.css" />
-<link rel="stylesheet" href="/css/modals.css" />
-<link rel="stylesheet" href="/css/pages.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
 </head>
 <body class="app-body">
 
-  <header class="app-header">
-    <div class="header-left">
-      <button class="icon-btn" onclick="goBack()">←</button>
-      <div class="logo">New Application</div>
-    </div>
-  </header>
+  <div id="app"></div>
 
-  <form id="newForm" class="form-wrap">
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
 
-    <div class="form-section">
-      <h3 class="form-section-title">👤 Applicant Details</h3>
-      <label>Applicant Name *</label>
-      <input id="f_name" required />
-      <label>Contact Number</label>
-      <input id="f_contact" />
-      <label>Email</label>
-      <input id="f_email" type="email" />
-      <label>Address</label>
-      <textarea id="f_address" rows="2"></textarea>
-    </div>
-
-    <div class="form-section">
-      <h3 class="form-section-title">📋 Application Details</h3>
-      <label>Application No *</label>
-      <input id="f_app_no" required placeholder="BC-2026-001" />
-      <label>Application Date</label>
-      <input id="f_app_date" type="date" />
-      <label>Division</label>
-      <input id="f_division" placeholder="Siliguri Town Division" />
-      <label>Type</label>
-      <select id="f_type">
-        <option value="LT Bulk">LT Bulk</option>
-        <option value="HT Bulk">HT Bulk</option>
-      </select>
-    </div>
-
-    <div class="form-section">
-      <h3 class="form-section-title">📎 Documents Received</h3>
-      <div id="docsList" class="docs-checklist"></div>
-    </div>
-
-    <div class="form-section">
-      <h3 class="form-section-title">👤 Assignment</h3>
-      <label>Assign To (username)</label>
-      <input id="f_assigned" placeholder="e.g. manager1" />
-      <label>Initial Remarks</label>
-      <textarea id="f_remarks" rows="2"></textarea>
-    </div>
-
-    <div class="form-actions">
-      <button type="button" class="btn-secondary" onclick="goBack()">Cancel</button>
-      <button type="submit" class="btn-primary" id="submitBtn">Save Application</button>
-    </div>
-
-  </form>
-
-  <script src="/js/api.js"></script>
   <script>
-    const params = new URLSearchParams(window.location.search);
+    // ── Params ──
+    const params  = new URLSearchParams(window.location.search);
     const blockId = params.get("block") || "bulk_connection";
-    document.getElementById("f_app_date").valueAsDate = new Date();
 
-    async function loadConfig() {
+    const blockApi = BlockAPI(blockId);
+
+    // ── Render shell ──
+    const root = document.getElementById("app");
+
+    root.innerHTML = `
+      ${header({
+        title: "New Application",
+        back: true,
+        backOnClick: `location.href='/block-detail.html?block=${blockId}'`,
+      })}
+
+      <div class="form-wrap">
+        <div id="formContent">
+          ${emptyState("⏳", "Loading form...")}
+        </div>
+      </div>
+    `;
+
+    // ── State ──
+    let blockConfig = null;
+
+    // ── Load config + render form ──
+    async function loadForm() {
       try {
-        const cfg = await BlocksAPI.getConfig();
-        const docs = cfg.documents_required || [];
-        document.getElementById("docsList").innerHTML = docs.map(d => `
-          <label class="doc-item">
-            <input type="checkbox" data-doc="${d.key}" />
-            <span>${d.label}</span>
-          </label>
-        `).join("");
+        blockConfig = await blockApi.getConfig();
+        renderForm();
       } catch (e) {
-        showToast("Config load failed: " + e.message, "error");
+        document.getElementById("formContent").innerHTML =
+          emptyState("⚠️", e.message || "Failed to load form");
       }
     }
-    loadConfig();
 
-    document.getElementById("newForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("submitBtn");
-      btn.disabled = true;
-      btn.textContent = "Saving...";
+    // ── Render the form ──
+    function renderForm() {
+      const cfg = blockConfig;
+      const docs = cfg.documents_required || [];
 
+      document.getElementById("formContent").innerHTML = `
+        <div class="form-section">
+          <div class="form-section-title">📋 Application Details</div>
+
+          <label for="application_no">Application No *</label>
+          <input id="application_no" type="text" placeholder="e.g. BC-2026-002" required />
+
+          <label for="division">Division</label>
+          <input id="division" type="text" placeholder="e.g. Siliguri Town" />
+
+          <label for="application_date">Application Date</label>
+          <input id="application_date" type="date" />
+
+          <label for="assigned_to">Assigned To</label>
+          <input id="assigned_to" type="text" placeholder="e.g. manager1" />
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">👤 Applicant Information</div>
+
+          <label for="applicant_name">Applicant Name *</label>
+          <input id="applicant_name" type="text" placeholder="Full name" required />
+
+          <label for="applicant_contact">Contact Number</label>
+          <input id="applicant_contact" type="tel" placeholder="e.g. 9876543210" />
+
+          <label for="applicant_email">Email</label>
+          <input id="applicant_email" type="email" placeholder="email@example.com" />
+
+          <label for="applicant_address">Address</label>
+          <input id="applicant_address" type="text" placeholder="Full address" />
+
+          <label for="applicant_type">Application Type</label>
+          <select id="applicant_type">
+            <option value="LT Bulk">LT Bulk</option>
+            <option value="HT Bulk">HT Bulk</option>
+            <option value="LT General">LT General</option>
+            <option value="HT General">HT General</option>
+          </select>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">📎 Documents Received</div>
+          <div class="docs-checklist">
+            ${docs.map(d => `
+              <label class="doc-item">
+                <input type="checkbox" data-doc="${d.key}" />
+                <span>${escapeHtml(d.label)}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitForm()">Create Application</button>
+        </div>
+      `;
+
+      // Pre-fill application date = today
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("application_date").value = today;
+
+      // Focus first field
+      document.getElementById("application_no").focus();
+    }
+
+    // ── Submit form ──
+    async function submitForm() {
+      const $appNo  = document.getElementById("application_no");
+      const $name   = document.getElementById("applicant_name");
+      const $btn    = document.getElementById("submitBtn");
+
+      // Validation
+      if (!$appNo.value.trim()) {
+        showToast("Application No is required", "error");
+        $appNo.focus();
+        return;
+      }
+      if (!$name.value.trim()) {
+        showToast("Applicant Name is required", "error");
+        $name.focus();
+        return;
+      }
+
+      // Collect documents checkboxes
       const documents = {};
-      document.querySelectorAll('#docsList input[type="checkbox"]').forEach(cb => {
+      document.querySelectorAll("[data-doc]").forEach(cb => {
         documents[cb.dataset.doc] = cb.checked;
       });
 
-      const body = {
-        application_no: document.getElementById("f_app_no").value.trim(),
+      // Build payload
+      const payload = {
+        application_no: $appNo.value.trim(),
         applicant: {
-          name: document.getElementById("f_name").value.trim(),
-          contact: document.getElementById("f_contact").value.trim(),
-          email: document.getElementById("f_email").value.trim(),
-          address: document.getElementById("f_address").value.trim(),
-          type: document.getElementById("f_type").value,
+          name:  $name.value.trim(),
+          contact: document.getElementById("applicant_contact").value.trim(),
+          email:   document.getElementById("applicant_email").value.trim(),
+          address: document.getElementById("applicant_address").value.trim(),
+          type:    document.getElementById("applicant_type").value,
         },
-        division: document.getElementById("f_division").value.trim(),
-        application_date: document.getElementById("f_app_date").value || null,
-        documents: documents,
-        assigned_to: document.getElementById("f_assigned").value.trim() || null,
-        remarks: document.getElementById("f_remarks").value.trim(),
+        division:         document.getElementById("division").value.trim(),
+        application_date: document.getElementById("application_date").value || null,
+        assigned_to:      document.getElementById("assigned_to").value.trim() || null,
+        documents:        documents,
       };
 
-      try {
-        const res = await BlocksAPI.create(body);
-        showToast("Application created ✅", "success");
-        setTimeout(() => {
-          window.location.href = `/application-detail.html?id=${res.id}`;
-        }, 800);
-      } catch (err) {
-        showToast(err.message, "error");
-        btn.disabled = false;
-        btn.textContent = "Save Application";
-      }
-    });
+      $btn.disabled = true;
+      $btn.textContent = "Creating...";
 
-    function goBack() {
+      try {
+        const result = await blockApi.create(payload);
+        showToast("Application created ✅", "success");
+
+        setTimeout(() => {
+          window.location.href = `/application-detail.html?block=${blockId}&id=${result.id}`;
+        }, 500);
+      } catch (e) {
+        showToast(e.message, "error");
+        $btn.disabled = false;
+        $btn.textContent = "Create Application";
+      }
+    }
+
+    // ── Cancel ──
+    function cancelForm() {
       window.location.href = `/block-detail.html?block=${blockId}`;
     }
+
+    // ── Boot ──
+    loadForm();
   </script>
 </body>
 </html>

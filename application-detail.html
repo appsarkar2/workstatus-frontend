@@ -5,181 +5,179 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Application Detail — WorkStatus</title>
   <link rel="stylesheet" href="/css/base.css" />
-<link rel="stylesheet" href="/css/layout.css" />
-<link rel="stylesheet" href="/css/components.css" />
-<link rel="stylesheet" href="/css/modals.css" />
-<link rel="stylesheet" href="/css/pages.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
 </head>
 <body class="app-body">
 
-  <header class="app-header">
-    <div class="header-left">
-      <button class="icon-btn" onclick="goBack()">←</button>
-      <div class="logo" id="headerTitle">Application</div>
-    </div>
-    <div class="header-right">
-      <button class="icon-btn" onclick="loadApp()">🔄</button>
-    </div>
-  </header>
+  <div id="app"></div>
 
-  <section id="appHeader" class="app-header-card">
-    <div class="empty-state">
-      <div class="empty-icon">⏳</div>
-      <div class="empty-title">Loading application...</div>
-    </div>
-  </section>
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
 
-  <section id="applicantCard" class="detail-card" style="display:none">
-    <div class="detail-grid">
-      <div class="detail-block"><div class="detail-label">👤 Applicant</div><div class="detail-value" id="d_name">—</div></div>
-      <div class="detail-block"><div class="detail-label">📞 Contact</div><div class="detail-value" id="d_contact">—</div></div>
-      <div class="detail-block"><div class="detail-label">📧 Email</div><div class="detail-value" id="d_email">—</div></div>
-      <div class="detail-block"><div class="detail-label">📍 Division</div><div class="detail-value" id="d_division">—</div></div>
-      <div class="detail-block"><div class="detail-label">🏢 Type</div><div class="detail-value" id="d_type">—</div></div>
-      <div class="detail-block"><div class="detail-label">📅 Application Date</div><div class="detail-value" id="d_date">—</div></div>
-      <div class="detail-block"><div class="detail-label">👤 Assigned To</div><div class="detail-value" id="d_assigned">—</div></div>
-      <div class="detail-block"><div class="detail-label">🕒 Updated</div><div class="detail-value" id="d_updated">—</div></div>
-    </div>
-  </section>
-
-  <section id="progressWrap" class="detail-card" style="display:none">
-    <div class="section-header">
-      <h2 class="section-title">Stage Progress</h2>
-      <span id="d_pct" class="progress-pct">0%</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" id="d_progress" style="width:0%"></div></div>
-  </section>
-
-  <section id="stagesSection" class="tasks-section" style="display:none">
-    <h2 class="section-title">Stages</h2>
-    <div id="stagesList" class="stages-list"></div>
-  </section>
-
-  <section id="docsSection" class="detail-card" style="display:none">
-    <h2 class="section-title">📎 Documents</h2>
-    <div id="docsList" class="docs-grid"></div>
-  </section>
-
-  <script src="/js/api.js"></script>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const appId = params.get("id");
+    // ── Read params from URL ──
+    const params  = new URLSearchParams(window.location.search);
+    const appId   = params.get("id");
+    const blockId = params.get("block") || "bulk_connection";
+
     if (!appId) window.location.href = "/dashboard.html";
 
+    const blockApi = BlockAPI(blockId);
+
+    // ── State ──
     let currentApp = null;
     let currentConfig = null;
 
+    // ── Render loading shell ──
+    const root = document.getElementById("app");
+    root.innerHTML = `
+      ${header({
+        title: "Application",
+        back: true,
+        backOnClick: `location.href='/block-detail.html?block=${blockId}'`,
+        actions: [
+          { icon: "🔄", onClick: "loadApp()", title: "Refresh" }
+        ]
+      })}
+      <section class="app-header-card">
+        ${emptyState("⏳", "Loading application...")}
+      </section>
+    `;
+
+    // ── Load data ──
     async function loadApp() {
       try {
         const [app, cfg] = await Promise.all([
-          BlocksAPI.getOne(appId),
-          BlocksAPI.getConfig(),
+          blockApi.getOne(appId),
+          blockApi.getConfig(),
         ]);
         currentApp = app;
         currentConfig = cfg;
         render();
       } catch (e) {
-        document.getElementById("appHeader").innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">⚠️</div>
-            <div class="empty-title">${e.message}</div>
-          </div>
-        `;
+        document.querySelector(".app-header-card").innerHTML =
+          emptyState("⚠️", e.message || "Failed to load");
       }
     }
 
+    // ── Render full page ──
     function render() {
       const a = currentApp;
-      document.getElementById("headerTitle").textContent = a.application_no;
-      document.title = `${a.application_no} — WorkStatus`;
+      const cfg = currentConfig;
+      const totalStages = (a.stages && a.stages.length) || (cfg.stages && cfg.stages.length) || 13;
 
-      const statusClass =
-        a.status === "completed" ? "completed" :
-        a.status === "rejected"  ? "rejected"  : "in_progress";
-      const statusIcon =
-        a.status === "completed" ? "✅" :
-        a.status === "rejected"  ? "❌" : "🔄";
-
-      const totalStages = (a.stages && a.stages.length) ||
-                          (currentConfig && currentConfig.stages && currentConfig.stages.length) ||
-                          0;
-
-      document.getElementById("appHeader").innerHTML = `
-        <div class="app-header-top">
-          <div class="app-header-name">${escapeHtml(a.applicant?.name || "—")}</div>
-          <span class="task-badge ${statusClass}">${statusIcon} ${a.status.replace("_", " ")}</span>
-        </div>
-        <div class="app-header-meta">
-          Application No: <b>${escapeHtml(a.application_no)}</b> · Stage <b>${a.current_stage}</b> of ${totalStages}
-        </div>
-      `;
-
-      document.getElementById("applicantCard").style.display = "";
-      document.getElementById("d_name").textContent = a.applicant?.name || "—";
-      document.getElementById("d_contact").textContent = a.applicant?.contact || "—";
-      document.getElementById("d_email").textContent = a.applicant?.email || "—";
-      document.getElementById("d_division").textContent = a.division || "—";
-      document.getElementById("d_type").textContent = a.applicant?.type || "—";
-      document.getElementById("d_date").textContent = formatDate(a.application_date);
-      document.getElementById("d_assigned").textContent = a.assigned_to || "Unassigned";
-      document.getElementById("d_updated").textContent = timeAgo(a.updated_at || a.created_at);
-
-      document.getElementById("progressWrap").style.display = "";
-      const total = (a.stages && a.stages.length) || totalStages || 1;
       const completed = (a.stages || []).filter(s => s.status === "completed").length;
-      const pct = Math.round((completed / total) * 100);
-      document.getElementById("d_pct").textContent = pct + "%";
-      document.getElementById("d_progress").style.width = pct + "%";
+      const pct = Math.round((completed / totalStages) * 100);
 
-      document.getElementById("stagesSection").style.display = "";
-      document.getElementById("stagesList").innerHTML = (a.stages || []).map(s => {
-        const icon =
-          s.status === "completed" ? "✅" :
-          s.status === "in_progress" ? "🔄" :
-          s.status === "not_applicable" ? "⚪" :
-          s.status === "rejected" ? "❌" : "⏳";
+      const docs       = cfg.documents_required || [];
+      const gotDocs    = a.documents || {};
 
-        const canAct = s.status === "in_progress";
+      root.innerHTML = `
+        ${header({
+          title: a.application_no,
+          back: true,
+          backOnClick: `location.href='/block-detail.html?block=${blockId}'`,
+          actions: [
+            { icon: "🔄", onClick: "loadApp()", title: "Refresh" }
+          ]
+        })}
 
-        let metaLine = "";
-        if (s.status === "completed" && s.completed_by) {
-          metaLine = `Completed by <b>${escapeHtml(s.completed_by)}</b> · ${formatDate(s.completed_at)}`;
-        } else if (s.status === "in_progress") {
-          metaLine = `In progress · Started ${timeAgo(s.started_at)}`;
-        } else {
-          metaLine = "Pending";
-        }
-
-        return `
-          <div class="stage-item stage-${s.status}">
-            <div class="stage-row">
-              <div class="stage-icon">${icon}</div>
-              <div class="stage-content">
-                <div class="stage-name">${s.stage_no}. ${escapeHtml(s.name)}</div>
-                <div class="stage-meta">${metaLine}</div>
-                ${s.remarks ? `<div class="stage-remark">"${escapeHtml(s.remarks)}"</div>` : ""}
-              </div>
-            </div>
-            ${canAct ? `
-              <div class="stage-actions">
-                <button class="small-btn" onclick="markComplete(${s.stage_no})">✅ Mark Complete</button>
-                <button class="small-btn btn-outline" onclick="addRemark(${s.stage_no})">💬 Add Remark</button>
-              </div>
-            ` : ""}
+        <section class="app-header-card">
+          <div class="app-header-top">
+            <div class="app-header-name">${escapeHtml(a.applicant?.name || "—")}</div>
+            ${statusBadge(a.status)}
           </div>
-        `;
-      }).join("");
+          <div class="app-header-meta">
+            Application No: <b>${escapeHtml(a.application_no)}</b> · Stage <b>${a.current_stage}</b> of ${totalStages}
+          </div>
+        </section>
 
-      document.getElementById("docsSection").style.display = "";
-      const docs = currentConfig.documents_required || [];
-      const got = a.documents || {};
-      document.getElementById("docsList").innerHTML = docs.map(d => `
-        <div class="doc-chip ${got[d.key] ? "doc-yes" : "doc-no"}">
-          ${got[d.key] ? "✅" : "⏳"} ${d.label}
-        </div>
-      `).join("");
+        ${card("", `
+          <div class="detail-grid">
+            <div class="detail-block"><div class="detail-label">👤 Applicant</div><div class="detail-value">${escapeHtml(a.applicant?.name || "—")}</div></div>
+            <div class="detail-block"><div class="detail-label">📞 Contact</div><div class="detail-value">${escapeHtml(a.applicant?.contact || "—")}</div></div>
+            <div class="detail-block"><div class="detail-label">📧 Email</div><div class="detail-value">${escapeHtml(a.applicant?.email || "—")}</div></div>
+            <div class="detail-block"><div class="detail-label">📍 Division</div><div class="detail-value">${escapeHtml(a.division || "—")}</div></div>
+            <div class="detail-block"><div class="detail-label">🏢 Type</div><div class="detail-value">${escapeHtml(a.applicant?.type || "—")}</div></div>
+            <div class="detail-block"><div class="detail-label">📅 Application Date</div><div class="detail-value">${formatDate(a.application_date)}</div></div>
+            <div class="detail-block"><div class="detail-label">👤 Assigned To</div><div class="detail-value">${escapeHtml(a.assigned_to || "Unassigned")}</div></div>
+            <div class="detail-block"><div class="detail-label">🕒 Updated</div><div class="detail-value">${timeAgo(a.updated_at || a.created_at)}</div></div>
+          </div>
+        `)}
+
+        <section class="detail-card">
+          <div class="section-header">
+            <h2 class="section-title">Stage Progress</h2>
+            <span class="progress-pct">${pct}%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </section>
+
+        <section class="tasks-section">
+          <h2 class="section-title">Stages</h2>
+          <div class="stages-list">
+            ${(a.stages || []).map(s => renderStage(s)).join("")}
+          </div>
+        </section>
+
+        ${card("📎 Documents", `
+          <div class="docs-grid">
+            ${docs.map(d => `
+              <div class="doc-chip ${gotDocs[d.key] ? "doc-yes" : "doc-no"}">
+                ${gotDocs[d.key] ? "✅" : "⏳"} ${escapeHtml(d.label)}
+              </div>
+            `).join("")}
+          </div>
+        `)}
+      `;
     }
 
+    // ── Render a single stage ──
+    function renderStage(s) {
+      const icon =
+        s.status === "completed"     ? "✅" :
+        s.status === "in_progress"   ? "🔄" :
+        s.status === "not_applicable"? "⚪" :
+        s.status === "rejected"      ? "❌" : "⏳";
+
+      const canAct = s.status === "in_progress";
+
+      let metaLine = "";
+      if (s.status === "completed" && s.completed_by) {
+        metaLine = `Completed by <b>${escapeHtml(s.completed_by)}</b> · ${formatDate(s.completed_at)}`;
+      } else if (s.status === "in_progress") {
+        metaLine = `In progress · Started ${timeAgo(s.started_at)}`;
+      } else {
+        metaLine = "Pending";
+      }
+
+      return `
+        <div class="stage-item stage-${s.status}">
+          <div class="stage-row">
+            <div class="stage-icon">${icon}</div>
+            <div class="stage-content">
+              <div class="stage-name">${s.stage_no}. ${escapeHtml(s.name)}</div>
+              <div class="stage-meta">${metaLine}</div>
+              ${s.remarks ? `<div class="stage-remark">"${escapeHtml(s.remarks)}"</div>` : ""}
+            </div>
+          </div>
+          ${canAct ? `
+            <div class="stage-actions">
+              <button class="small-btn" onclick="markComplete(${s.stage_no})">✅ Mark Complete</button>
+              <button class="small-btn btn-outline" onclick="addRemark(${s.stage_no})">💬 Add Remark</button>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    // ── Actions ──
     async function markComplete(stageNo) {
       const remarks = await showPrompt({
         title: `Complete Stage ${stageNo}`,
@@ -187,9 +185,10 @@
         confirmText: "Mark Complete",
         multiline: true,
       });
-      if (remarks === null) return; // user cancelled
+      if (remarks === null) return;
+
       try {
-        await BlocksAPI.updateStage(appId, {
+        await blockApi.updateStage(appId, {
           stage_no: stageNo,
           status: "completed",
           remarks: remarks,
@@ -209,8 +208,9 @@
         multiline: true,
       });
       if (remark === null || !remark.trim()) return;
+
       try {
-        await BlocksAPI.updateStage(appId, {
+        await blockApi.updateStage(appId, {
           stage_no: stageNo,
           status: "in_progress",
           remarks: remark,
@@ -222,14 +222,7 @@
       }
     }
 
-    function goBack() { window.location.href = "/block-detail.html?block=bulk_connection"; }
-
-    function escapeHtml(s) {
-      return String(s || "").replace(/[&<>"']/g, c => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-      }[c]));
-    }
-
+    // ── Boot ──
     loadApp();
   </script>
 </body>

@@ -7,167 +7,118 @@
   <title>WorkStatus — Home</title>
   <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="/css/base.css" />
-<link rel="stylesheet" href="/css/layout.css" />
-<link rel="stylesheet" href="/css/components.css" />
-<link rel="stylesheet" href="/css/modals.css" />
-<link rel="stylesheet" href="/css/pages.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
 </head>
 <body class="app-body">
 
-  <!-- ═══════════════════════════════════════════════════════
-       HEADER
-       ═══════════════════════════════════════════════════════ -->
-  <header class="app-header">
-    <div class="header-left">
-      <div class="logo">WorkStatus</div>
-    </div>
-    <div class="header-right">
-      <button class="icon-btn" title="Contact">📞</button>
-      <button class="icon-btn" title="Location">📍</button>
-      <button class="icon-btn" title="Notifications">🔔</button>
-    </div>
-  </header>
+  <div id="app"></div>
 
-  <!-- ═══════════════════════════════════════════════════════
-       USER CARD
-       ═══════════════════════════════════════════════════════ -->
-  <section class="user-card">
-    <div class="user-avatar">👤</div>
-    <div class="user-info">
-      <div class="user-name" id="userName">Loading...</div>
-      <div class="user-role" id="userRole">—</div>
-    </div>
-    <button class="chevron-btn" onclick="toggleUserMenu()">▼</button>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       SEARCH BAR
-       ═══════════════════════════════════════════════════════ -->
-  <section class="search-wrap">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Search blocks or tasks..." />
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       QUICK ACTION BANNER
-       ═══════════════════════════════════════════════════════ -->
-  <section class="banner">
-    <div class="banner-text">
-      <div class="banner-title">Quick Actions</div>
-      <div class="banner-sub">Create a task or view today's work</div>
-    </div>
-    <button class="banner-btn" onclick="comingSoon()">New Task</button>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       MY BLOCKS GRID
-       ═══════════════════════════════════════════════════════ -->
-  <section class="blocks-section">
-    <h2 class="section-title">My Blocks</h2>
-    <div class="block-grid" id="blockGrid">
-      <!-- Cards injected by JS -->
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════
-       BOTTOM NAVIGATION
-       ═══════════════════════════════════════════════════════ -->
-  <nav class="bottom-nav">
-    <a href="#" class="nav-item" onclick="comingSoon()">
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">Blocks</span>
-    </a>
-    <a href="#" class="nav-item" onclick="comingSoon()">
-      <span class="nav-icon">📊</span>
-      <span class="nav-label">Reports</span>
-    </a>
-    <a href="/dashboard.html" class="nav-item active">
-      <span class="nav-icon active-circle">🏠</span>
-      <span class="nav-label">Home</span>
-    </a>
-    <a href="#" class="nav-item" onclick="comingSoon()">
-      <span class="nav-icon">📤</span>
-      <span class="nav-label">Uploads</span>
-    </a>
-    <a href="#" class="nav-item" onclick="logout()">
-      <span class="nav-icon">👤</span>
-      <span class="nav-label">Logout</span>
-    </a>
-  </nav>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
+  <script src="/js/ui/charts.js"></script>
 
   <script>
-    // ═══════════════════════════════════════════════════════
-    // AUTH GUARD
-    // ═══════════════════════════════════════════════════════
-    const token = localStorage.getItem("token");
-    if (!token) window.location.href = "/";
+    // ── Auth guard already ran (auth-guard.js) ──
+    const user = getCurrentUser();
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    // ── Compose the page ──
+    const app = document.getElementById("app");
 
-    // ═══════════════════════════════════════════════════════
-    // POPULATE HEADER
-    // ═══════════════════════════════════════════════════════
-    document.getElementById("userName").textContent = user.name || user.username;
-    document.getElementById("userRole").textContent = (user.role || "").replace("_", " ").toUpperCase();
+    app.innerHTML = `
+      ${header({
+        title: "WorkStatus",
+        actions: [
+          { icon: "📞", onClick: "comingSoon('Contact')", title: "Contact" },
+          { icon: "📍", onClick: "comingSoon('Location')", title: "Location" },
+          { icon: "🔔", onClick: "comingSoon('Notifications')", title: "Notifications" }
+        ]
+      })}
 
-    // ═══════════════════════════════════════════════════════
-    // BLOCKS DATA
-    // ═══════════════════════════════════════════════════════
-    // For now, hardcoded. Later, fetch from /api/blocks
-    const BLOCKS = [
-      { id: "disconnection",  icon: "⚡", name: "Disconnection",    color: "pink"   },
-      { id: "new_connection", icon: "🔌", name: "New Connection",   color: "green"  },
-      { id: "transformer",    icon: "🔧", name: "Transformer",      color: "blue"   },
-      { id: "meter_replace",  icon: "📊", name: "Meter Replace",    color: "yellow" },
-      { id: "reports",        icon: "📈", name: "Reports",          color: "purple" },
-      { id: "uploads",        icon: "📤", name: "Uploads",          color: "orange" },
-      { id: "bulk_connection", icon: "📦", name: "Bulk Connection",  color: "purple" },
-    ];
+      <section class="user-card">
+        <div class="user-avatar">👤</div>
+        <div class="user-info">
+          <div class="user-name">${escapeHtml(user.name || user.username || "User")}</div>
+          <div class="user-role">${escapeHtml((user.role || "").replace("_", " ").toUpperCase())}</div>
+        </div>
+        <button class="chevron-btn" onclick="comingSoon('Profile menu')">▼</button>
+      </section>
 
-    // ═══════════════════════════════════════════════════════
-    // RENDER BLOCKS
-    // ═══════════════════════════════════════════════════════
-    const grid = document.getElementById("blockGrid");
-BLOCKS.forEach(block => {
-  const card = document.createElement("a");
-  card.href = `/block-detail.html?block=${block.id}`;
-  card.className = `block-card ${block.color}`;
-  card.innerHTML = `
-    <div class="block-icon">${block.icon}</div>
-    <div class="block-label">${block.name}</div>
-  `;
-  grid.appendChild(card);
-});
+      ${searchBar("searchInput", "Search blocks...")}
 
-    // ═══════════════════════════════════════════════════════
-    // SEARCH
-    // ═══════════════════════════════════════════════════════
-    document.getElementById("searchInput").addEventListener("input", (e) => {
+      <section class="banner">
+        <div class="banner-text">
+          <div class="banner-title">Quick Actions</div>
+          <div class="banner-sub">Create a task or view today's work</div>
+        </div>
+        <button class="banner-btn" onclick="comingSoon('New Task')">New Task</button>
+      </section>
+
+      <section class="blocks-section">
+        <h2 class="section-title">My Blocks</h2>
+        <div class="block-grid" id="blockGrid">
+          ${emptyState("⏳", "Loading blocks...")}
+        </div>
+      </section>
+
+      ${bottomNav("home")}
+    `;
+
+    // ── Load blocks from backend ──
+    async function loadBlocks() {
+      try {
+        const data = await RegistryAPI.listBlocks();
+        const blocks = data.blocks || [];
+        const grid = document.getElementById("blockGrid");
+
+        if (!blocks.length) {
+          grid.innerHTML = emptyState("📭", "No blocks available");
+          return;
+        }
+
+        grid.innerHTML = blocks.map(b => `
+          <a href="/block-detail.html?block=${encodeURIComponent(b.id)}" class="block-card ${b.color || "blue"}">
+            <div class="block-icon">${iconForBlock(b)}</div>
+            <div class="block-label">${escapeHtml(b.name)}</div>
+          </a>
+        `).join("");
+      } catch (e) {
+        showError("blockGrid", e.message);
+      }
+    }
+
+    // ── Icon mapping (backend config uses names like "box", "bolt") ──
+    function iconForBlock(b) {
+      const map = {
+        box: "📦", bolt: "⚡", plug: "🔌",
+        wrench: "🔧", chart: "📊", upload: "📤",
+      };
+      return map[b.icon] || "📁";
+    }
+
+    // ── Search filter (works on dynamically added cards) ──
+    document.addEventListener("input", (e) => {
+      if (e.target.id !== "searchInput") return;
       const q = e.target.value.toLowerCase();
       document.querySelectorAll(".block-card").forEach(card => {
-        const label = card.querySelector(".block-label").textContent.toLowerCase();
+        const label = card.querySelector(".block-label")?.textContent.toLowerCase() || "";
         card.style.display = label.includes(q) ? "" : "none";
       });
     });
 
-    // ═══════════════════════════════════════════════════════
-    // HELPERS
-    // ═══════════════════════════════════════════════════════
-    function logout() {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/";
-    }
-
-    function toggleUserMenu() {
-      comingSoon("Profile menu");
-    }
-
+    // ── Helpers ──
     function comingSoon(label) {
-      alert(`🚧 ${label || "This feature"} is coming soon!\n\nWe're building it step by step.`);
+      showToast(`🚧 ${label || "This feature"} coming soon`, "info");
     }
+
+    // ── Boot ──
+    loadBlocks();
   </script>
 </body>
 </html>

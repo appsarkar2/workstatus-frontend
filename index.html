@@ -3,26 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#1e40af" />
   <title>WorkStatus — Login</title>
   <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="/css/base.css" />
-<link rel="stylesheet" href="/css/layout.css" />
-<link rel="stylesheet" href="/css/components.css" />
-<link rel="stylesheet" href="/css/modals.css" />
-<link rel="stylesheet" href="/css/pages.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
 </head>
 <body>
+
   <div class="login-card">
     <h1>WorkStatus</h1>
     <p class="subtitle">Sign in to continue</p>
 
     <form id="loginForm">
       <label for="username">Username</label>
-      <input id="username" autocomplete="username" required autofocus />
+      <input
+        id="username"
+        type="text"
+        autocomplete="username"
+        placeholder="Enter username"
+        required
+        autofocus
+      />
 
       <label for="password">Password</label>
-      <input id="password" type="password" autocomplete="current-password" required />
+      <input
+        id="password"
+        type="password"
+        autocomplete="current-password"
+        placeholder="Enter password"
+        required
+      />
 
       <button type="submit" id="submitBtn">Sign In</button>
     </form>
@@ -30,6 +44,69 @@
     <p id="message" class="message"></p>
   </div>
 
-  <script src="/app.js"></script>
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+
+  <script>
+    // -----------------------------------------------------------
+    // If already logged in, skip the login page
+    // -----------------------------------------------------------
+    if (getToken()) {
+      window.location.href = "/dashboard.html";
+    }
+
+    // -----------------------------------------------------------
+    // Login handler
+    // -----------------------------------------------------------
+    const form       = document.getElementById("loginForm");
+    const $username  = document.getElementById("username");
+    const $password  = document.getElementById("password");
+    const $btn       = document.getElementById("submitBtn");
+    const $message   = document.getElementById("message");
+
+    function setMessage(text, type = "") {
+      $message.textContent = text;
+      $message.className = "message" + (type ? " " + type : "");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const username = $username.value.trim();
+      const password = $password.value;
+
+      if (!username || !password) {
+        setMessage("Please enter username and password", "error");
+        return;
+      }
+
+      $btn.disabled = true;
+      $btn.textContent = "Signing in...";
+      setMessage("");
+
+      try {
+        const res = await AuthAPI.login(username, password);
+
+        // Save session (token + user) to localStorage
+        setSession(res.access_token, res.user);
+
+        setMessage("Login successful! Redirecting...", "success");
+
+        setTimeout(() => {
+          window.location.href = "/dashboard.html";
+        }, 300);
+      } catch (err) {
+        setMessage(err.message || "Login failed", "error");
+        $btn.disabled = false;
+        $btn.textContent = "Sign In";
+      }
+    });
+
+    // Focus username on load
+    $username.focus();
+  </script>
+
 </body>
 </html>
