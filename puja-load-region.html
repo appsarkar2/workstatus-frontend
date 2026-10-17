@@ -57,7 +57,7 @@
             </div>
             <div style="flex: 1; min-width: 100px;">
               <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Time (HH:00)</label>
-              <input type="text" id="timeInput" placeholder="17:00" value="17:00" class="modal-input" style="margin-bottom: 0;" />
+              <input type="text" id="timeInput" placeholder="Leave blank for latest" class="modal-input" style="margin-bottom: 0;" />
             </div>
             <button class="btn-primary" onclick="loadReport()" style="width: auto; padding: 10px 20px; height: 42px;">View</button>
           </div>
@@ -69,13 +69,13 @@
       `;
     }
 
-    // ---------- Load Report ----------
+       // ---------- Load Report ----------
     async function loadReport() {
-      const date = document.getElementById("dateInput").value;
-      const time = document.getElementById("timeInput").value;
+      let date = document.getElementById("dateInput").value;
+      let time = document.getElementById("timeInput").value.trim();
       
-      if (!date || !time) {
-        showToast("Please enter both date and time", "error");
+      if (!date) {
+        showToast("Please select a date", "error");
         return;
       }
 
@@ -83,6 +83,20 @@
       content.innerHTML = emptyState("⏳", "Loading report...");
 
       try {
+        // If no time is entered, fetch all entries for the day to find the latest
+        if (!time) {
+           const allData = await blockApi.list({ search: date });
+           const dayEntries = allData.items.filter(e => e.date === date);
+           if (dayEntries.length > 0) {
+             dayEntries.sort((a, b) => b.time.localeCompare(a.time));
+             time = dayEntries[0].time;
+             document.getElementById("timeInput").value = time;
+           } else {
+             content.innerHTML = emptyState("📭", "No entries found for this date");
+             return;
+           }
+        }
+
         // Fetch both region and peak data in parallel
         const [rData, pData] = await Promise.all([
           apiFetch(`/api/blocks/puja_load_demand/report/region?date=${date}&time=${time}`),
