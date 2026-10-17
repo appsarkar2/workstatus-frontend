@@ -22,6 +22,9 @@
 
   <script>
     const user = getCurrentUser();
+    const params  = new URLSearchParams(window.location.search);
+    const editId = params.get("id"); // If present, we are editing
+    
     const blockApi = BlockAPI("puja_load_demand");
     const app = document.getElementById("app");
 
@@ -29,27 +32,52 @@
     let myDivision = null;
     let substations = []; 
     let myFeeders = { "33kv_total": 0, "33kv_bulk": 0, "11kv_total": 0 };
+    let existingEntry = null;
 
+    // ---------- Render Shell ----------
     function renderShell() {
       app.innerHTML = `
-        ${header({ title: "New Entry", back: true, backUrl: "/puja-load.html" })}
+        ${header({
+          title: editId ? "Edit Entry" : "New Entry",
+          back: true,
+          backUrl: editId ? `/puja-load-detail.html?id=${editId}` : "/puja-load.html"
+        })}
         <div class="form-wrap">
-          <div id="formContent">${emptyState("⏳", "Loading form...")}</div>
+          <div id="formContent">
+            ${emptyState("⏳", "Loading form...")}
+          </div>
         </div>
       `;
     }
 
+    // ---------- Load Data & Render Form ----------
     async function loadForm() {
       try {
         blockConfig = await blockApi.getConfig();
-        if (user.role === "division_user") { myDivision = user.division; } 
-        else { myDivision = blockConfig.divisions[0].name; }
+
+        if (editId) {
+           // Load existing entry for editing
+           existingEntry = await blockApi.getOne(editId);
+           myDivision = existingEntry.division;
+        } else {
+           if (user.role === "division_user") {
+             myDivision = user.division;
+           } else {
+             myDivision = blockConfig.divisions[0].name;
+           }
+        }
 
         const divConfig = blockConfig.divisions.find(d => d.name === myDivision);
-        if (!divConfig) throw new Error("Division not found.");
+        if (!divConfig) throw new Error("Division configuration not found.");
 
-        substations = divConfig.substations.map(s => ({ ...s, load_mva: 0 }));
-        myFeeders = divConfig.feeders || { "33kv_total": 0, "33kv_bulk": 0, "11kv_total": 0 };
+        if (editId && existingEntry) {
+            substations = existingEntry.substations;
+            myFeeders = divConfig.feeders || { "33kv_total": 0, "33kv_bulk": 0, "11kv_total": 0 };
+        } else {
+            substations = divConfig.substations.map(s => ({ ...s, load_mva: 0 }));
+            myFeeders = divConfig.feeders || { "33kv_total": 0, "33kv_bulk": 0, "11kv_total": 0 };
+        }
+
         renderForm();
       } catch (e) {
         document.getElementById("formContent").innerHTML = emptyState("⚠️", "Failed to load", e.message);
@@ -57,30 +85,74 @@
     }
 
     function renderForm() {
-      const dateStr = new Date().toISOString().split("T")[0];
+      const isEdit = !!existingEntry;
+      const dateStr = isEdit ? existingEntry.date : new Date().toISOString().split("T")[0];
+      const timeStr = isEdit ? existingEntry.time : "00:00";
+      
+      const sysStatus = isEdit ? existingEntry.system_status : "Normal";
+      const isCustomSysStatus = sysStatus !== "Normal" && sysStatus !== "Partial Outage";
+      
+      const weather = isEdit ? existingEntry.weather : "Normal";
+      const isCustomWeather = weather !== "Normal" && weather !== "Rainy";
+
+      const sysReport = isEdit ? existingEntry.system_report : {
+          ss_without_power: `NIL/${substations.length}`,
+          line_33kv_bd: `NIL/${myFeeders['33kv_total']}`,
+          line_33kv_bulk: 0,
+          line_11kv_bd: `NIL/${myFeeders['11kv_total']}`,
+          line_11kv_bd_partial: `NIL/${myFeeders['11kv_total']}`,
+          dtr_replacement_pending: 0
+      };
+
       document.getElementById("formContent").innerHTML = `
+        <!-- Entry Details -->
         <div class="form-section">
           <div class="form-section-title">Entry Details</div>
-          <label>Division</label>
-          <input type="text" value="${escapeHtml(myDivision)}" disabled />
+          
+          <label for="division">Division</label>
+          <input id="division" type="text" value="${escapeHtml(myDivision)}" disabled />
+          
           <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <div style="flex: 1;"><label>Date *</label><input id="date" type="date" value="${dateStr}" required /></div>
-            <div style="flex: 1;"><label>Time *</label><select id="time">${blockConfig.time_slots.map(t => `<option value="${t}">${t}</option>`).join("")}</select></div>
+            <div style="flex: 1;">
+              <label for="date">Date *</label>
+              <input id="date" type="date" value="${dateStr}" ${isEdit ? 'disabled' : ''} required />
+            </div>
+            <div style="flex: 1;">
+              <label for="time">Time (24hr) *</label>
+              <select id="time" ${isEdit ? 'disabled' : ''} required>
+                ${blockConfig.time_slots.map(t => `<option value="${t}" ${t === timeStr ? 'selected' : ''}>${t}</option>`).join("")}
+              </select>
+            </div>
           </div>
         </div>
 
+        <!-- Substations -->
         <div class="form-section">
           <div class="form-section-title">Substation Loads (MVA)</div>
           <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;">
-              <thead><tr style="border-bottom: 2px solid var(--color-border); text-align: left;"><th>SL</th><th>Name</th><th>Capacity</th><th>Load *</th></tr></thead>
+              <thead>
+                <tr style="border-bottom: 2px solid var(--color-border); text-align: left;">
+                  <th style="padding: 8px;">SL</th>
+                  <th style="padding: 8px;">Name</th>
+                  <th style="padding: 8px;">Capacity</th>
+                  <th style="padding: 8px; width: 100px;">Load *</th>
+                </tr>
+              </thead>
               <tbody>
                 ${substations.map((s, idx) => `
                   <tr style="border-bottom: 1px solid var(--color-border);">
                     <td style="padding: 8px;">${s.sl_no}</td>
                     <td style="padding: 8px;">${escapeHtml(s.name)}</td>
                     <td style="padding: 8px; color: var(--color-text-muted);">${s.capacity_mva}</td>
-                    <td style="padding: 4px;"><input type="number" step="0.01" min="0" class="form-input load-input" data-idx="${idx}" value="0" onchange="updateLoad(${idx}, this.value)" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--color-border);" /></td>
+                    <td style="padding: 4px;">
+                      <input type="number" step="0.01" min="0" 
+                        class="form-input load-input" 
+                        data-idx="${idx}" 
+                        value="${s.load_mva}" 
+                        onchange="updateLoad(${idx}, this.value)"
+                        style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--color-border);" />
+                    </td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -88,39 +160,101 @@
           </div>
         </div>
 
+        <!-- System Report -->
         <div class="form-section">
           <div class="form-section-title">System Report</div>
+          
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 120px;"><label>Substation Outage</label><input type="text" id="ss_without_power" value="NIL/${substations.length}" /></div>
-            <div style="flex: 1; min-width: 120px;"><label>33kV Source Outage</label><input type="text" id="line_33kv_bd" value="NIL/${myFeeders['33kv_total']}" /></div>
-            <div style="flex: 1; min-width: 120px;"><label>33kV Bulk Outage</label><input type="number" id="line_33kv_bulk" value="0" /></div>
-            <div style="flex: 1; min-width: 120px;"><label>11kV Line Outage</label><input type="text" id="line_11kv_bd" value="NIL/${myFeeders['11kv_total']}" /></div>
-            <div style="flex: 1; min-width: 120px;"><label>11kV Partial Outage</label><input type="text" id="line_11kv_partial" value="NIL/${myFeeders['11kv_total']}" /></div>
-            <div style="flex: 1; min-width: 120px;"><label>DTR Failure</label><input type="number" id="dtr_replacement" value="0" /></div>
+            <div style="flex: 1; min-width: 120px;">
+              <label>Substation Outage</label>
+              <input type="text" id="ss_without_power" value="${escapeHtml(sysReport.ss_without_power || '')}" />
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label>33kV Source Outage</label>
+              <input type="text" id="line_33kv_bd" value="${escapeHtml(sysReport.line_33kv_bd || '')}" />
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label>33kV Bulk Outage</label>
+              <input type="number" id="line_33kv_bulk" value="${sysReport.line_33kv_bulk || 0}" />
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label>11kV Line Outage</label>
+              <input type="text" id="line_11kv_bd" value="${escapeHtml(sysReport.line_11kv_bd || '')}" />
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label>11kV Partial Outage</label>
+              <input type="text" id="line_11kv_partial" value="${escapeHtml(sysReport.line_11kv_bd_partial || '')}" />
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label>DTR Failure</label>
+              <input type="number" id="dtr_replacement" value="${sysReport.dtr_replacement_pending || 0}" />
+            </div>
           </div>
-          <label style="margin-top: 15px;">System Status</label><select id="system_status"><option value="Normal">Normal</option><option value="Alert">Alert</option></select>
-          <label style="margin-top: 15px;">Weather</label><select id="weather"><option value="Normal">Normal</option><option value="Rain">Rain</option><option value="Storm">Storm</option></select>
+          
+          <label style="margin-top: 15px;">System Status</label>
+          <select id="system_status" onchange="toggleCustomInput('system_status', 'custom_sys_status_wrap')">
+            <option value="Normal" ${sysStatus === 'Normal' ? 'selected' : ''}>Normal</option>
+            <option value="Partial Outage" ${sysStatus === 'Partial Outage' ? 'selected' : ''}>Partial Outage</option>
+            <option value="Other" ${isCustomSysStatus ? 'selected' : ''}>Other (Type below)</option>
+          </select>
+          <div id="custom_sys_status_wrap" style="display: ${isCustomSysStatus ? 'block' : 'none'}; margin-top: 10px;">
+            <input type="text" id="custom_sys_status" placeholder="Enter custom system status..." value="${isCustomSysStatus ? escapeHtml(sysStatus) : ''}" />
+          </div>
+
+          <label style="margin-top: 15px;">Weather</label>
+          <select id="weather" onchange="toggleCustomInput('weather', 'custom_weather_wrap')">
+            <option value="Normal" ${weather === 'Normal' ? 'selected' : ''}>Normal</option>
+            <option value="Rainy" ${weather === 'Rainy' ? 'selected' : ''}>Rainy</option>
+            <option value="Other" ${isCustomWeather ? 'selected' : ''}>Other (Type below)</option>
+          </select>
+          <div id="custom_weather_wrap" style="display: ${isCustomWeather ? 'block' : 'none'}; margin-top: 10px;">
+            <input type="text" id="custom_weather" placeholder="Enter custom weather..." value="${isCustomWeather ? escapeHtml(weather) : ''}" />
+          </div>
         </div>
 
         <div class="form-actions">
           <button class="btn-secondary" onclick="cancel()">Cancel</button>
-          <button class="btn-primary" id="submitBtn" onclick="submitForm()">Submit Entry</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitForm()">${isEdit ? 'Update Entry' : 'Submit Entry'}</button>
         </div>
       `;
     }
 
-    function updateLoad(idx, val) { substations[idx].load_mva = parseFloat(val) || 0; }
-    function cancel() { window.location.href = "/puja-load.html"; }
+    // ---------- Interactions ----------
+    function updateLoad(idx, val) {
+      substations[idx].load_mva = parseFloat(val) || 0;
+    }
 
+    function toggleCustomInput(selectId, wrapId) {
+      const val = document.getElementById(selectId).value;
+      const wrap = document.getElementById(wrapId);
+      wrap.style.display = (val === "Other") ? "block" : "none";
+      if (val !== "Other") {
+          document.getElementById(wrapId).querySelector("input").value = "";
+      }
+    }
+
+    function cancel() {
+      if (editId) window.location.href = `/puja-load-detail.html?id=${editId}`;
+      else window.location.href = "/puja-load.html";
+    }
+
+    // ---------- Submit ----------
     async function submitForm() {
       const btn = document.getElementById("submitBtn");
-      const dateVal = document.getElementById("date").value;
-      if (!dateVal) { showToast("Please select a date", "error"); return; }
-      btn.disabled = true; btn.textContent = "Submitting...";
+      
+      let sysStatus = document.getElementById("system_status").value;
+      if (sysStatus === "Other") sysStatus = document.getElementById("custom_sys_status").value.trim() || "Other";
+
+      let weather = document.getElementById("weather").value;
+      if (weather === "Other") weather = document.getElementById("custom_weather").value.trim() || "Other";
 
       const payload = {
-        division: myDivision, date: dateVal, time: document.getElementById("time").value,
-        substations: substations.map(s => ({ sl_no: s.sl_no, name: s.name, load_mva: s.load_mva, capacity_mva: s.capacity_mva })),
+        division: myDivision,
+        date: document.getElementById("date").value,
+        time: document.getElementById("time").value,
+        substations: substations.map(s => ({
+          sl_no: s.sl_no, name: s.name, load_mva: s.load_mva, capacity_mva: s.capacity_mva
+        })),
         system_report: {
           ss_without_power: document.getElementById("ss_without_power").value,
           line_33kv_bd: document.getElementById("line_33kv_bd").value,
@@ -129,20 +263,35 @@
           line_11kv_bd_partial: document.getElementById("line_11kv_partial").value,
           dtr_replacement_pending: parseInt(document.getElementById("dtr_replacement").value) || 0
         },
-        system_status: document.getElementById("system_status").value,
-        weather: document.getElementById("weather").value
+        system_status: sysStatus,
+        weather: weather
       };
 
+      btn.disabled = true;
+      btn.textContent = editId ? "Updating..." : "Submitting...";
+
       try {
-        const res = await blockApi.create(payload);
-        showToast("Entry created successfully ✅", "success");
-        setTimeout(() => { window.location.href = `/puja-load-detail.html?id=${res.id}`; }, 500);
+        let res;
+        if (editId) {
+            res = await blockApi.update(editId, payload);
+            showToast("Entry updated successfully ✅", "success");
+            setTimeout(() => { window.location.href = `/puja-load-detail.html?id=${editId}`; }, 500);
+        } else {
+            res = await blockApi.create(payload);
+            showToast("Entry created successfully ✅", "success");
+            setTimeout(() => { window.location.href = `/puja-load-detail.html?id=${res.id}`; }, 500);
+        }
       } catch (e) {
-        showToast(e.message, "error"); btn.disabled = false; btn.textContent = "Submit Entry";
+        let errMsg = typeof e.message === "string" ? e.message : "Failed to submit";
+        showToast(errMsg, "error");
+        btn.disabled = false;
+        btn.textContent = editId ? "Update Entry" : "Submit Entry";
       }
     }
 
-    renderShell(); loadForm();
+    // ---------- Init ----------
+    renderShell();
+    loadForm();
   </script>
 </body>
 </html>

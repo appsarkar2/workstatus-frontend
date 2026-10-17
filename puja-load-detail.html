@@ -31,7 +31,6 @@
 
     let entry = null;
 
-    // ---------- Render Shell ----------
     function renderShell() {
       app.innerHTML = `
         ${header({
@@ -46,7 +45,6 @@
       `;
     }
 
-    // ---------- Load Data ----------
     async function loadData() {
       try {
         entry = await blockApi.getOne(entryId);
@@ -57,13 +55,25 @@
       }
     }
 
-    // ---------- Render Page ----------
     function render() {
       const e = entry;
-
-      // Compute alert color based on % load
       const pct = e.overall_percent || 0;
       const badgeClass = pct > 80 ? "rejected" : pct > 60 ? "pending" : "completed";
+
+      // Check Edit Permissions (5 Minute Rule)
+      const isAdmin = user.role === "super_admin" || user.role === "admin";
+      const isCreator = user.username === e.created_by;
+      
+      let canEdit = isAdmin;
+      if (isCreator && !isAdmin) {
+          // If it's the division user who created it, check the time
+          const createdTime = new Date(e.created_at).getTime();
+          const now = Date.now();
+          const diffMinutes = (now - createdTime) / 1000 / 60;
+          if (diffMinutes <= 5) {
+              canEdit = true;
+          }
+      }
 
       app.innerHTML = `
         ${header({
@@ -73,7 +83,6 @@
           actions: [{ icon: "🔄", onClick: "loadData()", title: "Refresh" }]
         })}
 
-        <!-- Summary Header -->
         <section class="app-header-card">
           <div class="app-header-top">
             <div class="app-header-name">${escapeHtml(e.division)}</div>
@@ -84,7 +93,6 @@
           </div>
         </section>
 
-        <!-- Totals -->
         ${statGrid([
           { label: "Total Load (MVA)", value: e.total_load_mva, color: pct > 80 ? "rejected" : "progress" },
           { label: "Capacity (MVA)", value: e.total_capacity_mva, color: "pending" },
@@ -92,7 +100,6 @@
           { label: "Weather", value: e.weather, color: "progress" }
         ])}
 
-        <!-- Substation Table -->
         <section class="detail-card" style="overflow-x: auto;">
           <h2 class="section-title">Substation Details</h2>
           <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;">
@@ -123,7 +130,6 @@
           </table>
         </section>
 
-        <!-- System Report -->
         <section class="detail-card">
           <h2 class="section-title">System Report</h2>
           <div class="detail-grid" style="margin-top: 10px;">
@@ -136,12 +142,14 @@
           </div>
         </section>
 
-        <!-- Workflow / Admin Actions -->
         <section class="tasks-section" style="margin-bottom: 50px;">
           <h2 class="section-title">Actions</h2>
           <div style="display: flex; gap: 10px;">
             ${(user.role !== "division_user" && e.current_stage === 2) ? `
               <button class="btn-primary" onclick="verifyEntry()">✅ Verify Entry</button>
+            ` : ""}
+            ${canEdit ? `
+              <button class="btn-secondary" onclick="window.location.href='/puja-load-new.html?id=${e._id}'">✏️ Edit Entry</button>
             ` : ""}
             <button class="btn-secondary" onclick="window.print()">🖨️ Print</button>
           </div>
@@ -149,7 +157,6 @@
       `;
     }
 
-    // ---------- Actions ----------
     async function verifyEntry() {
       const confirm = await showConfirm({
         title: "Verify Entry",
@@ -172,7 +179,6 @@
       }
     }
 
-    // ---------- Init ----------
     renderShell();
     loadData();
   </script>
