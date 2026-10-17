@@ -69,7 +69,8 @@
           </div>
         </section>
 
-        <div id="reportContent" style="overflow-x: auto;">
+        <!-- Added a scrollable div here for mobile viewing -->
+        <div id="reportContent" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
           ${emptyState("⏳", "Select a date and click View")}
         </div>
       `;
@@ -152,17 +153,18 @@
       const regionHourlyTotals = {};
       displayHours.forEach(h => { regionHourlyTotals[h] = 0; });
 
-      const thStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc;";
-      const tdStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; white-space: normal; word-wrap: break-word;";
+      const thStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 60px; white-space: nowrap;";
+      const tdStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; white-space: normal; word-wrap: break-word; min-width: 60px;";
 
+      // Set a fixed minimum width so the table doesn't squish
       let tableHeaders = `
-        <th rowspan="2" style="padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc;">Division</th>
+        <th rowspan="2" style="padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 100px;">Division</th>
         <th rowspan="2" style="${thStyle}">Inst. Capacity<br>(MVA)</th>
         <th rowspan="2" style="${thStyle}">Peak Load<br>(MVA)<br><span style="font-size: 10px; font-weight: normal;">(Time & Date)</span></th>
       `;
 
       displayHours.forEach(h => {
-        tableHeaders += `<th colspan="2" style="padding: 6px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #e2e8f0; font-size: 12px;">${h}</th>`;
+        tableHeaders += `<th colspan="2" style="padding: 6px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #e2e8f0; font-size: 12px; white-space: nowrap;">${h}</th>`;
       });
 
       let subHeaders = `<tr>`;
@@ -180,13 +182,13 @@
 
         let rowHtml = `
           <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: left; vertical-align: middle;">${escapeHtml(div.name)}</td>
+            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: left; vertical-align: middle; min-width: 100px; white-space: nowrap;">${escapeHtml(div.name)}</td>
             <td style="${tdStyle}">${div.capacity.toFixed(2)}</td>
             
-            <td style="${tdStyle}">
+            <td style="${tdStyle} min-width: 120px;">
                 ${div.peak_load > 0 
                   ? `<div style="font-weight: bold; font-size: 14px;">${div.peak_load.toFixed(2)}</div>
-                     <div style="font-size: 11px; color: #64748b;">at ${div.peak_hour} on ${reportDateFormatted}</div>` 
+                     <div style="font-size: 11px; color: #64748b; white-space: nowrap;">at ${div.peak_hour} on ${reportDateFormatted}</div>` 
                   : "—"}
             </td>
         `;
@@ -236,7 +238,8 @@
           <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: fixed;">
+        <!-- Added min-width to the table so it forces the scrollbar on mobile -->
+        <table style="width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: auto;">
           <thead>
             <tr>${tableHeaders}</tr>
             ${subHeaders}
@@ -244,7 +247,7 @@
           <tbody>
             ${tableRows}
             <tr style="background: #f8fafc; font-weight: bold;">
-              <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: left; vertical-align: middle;">TOTAL REGION</td>
+              <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; min-width: 100px;">TOTAL REGION</td>
               <td style="${tdStyle}">${grandTotalCapacity.toFixed(2)}</td>
               <td style="${tdStyle}">${grandTotalPeak.toFixed(2)}</td>
               ${totalRowHourlyHtml}
