@@ -35,7 +35,9 @@
     let blockConfig = null;
     let reportData = [];
     let reportDate = "";
-    
+    let reportHour = "";
+    let missingDivisions = []; // Track which divisions are missing data
+
     // Define the hours to display
     const displayHours = ["17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"];
 
@@ -56,7 +58,13 @@
               <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Date</label>
               <input type="date" id="dateInput" value="${today}" class="modal-input" style="margin-bottom: 0;" />
             </div>
-            <button class="btn-primary" onclick="loadReport()" style="width: auto; padding: 10px 20px; height: 42px;">View Report</button>
+            <div style="flex: 1; min-width: 120px;">
+              <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Hour</label>
+              <select id="hourInput" class="modal-input" style="margin-bottom: 0;">
+                ${displayHours.map(h => `<option value="${h}">${h} hrs</option>`).join("")}
+              </select>
+            </div>
+            <button class="btn-primary" onclick="loadReport()" style="width: auto; padding: 10px 20px; height: 42px;">View</button>
           </div>
         </section>
 
@@ -69,9 +77,12 @@
     // ---------- Load Report ----------
     async function loadReport() {
       const date = document.getElementById("dateInput").value;
-      if (!date) { showToast("Please select a date", "error"); return; }
+      const time = document.getElementById("hourInput").value;
+      
+      if (!date || !time) { showToast("Please select date and hour", "error"); return; }
 
       reportDate = date;
+      reportHour = time;
       const content = document.getElementById("reportContent");
       content.innerHTML = emptyState("⏳", "Loading report...");
 
@@ -84,6 +95,8 @@
 
         // Group current day data
         const divisionsMap = {};
+        missingDivisions = []; // Reset missing divisions
+
         blockConfig.divisions.forEach(div => {
            const capacity = div.substations.reduce((sum, s) => sum + s.capacity_mva, 0);
            divisionsMap[div.name] = {
@@ -101,7 +114,7 @@
 
         reportData = Object.values(divisionsMap);
         
-        // Process Peak Load for current day
+        // Process Peak Load for current day & Check for missing data at the selected hour
         reportData.forEach(div => {
            let maxLoad = 0;
            let peakHour = "";
@@ -116,6 +129,11 @@
            
            div.peak_load = maxLoad;
            div.peak_hour = peakHour;
+
+           // Check if data is missing for the requested hour
+           if (!div.hours[reportHour]) {
+               missingDivisions.push(div.name);
+           }
         });
 
         renderGrid();
@@ -131,11 +149,9 @@
       let grandTotalCapacity = 0;
       let grandTotalPeak = 0;
 
-      // Shared styles for centering and wrapping
       const thStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc;";
       const tdStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; white-space: normal; word-wrap: break-word;";
 
-      // Build Headers
       let tableHeaders = `
         <th rowspan="2" style="padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc;">Division</th>
         <th rowspan="2" style="${thStyle}">Inst. Capacity<br>(MVA)</th>
@@ -155,7 +171,6 @@
       });
       subHeaders += `</tr>`;
 
-      // Build Rows
       let tableRows = reportData.map(div => {
         grandTotalCapacity += div.capacity;
         grandTotalPeak += div.peak_load;
@@ -165,7 +180,6 @@
             <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: left; vertical-align: middle;">${escapeHtml(div.name)}</td>
             <td style="${tdStyle}">${div.capacity.toFixed(2)}</td>
             
-            <!-- Combined Peak Load Column -->
             <td style="${tdStyle}">
                 ${div.peak_load > 0 
                   ? `<div style="font-weight: bold; font-size: 14px;">${div.peak_load.toFixed(2)}</div>
@@ -174,7 +188,6 @@
             </td>
         `;
 
-        // Hourly columns
         displayHours.forEach(h => {
            const entry = div.hours[h];
            if (entry) {
@@ -194,6 +207,8 @@
         rowHtml += `</tr>`;
         return rowHtml;
       }).join("");
+
+      const grandPercent = grandTotalCapacity > 0 ? ((grandTotalPeak / grandTotalCapacity) * 100).toFixed(2) : 0;
 
       content.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
@@ -219,25 +234,40 @@
       `;
     }
 
-    // ---------- Download PDF (A4 Landscape Professional) ----------
-    function downloadPDF() {
+    // ---------- Check Data & Download PDF ----------
+    async function downloadPDF() {
+      // Check if there are missing divisions
+      if (missingDivisions.length > 0) {
+        const confirmMsg = `The following divisions have not entered data for ${reportHour} hrs:\n\n${missingDivisions.join(", ")}\n\nDo you still want to download the report?`;
+        
+        const proceed = await showConfirm({
+          title: "Missing Data",
+          message: confirmMsg,
+          confirmText: "Yes, Download",
+          cancelText: "Cancel"
+        });
+
+        if (!proceed) return; // Stop if user cancels
+      }
+
+      // Proceed with PDF generation
+      generatePDF();
+    }
+
+    function generatePDF() {
       const { jsPDF } = window.jspdf;
-      // Use standard A4 Landscape
       const doc = new jsPDF({ orientation: 'landscape', format: 'a4' });
 
-      // Main Title
       doc.setFontSize(16);
-      doc.setTextColor(30, 64, 175); // Brand Blue
+      doc.setTextColor(30, 64, 175);
       doc.setFont("helvetica", "bold");
       doc.text(`Hourly System Load Statement - Darjeeling Region`, 14, 20);
       
-      // Subtitle
       doc.setFontSize(11);
-      doc.setTextColor(100, 116, 139); // Muted Gray
+      doc.setTextColor(100, 116, 139);
       doc.setFont("helvetica", "normal");
       doc.text(`Date: ${reportDate}`, 14, 26);
 
-      // Build Headers for PDF
       let head = [
         [
           { content: 'Division', rowSpan: 2 },
@@ -257,7 +287,6 @@
         head[1].push({ content: '%', styles: { halign: 'center', fontSize: 9 } });
       });
 
-      // Build Body
       const body = reportData.map(div => {
          let peakStr = "-";
          if (div.peak_load > 0) {
@@ -284,7 +313,6 @@
          return row;
       });
 
-      // Generate Table
       doc.autoTable({
         startY: 32,
         head: head,
@@ -295,26 +323,25 @@
           cellPadding: 3, 
           halign: 'center', 
           valign: 'middle',
-          textColor: [15, 23, 42], // Dark slate
-          lineColor: [203, 213, 225], // Light border
+          textColor: [15, 23, 42], 
+          lineColor: [203, 213, 225], 
           lineWidth: 0.1
         },
         headStyles: { 
-          fillColor: [241, 245, 249], // Very light blue-gray header
+          fillColor: [241, 245, 249], 
           textColor: [15, 23, 42],
           fontStyle: 'bold'
         },
         columnStyles: {
-          0: { minCellWidth: 35 } // Ensure Division name has enough space
+          0: { minCellWidth: 35 }
         },
         alternateRowStyles: {
-          fillColor: [248, 250, 252] // Slight zebra striping for readability
+          fillColor: [248, 250, 252]
         },
         margin: { top: 32, left: 14, right: 14 },
         pageBreak: 'avoid'
       });
 
-      // Save
       doc.save(`Hourly_Load_Report_${reportDate}.pdf`);
     }
 
