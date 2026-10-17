@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="/css/modals.css" />
   <link rel="stylesheet" href="/css/pages.css" />
   
-  <!-- PDF Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -27,15 +26,18 @@
   <script>
     const user = getCurrentUser();
     if (user.role === "division_user") {
-      // Division users shouldn't view region report
       window.location.href = "/puja-load.html";
     }
 
     const blockApi = BlockAPI("puja_load_demand");
     const app = document.getElementById("app");
 
-    let regionData = null;
-    let peakData = null;
+    let blockConfig = null;
+    let reportData = [];
+    let reportDate = "";
+    
+    // Define the hours to display
+    const displayHours = ["17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"];
 
     // ---------- Render Shell ----------
     function renderShell() {
@@ -48,218 +50,272 @@
           backUrl: "/puja-load.html"
         })}
         
-        <!-- Controls -->
         <section class="detail-card" style="margin-top: 16px;">
           <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 140px;">
               <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Date</label>
               <input type="date" id="dateInput" value="${today}" class="modal-input" style="margin-bottom: 0;" />
             </div>
-            <div style="flex: 1; min-width: 100px;">
-              <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Time (HH:00)</label>
-              <input type="text" id="timeInput" placeholder="Leave blank for latest" class="modal-input" style="margin-bottom: 0;" />
-            </div>
-            <button class="btn-primary" onclick="loadReport()" style="width: auto; padding: 10px 20px; height: 42px;">View</button>
+            <button class="btn-primary" onclick="loadReport()" style="width: auto; padding: 10px 20px; height: 42px;">View Report</button>
           </div>
         </section>
 
-        <div id="reportContent">
-          ${emptyState("⏳", "Select date and time, then click View")}
+        <div id="reportContent" style="overflow-x: auto;">
+          ${emptyState("⏳", "Select a date and click View")}
         </div>
       `;
     }
 
-       // ---------- Load Report ----------
+    // ---------- Load Report ----------
     async function loadReport() {
-      let date = document.getElementById("dateInput").value;
-      let time = document.getElementById("timeInput").value.trim();
-      
-      if (!date) {
-        showToast("Please select a date", "error");
-        return;
-      }
+      const date = document.getElementById("dateInput").value;
+      if (!date) { showToast("Please select a date", "error"); return; }
 
+      reportDate = date;
       const content = document.getElementById("reportContent");
       content.innerHTML = emptyState("⏳", "Loading report...");
 
       try {
-        // If no time is entered, fetch all entries for the day to find the latest
-        if (!time) {
-           const allData = await blockApi.list({ search: date });
-           const dayEntries = allData.items.filter(e => e.date === date);
-           if (dayEntries.length > 0) {
-             dayEntries.sort((a, b) => b.time.localeCompare(a.time));
-             time = dayEntries[0].time;
-             document.getElementById("timeInput").value = time;
-           } else {
-             content.innerHTML = emptyState("📭", "No entries found for this date");
-             return;
-           }
-        }
+        if (!blockConfig) blockConfig = await blockApi.getConfig();
 
-        // Fetch both region and peak data in parallel
-        const [rData, pData] = await Promise.all([
-          apiFetch(`/api/blocks/puja_load_demand/report/region?date=${date}&time=${time}`),
-          apiFetch(`/api/blocks/puja_load_demand/report/peak?date=${date}`)
-        ]);
+        // Fetch data for current day
+        const data = await blockApi.list({ search: date });
+        const currEntries = data.items.filter(e => e.date === date);
+
+        // Group current day data
+        const divisionsMap = {};
+        blockConfig.divisions.forEach(div => {
+           const capacity = div.substations.reduce((sum, s) => sum + s.capacity_mva, 0);
+           divisionsMap[div.name] = {
+              name: div.name,
+              capacity: capacity,
+              hours: {} 
+           };
+        });
+
+        currEntries.forEach(entry => {
+           if (divisionsMap[entry.division]) {
+               divisionsMap[entry.division].hours[entry.time] = entry;
+           }
+        });
+
+        reportData = Object.values(divisionsMap);
         
-        regionData = rData;
-        peakData = pData;
-        renderReport();
+        // Process Peak Load for current day
+        reportData.forEach(div => {
+           let maxLoad = 0;
+           let peakHour = "";
+           
+           displayHours.forEach(h => {
+               const entry = div.hours[h];
+               if (entry && entry.total_load_mva > maxLoad) {
+                   maxLoad = entry.total_load_mva;
+                   peakHour = h;
+               }
+           });
+           
+           div.peak_load = maxLoad;
+           div.peak_hour = peakHour;
+        });
+
+        renderGrid();
       } catch (e) {
         content.innerHTML = emptyState("⚠️", "Failed to load", e.message);
       }
     }
 
-    // ---------- Render Report ----------
-    function renderReport() {
-      const r = regionData;
-      const p = peakData;
+    // ---------- Render the Grid ----------
+    function renderGrid() {
       const content = document.getElementById("reportContent");
+      
+      let grandTotalCapacity = 0;
+      let grandTotalPeak = 0;
 
-      // Check if we have any peak data
-      const hasPeakData = p.peak_substations && Object.keys(p.peak_substations).length > 0;
+      // Shared styles for centering and wrapping
+      const thStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc;";
+      const tdStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; white-space: normal; word-wrap: break-word;";
+
+      // Build Headers
+      let tableHeaders = `
+        <th rowspan="2" style="padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc;">Division</th>
+        <th rowspan="2" style="${thStyle}">Inst. Capacity<br>(MVA)</th>
+        <th rowspan="2" style="${thStyle}">Peak Load<br>(MVA)<br><span style="font-size: 10px; font-weight: normal;">(Time & Date)</span></th>
+      `;
+
+      displayHours.forEach(h => {
+        tableHeaders += `<th colspan="2" style="padding: 6px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #e2e8f0; font-size: 12px;">${h}</th>`;
+      });
+
+      let subHeaders = `<tr>`;
+      displayHours.forEach(h => {
+        subHeaders += `
+          <th style="padding: 4px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f1f5f9; font-size: 10px; width: 50px;">Load</th>
+          <th style="padding: 4px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f1f5f9; font-size: 10px; width: 50px;">%</th>
+        `;
+      });
+      subHeaders += `</tr>`;
+
+      // Build Rows
+      let tableRows = reportData.map(div => {
+        grandTotalCapacity += div.capacity;
+        grandTotalPeak += div.peak_load;
+
+        let rowHtml = `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: left; vertical-align: middle;">${escapeHtml(div.name)}</td>
+            <td style="${tdStyle}">${div.capacity.toFixed(2)}</td>
+            
+            <!-- Combined Peak Load Column -->
+            <td style="${tdStyle}">
+                ${div.peak_load > 0 
+                  ? `<div style="font-weight: bold; font-size: 14px;">${div.peak_load.toFixed(2)}</div>
+                     <div style="font-size: 11px; color: #64748b;">at ${div.peak_hour} hrs on ${reportDate}</div>` 
+                  : "—"}
+            </td>
+        `;
+
+        // Hourly columns
+        displayHours.forEach(h => {
+           const entry = div.hours[h];
+           if (entry) {
+              const pct = ((entry.total_load_mva / div.capacity) * 100).toFixed(1);
+              rowHtml += `
+                <td style="${tdStyle}">${entry.total_load_mva.toFixed(2)}</td>
+                <td style="${tdStyle} color: #64748b;">${pct}%</td>
+              `;
+           } else {
+              rowHtml += `
+                <td style="${tdStyle} color: #cbd5e1;">-</td>
+                <td style="${tdStyle} color: #cbd5e1;">-</td>
+              `;
+           }
+        });
+
+        rowHtml += `</tr>`;
+        return rowHtml;
+      }).join("");
 
       content.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
-          <h2 class="section-title" style="margin: 0;">Durgapuja Load Report at ${escapeHtml(r.time)} hrs</h2>
+          <h2 class="section-title" style="margin: 0;">Hourly System Load Statement - Darjeeling Region</h2>
           <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
         </div>
 
-        <!-- Region Summary Table -->
-        <section class="detail-card" style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-            <thead>
-              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="padding: 10px; text-align: left;">Division</th>
-                <th style="padding: 10px; text-align: right;">Installed Capacity (MVA)</th>
-                <th style="padding: 10px; text-align: right;">Load (MVA)</th>
-                <th style="padding: 10px; text-align: right;">Loading %</th>
-                <th style="padding: 10px; text-align: left;">System Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${r.divisions.map(d => {
-                // If no entry, show dashes
-                if (!d.has_entry) {
-                  return `
-                    <tr style="border-bottom: 1px solid #e2e8f0; color: #94a3b8;">
-                      <td style="padding: 10px; font-weight: bold;">${escapeHtml(d.division)}</td>
-                      <td style="padding: 10px; text-align: right;">${d.capacity_mva}</td>
-                      <td style="padding: 10px; text-align: right;">—</td>
-                      <td style="padding: 10px; text-align: right;">—</td>
-                      <td style="padding: 10px;">No entry</td>
-                    </tr>
-                  `;
-                }
-                
-                // If has entry, highlight if % is high
-                const rowColor = d.percent > 80 ? "color: #dc2626; font-weight: bold;" : "";
-                const statusBadge = d.system_status === "Normal" 
-                  ? `<span style="color: #16a34a; font-weight: bold;">${d.system_status}</span>`
-                  : `<span style="color: #dc2626; font-weight: bold;">${d.system_status}</span>`;
-
-                return `
-                  <tr style="border-bottom: 1px solid #e2e8f0; ${rowColor}">
-                    <td style="padding: 10px; font-weight: bold;">${escapeHtml(d.division)}</td>
-                    <td style="padding: 10px; text-align: right;">${d.capacity_mva}</td>
-                    <td style="padding: 10px; text-align: right;">${d.load_mva}</td>
-                    <td style="padding: 10px; text-align: right;">${d.percent}%</td>
-                    <td style="padding: 10px;">${statusBadge}</td>
-                  </tr>
-                `;
-              }).join("")}
-            </tbody>
-            <tfoot>
-              <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1; font-weight: bold;">
-                <td style="padding: 10px;">TOTAL REGION</td>
-                <td style="padding: 10px; text-align: right;">${r.region.total_capacity_mva}</td>
-                <td style="padding: 10px; text-align: right;">${r.region.total_load_mva}</td>
-                <td style="padding: 10px; text-align: right;">${r.region.overall_percent}%</td>
-                <td style="padding: 10px;">—</td>
-              </tr>
-            </tfoot>
-          </table>
-        </section>
-
-        <!-- Peak Load Section -->
-        <section class="detail-card" style="margin-top: 16px;">
-          <h2 class="section-title">Peak Load (Highest recorded today)</h2>
-          
-          ${!hasPeakData ? emptyState("📭", "No peak data available for this date") : `
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
-              ${Object.entries(p.peak_substations).map(([name, data]) => `
-                <div style="background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                  <div style="font-weight: bold; font-size: 13px; color: #0f172a;">${escapeHtml(name)}</div>
-                  <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${data.division}</div>
-                  <div style="font-size: 16px; font-weight: bold; color: #dc2626; margin-top: 6px;">${data.load_mva} MVA</div>
-                  <div style="font-size: 11px; color: #64748b;">at ${data.time} hrs</div>
-                </div>
-              `).join("")}
-            </div>
-          `}
-        </section>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: fixed;">
+          <thead>
+            <tr>${tableHeaders}</tr>
+            ${subHeaders}
+          </thead>
+          <tbody>
+            ${tableRows}
+            <tr style="background: #f8fafc; font-weight: bold;">
+              <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: left; vertical-align: middle;">TOTAL REGION</td>
+              <td style="${tdStyle}">${grandTotalCapacity.toFixed(2)}</td>
+              <td style="${tdStyle}">${grandTotalPeak.toFixed(2)}</td>
+              <td colspan="${displayHours.length * 2}" style="border: 1px solid #cbd5e1;"></td>
+            </tr>
+          </tbody>
+        </table>
       `;
     }
 
-    // ---------- Download PDF ----------
+    // ---------- Download PDF (A4 Landscape Professional) ----------
     function downloadPDF() {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      // Use standard A4 Landscape
+      const doc = new jsPDF({ orientation: 'landscape', format: 'a4' });
 
-      const r = regionData;
-      
-      // Title
+      // Main Title
       doc.setFontSize(16);
-      doc.text("Durgapuja Load Report", 14, 20);
+      doc.setTextColor(30, 64, 175); // Brand Blue
+      doc.setFont("helvetica", "bold");
+      doc.text(`Hourly System Load Statement - Darjeeling Region`, 14, 20);
+      
+      // Subtitle
       doc.setFontSize(11);
-      doc.text(`Date: ${r.date} | Time: ${r.time} hrs`, 14, 28);
+      doc.setTextColor(100, 116, 139); // Muted Gray
+      doc.setFont("helvetica", "normal");
+      doc.text(`Date: ${reportDate}`, 14, 26);
 
-      // Table Data
-      const tableBody = r.divisions.map(d => {
-        if (!d.has_entry) {
-          return [d.division, d.capacity_mva, "—", "—", "No entry"];
-        }
-        return [
-          d.division,
-          d.capacity_mva,
-          d.load_mva,
-          `${d.percent}%`,
-          d.system_status
-        ];
+      // Build Headers for PDF
+      let head = [
+        [
+          { content: 'Division', rowSpan: 2 },
+          { content: 'Inst. Cap\n(MVA)', rowSpan: 2 },
+          { content: 'Peak Load\n(Time & Date)', rowSpan: 2 }
+        ],
+        []
+      ];
+
+      displayHours.forEach(h => {
+        head[0].push({ 
+          content: h, 
+          colSpan: 2, 
+          styles: { halign: 'center', fillColor: [219, 234, 254], textColor: [30, 64, 175], fontStyle: 'bold' } 
+        });
+        head[1].push({ content: 'Load', styles: { halign: 'center', fontSize: 9 } });
+        head[1].push({ content: '%', styles: { halign: 'center', fontSize: 9 } });
       });
 
-      // Add total row
-      tableBody.push([
-        "TOTAL REGION",
-        r.region.total_capacity_mva,
-        r.region.total_load_mva,
-        `${r.region.overall_percent}%`,
-        "—"
-      ]);
+      // Build Body
+      const body = reportData.map(div => {
+         let peakStr = "-";
+         if (div.peak_load > 0) {
+             peakStr = `${div.peak_load.toFixed(2)}\n(at ${div.peak_hour})`;
+         }
+
+         let row = [
+            { content: div.name, styles: { fontStyle: 'bold', halign: 'left' } },
+            div.capacity.toFixed(2),
+            peakStr
+         ];
+         
+         displayHours.forEach(h => {
+            const entry = div.hours[h];
+            if (entry) {
+                const pct = ((entry.total_load_mva / div.capacity) * 100).toFixed(1);
+                row.push(entry.total_load_mva.toFixed(2));
+                row.push(pct + "%");
+            } else {
+                row.push("-");
+                row.push("-");
+            }
+         });
+         return row;
+      });
 
       // Generate Table
       doc.autoTable({
-        startY: 35,
-        head: [['Division', 'Capacity (MVA)', 'Load (MVA)', 'Loading %', 'Status']],
-        body: tableBody,
+        startY: 32,
+        head: head,
+        body: body,
         theme: 'grid',
-        headStyles: { fillColor: [30, 64, 175] }, // Primary blue
-        styles: { fontSize: 10 },
+        styles: { 
+          fontSize: 9, 
+          cellPadding: 3, 
+          halign: 'center', 
+          valign: 'middle',
+          textColor: [15, 23, 42], // Dark slate
+          lineColor: [203, 213, 225], // Light border
+          lineWidth: 0.1
+        },
+        headStyles: { 
+          fillColor: [241, 245, 249], // Very light blue-gray header
+          textColor: [15, 23, 42],
+          fontStyle: 'bold'
+        },
         columnStyles: {
-          1: { halign: 'right' },
-          2: { halign: 'right' },
-          3: { halign: 'right' }
-        }
+          0: { minCellWidth: 35 } // Ensure Division name has enough space
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252] // Slight zebra striping for readability
+        },
+        margin: { top: 32, left: 14, right: 14 },
+        pageBreak: 'avoid'
       });
 
-      // Footer
-      const finalY = doc.lastAutoTable.finalY || 150;
-      doc.setFontSize(10);
-      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, finalY + 15);
-      
       // Save
-      doc.save(`Durgapuja_Load_Report_${r.date}_${r.time.replace(":", "")}.pdf`);
+      doc.save(`Hourly_Load_Report_${reportDate}.pdf`);
     }
 
     // ---------- Init ----------
