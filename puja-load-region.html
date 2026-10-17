@@ -69,7 +69,6 @@
           </div>
         </section>
 
-        <!-- Added a scrollable div here for mobile viewing -->
         <div id="reportContent" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
           ${emptyState("⏳", "Select a date and click View")}
         </div>
@@ -156,7 +155,6 @@
       const thStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 60px; white-space: nowrap;";
       const tdStyle = "padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; white-space: normal; word-wrap: break-word; min-width: 60px;";
 
-      // Set a fixed minimum width so the table doesn't squish
       let tableHeaders = `
         <th rowspan="2" style="padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 100px;">Division</th>
         <th rowspan="2" style="${thStyle}">Inst. Capacity<br>(MVA)</th>
@@ -238,7 +236,6 @@
           <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
         </div>
 
-        <!-- Added min-width to the table so it forces the scrollbar on mobile -->
         <table style="width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: auto;">
           <thead>
             <tr>${tableHeaders}</tr>
@@ -399,7 +396,8 @@
         pageBreak: 'avoid'
       });
 
-      doc.save(`Division_wise_Load_${reportDateFormatted}.pdf`);
+      // Updated PDF Filename
+      doc.save(`Hourly_Load_Report_${reportHour}_${reportDateFormatted}.pdf`);
     }
 
     // ---------- Init ----------
