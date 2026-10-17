@@ -25,13 +25,24 @@
     // ── Read block ID from URL ──
     const params  = new URLSearchParams(window.location.search);
     const blockId = params.get("block") || "bulk_connection";
+    const user    = getCurrentUser();
+    const app     = document.getElementById("app");
+
+    // ── Security Check: Block division users from other blocks ──
+    if (user.role === "division_user" && blockId !== "puja_load_demand") {
+      app.innerHTML = `
+        ${header({ title: "Access Denied", back: true, backUrl: "/dashboard.html" })}
+        <section class="app-header-card" style="margin-top: 20px;">
+          ${emptyState("🚫", "Access Denied", "You do not have permission to view this block. Please use the PUJA Load Demand block.")}
+        </section>
+      `;
+      throw new Error("Access denied"); // Stops the rest of the script from running
+    }
 
     // ── Create block API client (works for any block) ──
     const blockApi = BlockAPI(blockId);
 
     // ── Render page shell first (loading state) ──
-    const app = document.getElementById("app");
-
     app.innerHTML = `
       ${header({
         title: "Block",

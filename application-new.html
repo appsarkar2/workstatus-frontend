@@ -24,6 +24,12 @@
     // ── Params ──
     const params  = new URLSearchParams(window.location.search);
     const blockId = params.get("block") || "bulk_connection";
+    const user    = getCurrentUser();
+
+    // ── Security Check ──
+    if (user.role === "division_user" && blockId !== "puja_load_demand") {
+      window.location.href = "/dashboard.html";
+    }
 
     const blockApi = BlockAPI(blockId);
 
