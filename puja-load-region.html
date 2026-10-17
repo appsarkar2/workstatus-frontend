@@ -149,7 +149,6 @@
       let grandTotalCapacity = 0;
       let grandTotalPeak = 0;
       
-      // We will calculate region hourly totals here
       const regionHourlyTotals = {};
       displayHours.forEach(h => { regionHourlyTotals[h] = 0; });
 
@@ -196,7 +195,7 @@
            const entry = div.hours[h];
            if (entry) {
               const pct = ((entry.total_load_mva / div.capacity) * 100).toFixed(1);
-              regionHourlyTotals[h] += entry.total_load_mva; // Add to region hourly total
+              regionHourlyTotals[h] += entry.total_load_mva; 
               
               rowHtml += `
                 <td style="${tdStyle}">${entry.total_load_mva.toFixed(2)}</td>
@@ -214,7 +213,6 @@
         return rowHtml;
       }).join("");
 
-      // Build the Total Region Hourly Cells
       let totalRowHourlyHtml = "";
       displayHours.forEach(h => {
           const load = regionHourlyTotals[h];
@@ -234,7 +232,7 @@
 
       content.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
-          <h2 class="section-title" style="margin: 0;">Hourly System Load Statement - Darjeeling Region</h2>
+          <h2 class="section-title" style="margin: 0;">Division-wise Hourly System Load-Darjeeling Region</h2>
           <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
         </div>
 
@@ -283,7 +281,7 @@
       doc.setFontSize(16);
       doc.setTextColor(30, 64, 175); 
       doc.setFont("helvetica", "bold");
-      doc.text(`Hourly System Load Statement - Darjeeling Region`, pageWidth / 2, 20, { align: 'center' });
+      doc.text(`Division-wise Hourly System Load-Darjeeling Region`, pageWidth / 2, 20, { align: 'center' });
       
       // Subtitle (Date) - Bold and Centered
       doc.setFontSize(11);
@@ -336,7 +334,6 @@
          return row;
       });
 
-      // Calculate Region Hourly Totals for PDF
       const regionHourlyTotals = {};
       displayHours.forEach(h => { regionHourlyTotals[h] = 0; });
       
@@ -349,11 +346,10 @@
          });
       });
 
-      // Build Total Row for PDF
       let totalRow = [
          { content: "TOTAL REGION", styles: { fontStyle: 'bold', halign: 'left' } },
          { content: grandTotalCapacity.toFixed(2), styles: { fontStyle: 'bold' } },
-         { content: "—", styles: { fontStyle: 'bold' } } // Empty Peak for total
+         { content: "—", styles: { fontStyle: 'bold' } } 
       ];
       
       displayHours.forEach(h => {
@@ -400,7 +396,7 @@
         pageBreak: 'avoid'
       });
 
-      doc.save(`Hourly_Load_Report_${reportDateFormatted}.pdf`);
+      doc.save(`Division_wise_Load_${reportDateFormatted}.pdf`);
     }
 
     // ---------- Init ----------
