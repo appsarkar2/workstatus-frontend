@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Load Entry — WorkStatus</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body class="app-body">
+
+  <div id="app"></div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const entryId = params.get("id");
+    if (!entryId) window.location.href = "/puja-load.html";
+
+    const user = getCurrentUser();
+    const blockApi = BlockAPI("puja_load_demand");
+    const app = document.getElementById("app");
+
+    let entry = null;
+
+    // ---------- Render Shell ----------
+    function renderShell() {
+      app.innerHTML = `
+        ${header({
+          title: "Load Entry",
+          back: true,
+          backUrl: "/puja-load.html",
+          actions: [{ icon: "🔄", onClick: "loadData()", title: "Refresh" }]
+        })}
+        <section class="app-header-card">
+          ${emptyState("⏳", "Loading entry...")}
+        </section>
+      `;
+    }
+
+    // ---------- Load Data ----------
+    async function loadData() {
+      try {
+        entry = await blockApi.getOne(entryId);
+        render();
+      } catch (e) {
+        document.querySelector(".app-header-card").innerHTML =
+          emptyState("⚠️", e.message || "Failed to load");
+      }
+    }
+
+    // ---------- Render Page ----------
+    function render() {
+      const e = entry;
+
+      // Compute alert color based on % load
+      const pct = e.overall_percent || 0;
+      const badgeClass = pct > 80 ? "rejected" : pct > 60 ? "pending" : "completed";
+
+      app.innerHTML = `
+        ${header({
+          title: e.application_no,
+          back: true,
+          backUrl: "/puja-load.html",
+          actions: [{ icon: "🔄", onClick: "loadData()", title: "Refresh" }]
+        })}
+
+        <!-- Summary Header -->
+        <section class="app-header-card">
+          <div class="app-header-top">
+            <div class="app-header-name">${escapeHtml(e.division)}</div>
+            <span class="task-badge ${badgeClass}">${pct}% Load</span>
+          </div>
+          <div class="app-header-meta">
+            Date: <b>${escapeHtml(e.date)}</b> · Time: <b>${escapeHtml(e.time)}</b>
+          </div>
+        </section>
+
+        <!-- Totals -->
+        ${statGrid([
+          { label: "Total Load (MVA)", value: e.total_load_mva, color: pct > 80 ? "rejected" : "progress" },
+          { label: "Capacity (MVA)", value: e.total_capacity_mva, color: "pending" },
+          { label: "System Status", value: e.system_status, color: e.system_status === "Normal" ? "completed" : "rejected" },
+          { label: "Weather", value: e.weather, color: "progress" }
+        ])}
+
+        <!-- Substation Table -->
+        <section class="detail-card" style="overflow-x: auto;">
+          <h2 class="section-title">Substation Details</h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--color-border); text-align: left;">
+                <th style="padding: 8px;">SL</th>
+                <th style="padding: 8px;">Substation Name</th>
+                <th style="padding: 8px; text-align: right;">Load (MVA)</th>
+                <th style="padding: 8px; text-align: right;">Capacity (MVA)</th>
+                <th style="padding: 8px; text-align: right;">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(e.substations || []).map(s => {
+                const sPct = s.percent || 0;
+                const rowColor = sPct > 80 ? "color: #dc2626; font-weight: bold;" : "";
+                return `
+                  <tr style="border-bottom: 1px solid var(--color-border); ${rowColor}">
+                    <td style="padding: 8px;">${s.sl_no}</td>
+                    <td style="padding: 8px;">${escapeHtml(s.name)}</td>
+                    <td style="padding: 8px; text-align: right;">${s.load_mva.toFixed(2)}</td>
+                    <td style="padding: 8px; text-align: right;">${s.capacity_mva.toFixed(2)}</td>
+                    <td style="padding: 8px; text-align: right;">${sPct.toFixed(2)}%</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </section>
+
+        <!-- System Report -->
+        <section class="detail-card">
+          <h2 class="section-title">System Report</h2>
+          <div class="detail-grid" style="margin-top: 10px;">
+            <div><div class="detail-label">Substation Outage</div><div class="detail-value">${escapeHtml(e.system_report?.ss_without_power || "—")}</div></div>
+            <div><div class="detail-label">33kV Source Outage</div><div class="detail-value">${escapeHtml(e.system_report?.line_33kv_bd || "—")}</div></div>
+            <div><div class="detail-label">33kV Bulk Outage</div><div class="detail-value">${e.system_report?.line_33kv_bulk !== undefined ? e.system_report.line_33kv_bulk : "—"}</div></div>
+            <div><div class="detail-label">11kV Line Outage</div><div class="detail-value">${escapeHtml(e.system_report?.line_11kv_bd || "—")}</div></div>
+            <div><div class="detail-label">11kV Partial Outage</div><div class="detail-value">${escapeHtml(e.system_report?.line_11kv_bd_partial || "—")}</div></div>
+            <div><div class="detail-label">DTR Failure</div><div class="detail-value">${e.system_report?.dtr_replacement_pending !== undefined ? e.system_report.dtr_replacement_pending : "—"}</div></div>
+          </div>
+        </section>
+
+        <!-- Workflow / Admin Actions -->
+        <section class="tasks-section" style="margin-bottom: 50px;">
+          <h2 class="section-title">Actions</h2>
+          <div style="display: flex; gap: 10px;">
+            ${(user.role !== "division_user" && e.current_stage === 2) ? `
+              <button class="btn-primary" onclick="verifyEntry()">✅ Verify Entry</button>
+            ` : ""}
+            <button class="btn-secondary" onclick="window.print()">🖨️ Print</button>
+          </div>
+        </section>
+      `;
+    }
+
+    // ---------- Actions ----------
+    async function verifyEntry() {
+      const confirm = await showConfirm({
+        title: "Verify Entry",
+        message: "Are you sure you want to verify this entry? It will be marked as approved.",
+        confirmText: "Verify"
+      });
+      
+      if (!confirm) return;
+
+      try {
+        await blockApi.updateStage(entryId, {
+          stage_no: 2,
+          status: "completed",
+          remarks: "Verified by Admin"
+        });
+        showToast("Entry verified ✅", "success");
+        await loadData();
+      } catch (e) {
+        showToast(e.message, "error");
+      }
+    }
+
+    // ---------- Init ----------
+    renderShell();
+    loadData();
+  </script>
+</body>
+</html>

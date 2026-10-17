@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Region Report — WorkStatus</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+  
+  <!-- PDF Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="app-body">
+
+  <div id="app"></div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
+
+  <script>
+    const user = getCurrentUser();
+    if (user.role === "division_user") {
+      // Division users shouldn't view region report
+      window.location.href = "/puja-load.html";
+    }
+
+    const blockApi = BlockAPI("puja_load_demand");
+    const app = document.getElementById("app");
+
+    let regionData = null;
+    let peakData = null;
+
+    // ---------- Render Shell ----------
+    function renderShell() {
+      const today = new Date().toISOString().split("T")[0];
+      
+      app.innerHTML = `
+        ${header({
+          title: "Region Report",
+          back: true,
+          backUrl: "/puja-load.html"
+        })}
+        
+        <!-- Controls -->
+        <section class="detail-card" style="margin-top: 16px;">
+          <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 140px;">
+              <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Date</label>
+              <input type="date" id="dateInput" value="${today}" class="modal-input" style="margin-bottom: 0;" />
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+              <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Time (HH:00)</label>
+              <input type="text" id="timeInput" placeholder="17:00" value="17:00" class="modal-input" style="margin-bottom: 0;" />
+            </div>
+            <button class="btn-primary" onclick="loadReport()" style="width: auto; padding: 10px 20px; height: 42px;">View</button>
+          </div>
+        </section>
+
+        <div id="reportContent">
+          ${emptyState("⏳", "Select date and time, then click View")}
+        </div>
+      `;
+    }
+
+    // ---------- Load Report ----------
+    async function loadReport() {
+      const date = document.getElementById("dateInput").value;
+      const time = document.getElementById("timeInput").value;
+      
+      if (!date || !time) {
+        showToast("Please enter both date and time", "error");
+        return;
+      }
+
+      const content = document.getElementById("reportContent");
+      content.innerHTML = emptyState("⏳", "Loading report...");
+
+      try {
+        // Fetch both region and peak data in parallel
+        const [rData, pData] = await Promise.all([
+          apiFetch(`/api/blocks/puja_load_demand/report/region?date=${date}&time=${time}`),
+          apiFetch(`/api/blocks/puja_load_demand/report/peak?date=${date}`)
+        ]);
+        
+        regionData = rData;
+        peakData = pData;
+        renderReport();
+      } catch (e) {
+        content.innerHTML = emptyState("⚠️", "Failed to load", e.message);
+      }
+    }
+
+    // ---------- Render Report ----------
+    function renderReport() {
+      const r = regionData;
+      const p = peakData;
+      const content = document.getElementById("reportContent");
+
+      // Check if we have any peak data
+      const hasPeakData = p.peak_substations && Object.keys(p.peak_substations).length > 0;
+
+      content.innerHTML = `
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
+          <h2 class="section-title" style="margin: 0;">Durgapuja Load Report at ${escapeHtml(r.time)} hrs</h2>
+          <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
+        </div>
+
+        <!-- Region Summary Table -->
+        <section class="detail-card" style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                <th style="padding: 10px; text-align: left;">Division</th>
+                <th style="padding: 10px; text-align: right;">Installed Capacity (MVA)</th>
+                <th style="padding: 10px; text-align: right;">Load (MVA)</th>
+                <th style="padding: 10px; text-align: right;">Loading %</th>
+                <th style="padding: 10px; text-align: left;">System Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${r.divisions.map(d => {
+                // If no entry, show dashes
+                if (!d.has_entry) {
+                  return `
+                    <tr style="border-bottom: 1px solid #e2e8f0; color: #94a3b8;">
+                      <td style="padding: 10px; font-weight: bold;">${escapeHtml(d.division)}</td>
+                      <td style="padding: 10px; text-align: right;">${d.capacity_mva}</td>
+                      <td style="padding: 10px; text-align: right;">—</td>
+                      <td style="padding: 10px; text-align: right;">—</td>
+                      <td style="padding: 10px;">No entry</td>
+                    </tr>
+                  `;
+                }
+                
+                // If has entry, highlight if % is high
+                const rowColor = d.percent > 80 ? "color: #dc2626; font-weight: bold;" : "";
+                const statusBadge = d.system_status === "Normal" 
+                  ? `<span style="color: #16a34a; font-weight: bold;">${d.system_status}</span>`
+                  : `<span style="color: #dc2626; font-weight: bold;">${d.system_status}</span>`;
+
+                return `
+                  <tr style="border-bottom: 1px solid #e2e8f0; ${rowColor}">
+                    <td style="padding: 10px; font-weight: bold;">${escapeHtml(d.division)}</td>
+                    <td style="padding: 10px; text-align: right;">${d.capacity_mva}</td>
+                    <td style="padding: 10px; text-align: right;">${d.load_mva}</td>
+                    <td style="padding: 10px; text-align: right;">${d.percent}%</td>
+                    <td style="padding: 10px;">${statusBadge}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+            <tfoot>
+              <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1; font-weight: bold;">
+                <td style="padding: 10px;">TOTAL REGION</td>
+                <td style="padding: 10px; text-align: right;">${r.region.total_capacity_mva}</td>
+                <td style="padding: 10px; text-align: right;">${r.region.total_load_mva}</td>
+                <td style="padding: 10px; text-align: right;">${r.region.overall_percent}%</td>
+                <td style="padding: 10px;">—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+
+        <!-- Peak Load Section -->
+        <section class="detail-card" style="margin-top: 16px;">
+          <h2 class="section-title">Peak Load (Highest recorded today)</h2>
+          
+          ${!hasPeakData ? emptyState("📭", "No peak data available for this date") : `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+              ${Object.entries(p.peak_substations).map(([name, data]) => `
+                <div style="background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                  <div style="font-weight: bold; font-size: 13px; color: #0f172a;">${escapeHtml(name)}</div>
+                  <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${data.division}</div>
+                  <div style="font-size: 16px; font-weight: bold; color: #dc2626; margin-top: 6px;">${data.load_mva} MVA</div>
+                  <div style="font-size: 11px; color: #64748b;">at ${data.time} hrs</div>
+                </div>
+              `).join("")}
+            </div>
+          `}
+        </section>
+      `;
+    }
+
+    // ---------- Download PDF ----------
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const r = regionData;
+      
+      // Title
+      doc.setFontSize(16);
+      doc.text("Durgapuja Load Report", 14, 20);
+      doc.setFontSize(11);
+      doc.text(`Date: ${r.date} | Time: ${r.time} hrs`, 14, 28);
+
+      // Table Data
+      const tableBody = r.divisions.map(d => {
+        if (!d.has_entry) {
+          return [d.division, d.capacity_mva, "—", "—", "No entry"];
+        }
+        return [
+          d.division,
+          d.capacity_mva,
+          d.load_mva,
+          `${d.percent}%`,
+          d.system_status
+        ];
+      });
+
+      // Add total row
+      tableBody.push([
+        "TOTAL REGION",
+        r.region.total_capacity_mva,
+        r.region.total_load_mva,
+        `${r.region.overall_percent}%`,
+        "—"
+      ]);
+
+      // Generate Table
+      doc.autoTable({
+        startY: 35,
+        head: [['Division', 'Capacity (MVA)', 'Load (MVA)', 'Loading %', 'Status']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 64, 175] }, // Primary blue
+        styles: { fontSize: 10 },
+        columnStyles: {
+          1: { halign: 'right' },
+          2: { halign: 'right' },
+          3: { halign: 'right' }
+        }
+      });
+
+      // Footer
+      const finalY = doc.lastAutoTable.finalY || 150;
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, finalY + 15);
+      
+      // Save
+      doc.save(`Durgapuja_Load_Report_${r.date}_${r.time.replace(":", "")}.pdf`);
+    }
+
+    // ---------- Init ----------
+    renderShell();
+  </script>
+</body>
+</html>

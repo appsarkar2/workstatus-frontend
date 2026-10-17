@@ -82,12 +82,19 @@
           return;
         }
 
-        grid.innerHTML = blocks.map(b => `
-          <a href="/block-detail.html?block=${encodeURIComponent(b.id)}" class="block-card ${b.color || "blue"}">
-            <div class="block-icon">${iconForBlock(b)}</div>
-            <div class="block-label">${escapeHtml(b.name)}</div>
-          </a>
-        `).join("");
+         grid.innerHTML = blocks.map(b => {
+          // Route PUJA Load Demand to its custom page, others to generic block-detail
+          const url = b.id === "puja_load_demand" 
+            ? "/puja-load.html" 
+            : `/block-detail.html?block=${encodeURIComponent(b.id)}`;
+            
+          return `
+            <a href="${url}" class="block-card ${b.color || "blue"}">
+              <div class="block-icon">${iconForBlock(b)}</div>
+              <div class="block-label">${escapeHtml(b.name)}</div>
+            </a>
+          `;
+        }).join("");
       } catch (e) {
         showError("blockGrid", e.message);
       }

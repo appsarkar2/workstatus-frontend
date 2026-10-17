@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Load Entry — WorkStatus</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body class="app-body">
+
+  <div id="app"></div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
+
+  <script>
+    const user = getCurrentUser();
+    const blockApi = BlockAPI("puja_load_demand");
+    const app = document.getElementById("app");
+
+    let blockConfig = null;
+    let myDivision = null;
+    let substations = []; 
+    let myFeeders = { "33kv_total": 0, "33kv_bulk": 0, "11kv_total": 0 };
+
+    function renderShell() {
+      app.innerHTML = `
+        ${header({ title: "New Entry", back: true, backUrl: "/puja-load.html" })}
+        <div class="form-wrap">
+          <div id="formContent">${emptyState("⏳", "Loading form...")}</div>
+        </div>
+      `;
+    }
+
+    async function loadForm() {
+      try {
+        blockConfig = await blockApi.getConfig();
+        if (user.role === "division_user") { myDivision = user.division; } 
+        else { myDivision = blockConfig.divisions[0].name; }
+
+        const divConfig = blockConfig.divisions.find(d => d.name === myDivision);
+        if (!divConfig) throw new Error("Division not found.");
+
+        substations = divConfig.substations.map(s => ({ ...s, load_mva: 0 }));
+        myFeeders = divConfig.feeders || { "33kv_total": 0, "33kv_bulk": 0, "11kv_total": 0 };
+        renderForm();
+      } catch (e) {
+        document.getElementById("formContent").innerHTML = emptyState("⚠️", "Failed to load", e.message);
+      }
+    }
+
+    function renderForm() {
+      const dateStr = new Date().toISOString().split("T")[0];
+      document.getElementById("formContent").innerHTML = `
+        <div class="form-section">
+          <div class="form-section-title">Entry Details</div>
+          <label>Division</label>
+          <input type="text" value="${escapeHtml(myDivision)}" disabled />
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <div style="flex: 1;"><label>Date *</label><input id="date" type="date" value="${dateStr}" required /></div>
+            <div style="flex: 1;"><label>Time *</label><select id="time">${blockConfig.time_slots.map(t => `<option value="${t}">${t}</option>`).join("")}</select></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Substation Loads (MVA)</div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;">
+              <thead><tr style="border-bottom: 2px solid var(--color-border); text-align: left;"><th>SL</th><th>Name</th><th>Capacity</th><th>Load *</th></tr></thead>
+              <tbody>
+                ${substations.map((s, idx) => `
+                  <tr style="border-bottom: 1px solid var(--color-border);">
+                    <td style="padding: 8px;">${s.sl_no}</td>
+                    <td style="padding: 8px;">${escapeHtml(s.name)}</td>
+                    <td style="padding: 8px; color: var(--color-text-muted);">${s.capacity_mva}</td>
+                    <td style="padding: 4px;"><input type="number" step="0.01" min="0" class="form-input load-input" data-idx="${idx}" value="0" onchange="updateLoad(${idx}, this.value)" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--color-border);" /></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">System Report</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 120px;"><label>Substation Outage</label><input type="text" id="ss_without_power" value="NIL/${substations.length}" /></div>
+            <div style="flex: 1; min-width: 120px;"><label>33kV Source Outage</label><input type="text" id="line_33kv_bd" value="NIL/${myFeeders['33kv_total']}" /></div>
+            <div style="flex: 1; min-width: 120px;"><label>33kV Bulk Outage</label><input type="number" id="line_33kv_bulk" value="0" /></div>
+            <div style="flex: 1; min-width: 120px;"><label>11kV Line Outage</label><input type="text" id="line_11kv_bd" value="NIL/${myFeeders['11kv_total']}" /></div>
+            <div style="flex: 1; min-width: 120px;"><label>11kV Partial Outage</label><input type="text" id="line_11kv_partial" value="NIL/${myFeeders['11kv_total']}" /></div>
+            <div style="flex: 1; min-width: 120px;"><label>DTR Failure</label><input type="number" id="dtr_replacement" value="0" /></div>
+          </div>
+          <label style="margin-top: 15px;">System Status</label><select id="system_status"><option value="Normal">Normal</option><option value="Alert">Alert</option></select>
+          <label style="margin-top: 15px;">Weather</label><select id="weather"><option value="Normal">Normal</option><option value="Rain">Rain</option><option value="Storm">Storm</option></select>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-secondary" onclick="cancel()">Cancel</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitForm()">Submit Entry</button>
+        </div>
+      `;
+    }
+
+    function updateLoad(idx, val) { substations[idx].load_mva = parseFloat(val) || 0; }
+    function cancel() { window.location.href = "/puja-load.html"; }
+
+    async function submitForm() {
+      const btn = document.getElementById("submitBtn");
+      const dateVal = document.getElementById("date").value;
+      if (!dateVal) { showToast("Please select a date", "error"); return; }
+      btn.disabled = true; btn.textContent = "Submitting...";
+
+      const payload = {
+        division: myDivision, date: dateVal, time: document.getElementById("time").value,
+        substations: substations.map(s => ({ sl_no: s.sl_no, name: s.name, load_mva: s.load_mva, capacity_mva: s.capacity_mva })),
+        system_report: {
+          ss_without_power: document.getElementById("ss_without_power").value,
+          line_33kv_bd: document.getElementById("line_33kv_bd").value,
+          line_33kv_bulk: parseInt(document.getElementById("line_33kv_bulk").value) || 0,
+          line_11kv_bd: document.getElementById("line_11kv_bd").value,
+          line_11kv_bd_partial: document.getElementById("line_11kv_partial").value,
+          dtr_replacement_pending: parseInt(document.getElementById("dtr_replacement").value) || 0
+        },
+        system_status: document.getElementById("system_status").value,
+        weather: document.getElementById("weather").value
+      };
+
+      try {
+        const res = await blockApi.create(payload);
+        showToast("Entry created successfully ✅", "success");
+        setTimeout(() => { window.location.href = `/puja-load-detail.html?id=${res.id}`; }, 500);
+      } catch (e) {
+        showToast(e.message, "error"); btn.disabled = false; btn.textContent = "Submit Entry";
+      }
+    }
+
+    renderShell(); loadForm();
+  </script>
+</body>
+</html>

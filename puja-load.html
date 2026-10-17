@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PUJA Load Demand — WorkStatus</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body class="app-body">
+
+  <div id="app"></div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
+
+  <script>
+    const user = getCurrentUser();
+    const isDivisionUser = user.role === "division_user";
+    const blockApi = BlockAPI("puja_load_demand");
+    const app = document.getElementById("app");
+
+    let currentEntries = [];
+
+    // ---------- Render page shell ----------
+    function renderShell() {
+      app.innerHTML = `
+        ${header({
+          title: "PUJA Load Demand",
+          back: true,
+          backUrl: "/dashboard.html",
+          actions: [
+            { icon: "🔄", onClick: "loadData()", title: "Refresh" },
+            ...(isDivisionUser ? [] : [{ icon: "📊", onClick: "goToRegion()", title: "Region Report" }])
+          ]
+        })}
+
+        ${statGrid([
+          { label: "Total Entries", value: "—", color: "progress" },
+          { label: "Latest Date", value: "—", color: "pending" }
+        ])}
+
+        ${searchBar("searchInput", "Search by division or date...")}
+
+        <section class="tasks-section">
+          <div class="section-header">
+            <h2 class="section-title">Entries</h2>
+            ${isDivisionUser ? `<button class="small-btn" onclick="goToNew()">+ New Entry</button>` : ""}
+          </div>
+          <div id="entryList" class="task-list">
+            ${emptyState("⏳", "Loading...")}
+          </div>
+        </section>
+
+        ${isDivisionUser ? fab("+", "goToNew()", "New Entry") : ""}
+      `;
+    }
+
+    // ---------- Load data ----------
+    async function loadData() {
+      const list = document.getElementById("entryList");
+      if (!list) return;
+      
+      list.innerHTML = emptyState("⏳", "Loading...");
+
+      try {
+        const data = await blockApi.list();
+        currentEntries = data.items || [];
+        renderEntries(currentEntries);
+      } catch (e) {
+        list.innerHTML = emptyState("⚠️", "Failed to load", e.message);
+      }
+    }
+
+    // ---------- Render entries ----------
+    function renderEntries(entries) {
+      const list = document.getElementById("entryList");
+      
+      if (!entries.length) {
+        list.innerHTML = emptyState("📭", "No entries yet", isDivisionUser ? "Click '+ New Entry' to add one" : "");
+        return;
+      }
+
+      // Update stats
+      const statCards = document.querySelectorAll(".stat-num");
+      if (statCards.length >= 2) {
+        statCards[0].textContent = entries.length;
+        statCards[1].textContent = entries[0].date || "—";
+      }
+
+      list.innerHTML = entries.map(e => `
+        <div class="task-item app-card" onclick="openEntry('${e._id}')">
+          <div class="app-card-top">
+            <div class="task-title">${escapeHtml(e.division)} — ${escapeHtml(e.date)} (${escapeHtml(e.time)})</div>
+            <span class="task-badge ${e.overall_percent > 80 ? 'rejected' : 'in_progress'}">
+              ${e.overall_percent}% Load
+            </span>
+          </div>
+          <div class="task-sub">
+            ⚡ ${e.total_load_mva} MVA / ${e.total_capacity_mva} MVA
+          </div>
+          <div class="task-sub">
+            🕒 Added ${timeAgo(e.created_at)}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // ---------- Navigation ----------
+    function goToNew() {
+      window.location.href = "/puja-load-new.html";
+    }
+
+    function goToRegion() {
+      window.location.href = "/puja-load-region.html";
+    }
+
+    function openEntry(id) {
+      window.location.href = `/puja-load-detail.html?id=${id}`;
+    }
+    
+
+    // ---------- Search ----------
+    document.addEventListener("input", (e) => {
+      if (e.target.id !== "searchInput") return;
+      const q = e.target.value.toLowerCase();
+      const filtered = currentEntries.filter(item =>
+        (item.division || "").toLowerCase().includes(q) ||
+        (item.date || "").toLowerCase().includes(q) ||
+        (item.time || "").toLowerCase().includes(q)
+      );
+      renderEntries(filtered);
+    });
+
+    // ---------- Init ----------
+    renderShell();
+    loadData();
+  </script>
+</body>
+</html>
