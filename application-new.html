@@ -32,13 +32,15 @@
     }
 
     const blockApi = BlockAPI(blockId);
+    const isCivilWork = blockId === "civil_work";
+    const pageTitle = isCivilWork ? "New Civil Work Project" : "New Application";
 
     // ── Render shell ──
     const root = document.getElementById("app");
 
     root.innerHTML = `
       ${header({
-        title: "New Application",
+        title: pageTitle,
         back: true,
         backOnClick: `location.href='/block-detail.html?block=${blockId}'`,
       })}
@@ -52,11 +54,18 @@
 
     // ── State ──
     let blockConfig = null;
+    let orgData = {};
 
     // ── Load config + render form ──
     async function loadForm() {
       try {
         blockConfig = await blockApi.getConfig();
+        
+        // Fetch Org Structure for Civil Work
+        if (isCivilWork) {
+            orgData = await apiFetch("/api/org-structure");
+        }
+        
         renderForm();
       } catch (e) {
         document.getElementById("formContent").innerHTML =
@@ -71,15 +80,44 @@
 
       document.getElementById("formContent").innerHTML = `
         <div class="form-section">
-          <div class="form-section-title">📋 Application Details</div>
+          <div class="form-section-title">📋 ${isCivilWork ? 'Project Details' : 'Application Details'}</div>
 
-          <label for="application_no">Application No *</label>
-          <input id="application_no" type="text" placeholder="e.g. BC-2026-002" required />
+          ${!isCivilWork ? `
+            <label for="application_no">Application No *</label>
+            <input id="application_no" type="text" placeholder="e.g. BC-2026-002" required />
+            
+            <label for="division">Division / Location</label>
+            <input id="division" type="text" placeholder="e.g. Siliguri Town" />
+          ` : `
+            <label for="work_type">Work Type *</label>
+            <select id="work_type" required>
+              <option value="" disabled selected>Select Work Type...</option>
+              <option value="New Capex Job">New Capex Job</option>
+              <option value="Maintenance Job">Maintenance Job</option>
+            </select>
 
-          <label for="division">Division</label>
-          <input id="division" type="text" placeholder="e.g. Siliguri Town" />
+            <label for="zone">Zone *</label>
+            <select id="zone" onchange="updateRegions()" required>
+                <option value="" disabled selected>Select Zone...</option>
+            </select>
 
-          <label for="application_date">Application Date</label>
+            <label for="region">Region *</label>
+            <select id="region" onchange="updateDivisions()" disabled required>
+                <option value="">Select Zone first...</option>
+            </select>
+
+            <label for="division">Division *</label>
+            <select id="division" onchange="updateLocations()" disabled required>
+                <option value="">Select Region first...</option>
+            </select>
+
+            <label for="location_name">Customer Care Centre (CCC) *</label>
+            <select id="location_name" disabled required>
+                <option value="">Select Division first...</option>
+            </select>
+          `}
+
+          <label for="application_date">${isCivilWork ? 'Start Date' : 'Application Date'}</label>
           <input id="application_date" type="date" />
 
           <label for="assigned_to">Assigned To</label>
@@ -87,27 +125,31 @@
         </div>
 
         <div class="form-section">
-          <div class="form-section-title">👤 Applicant Information</div>
+          <div class="form-section-title">👤 ${isCivilWork ? 'Work Information' : 'Applicant Information'}</div>
 
-          <label for="applicant_name">Applicant Name *</label>
-          <input id="applicant_name" type="text" placeholder="Full name" required />
+          <label for="applicant_name">${isCivilWork ? 'Project / Work Name *' : 'Applicant Name *'}</label>
+          <input id="applicant_name" type="text" placeholder="${isCivilWork ? 'e.g. Substation Upgrade Phase 1' : 'Full name'}" required />
 
-          <label for="applicant_contact">Contact Number</label>
+          <label for="applicant_contact">${isCivilWork ? 'Site In-charge Contact' : 'Contact Number'}</label>
           <input id="applicant_contact" type="tel" placeholder="e.g. 9876543210" />
 
           <label for="applicant_email">Email</label>
           <input id="applicant_email" type="email" placeholder="email@example.com" />
 
-          <label for="applicant_address">Address</label>
-          <input id="applicant_address" type="text" placeholder="Full address" />
+          <label for="applicant_address">${isCivilWork ? 'Work Scope / Description' : 'Address / Description'}</label>
+          <input id="applicant_address" type="text" placeholder="${isCivilWork ? 'Brief details about the work' : 'Full address or description'}" />
 
-          <label for="applicant_type">Application Type</label>
-          <select id="applicant_type">
-            <option value="LT Bulk">LT Bulk</option>
-            <option value="HT Bulk">HT Bulk</option>
-            <option value="LT General">LT General</option>
-            <option value="HT General">HT General</option>
-          </select>
+          ${!isCivilWork ? `
+            <label for="applicant_type">Application Type</label>
+            <select id="applicant_type">
+              <option value="LT Bulk">LT Bulk</option>
+              <option value="HT Bulk">HT Bulk</option>
+              <option value="LT General">LT General</option>
+              <option value="HT General">HT General</option>
+            </select>
+          ` : `
+            <input type="hidden" id="applicant_type" value="Civil Work" />
+          `}
         </div>
 
         <div class="form-section">
@@ -115,8 +157,8 @@
           <div class="docs-checklist">
             ${docs.map(d => `
               <label class="doc-item">
-                <input type="checkbox" data-doc="${d.key}" />
-                <span>${escapeHtml(d.label)}</span>
+                <input type="checkbox" data-doc="${d.key || d}" />
+                <span>${escapeHtml(d.label || d)}</span>
               </label>
             `).join("")}
           </div>
@@ -124,32 +166,109 @@
 
         <div class="form-actions">
           <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
-          <button class="btn-primary" id="submitBtn" onclick="submitForm()">Create Application</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitForm()">${isCivilWork ? 'Create Project' : 'Create Application'}</button>
         </div>
       `;
 
-      // Pre-fill application date = today
+      // Pre-fill date = today
       const today = new Date().toISOString().split("T")[0];
       document.getElementById("application_date").value = today;
 
+      // Populate Zone Dropdown for Civil Work
+      if (isCivilWork && orgData.zones) {
+          const zoneSelect = document.getElementById("zone");
+          Object.keys(orgData.zones).forEach(z => {
+              zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+          });
+      }
+
       // Focus first field
-      document.getElementById("application_no").focus();
+      if (isCivilWork) {
+        document.getElementById("applicant_name").focus();
+      } else {
+        document.getElementById("application_no").focus();
+      }
+    }
+
+    // ── Cascading Dropdown Logic for Civil Work ──
+    function updateRegions() {
+        const zone = document.getElementById("zone").value;
+        const regSelect = document.getElementById("region");
+        regSelect.innerHTML = `<option value="" disabled selected>Select Region...</option>`;
+        
+        if (zone && orgData.zones[zone]) {
+            Object.keys(orgData.zones[zone].regions).forEach(r => {
+                regSelect.innerHTML += `<option value="${r}">${r}</option>`;
+            });
+            regSelect.disabled = false;
+        }
+        // Reset child dropdowns
+        document.getElementById("division").innerHTML = `<option value="">Select Region first...</option>`;
+        document.getElementById("division").disabled = true;
+        document.getElementById("location_name").innerHTML = `<option value="">Select Division first...</option>`;
+        document.getElementById("location_name").disabled = true;
+    }
+
+    function updateDivisions() {
+        const zone = document.getElementById("zone").value;
+        const region = document.getElementById("region").value;
+        const divSelect = document.getElementById("division");
+        divSelect.innerHTML = `<option value="" disabled selected>Select Division...</option>`;
+        
+        if (zone && region && orgData.zones[zone].regions[region]) {
+            Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
+                divSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+            divSelect.disabled = false;
+        }
+        // Reset child dropdown
+        document.getElementById("location_name").innerHTML = `<option value="">Select Division first...</option>`;
+        document.getElementById("location_name").disabled = true;
+    }
+
+    function updateLocations() {
+        const zone = document.getElementById("zone").value;
+        const region = document.getElementById("region").value;
+        const division = document.getElementById("division").value;
+        const locSelect = document.getElementById("location_name");
+        locSelect.innerHTML = `<option value="" disabled selected>Select CCC...</option>`;
+        
+        if (zone && region && division && orgData.zones[zone].regions[region][division]) {
+            orgData.zones[zone].regions[region][division].forEach(ccc => {
+                locSelect.innerHTML += `<option value="${ccc}">${ccc}</option>`;
+            });
+            locSelect.disabled = false;
+        }
     }
 
     // ── Submit form ──
     async function submitForm() {
-      const $appNo  = document.getElementById("application_no");
       const $name   = document.getElementById("applicant_name");
       const $btn    = document.getElementById("submitBtn");
 
       // Validation
-      if (!$appNo.value.trim()) {
-        showToast("Application No is required", "error");
-        $appNo.focus();
-        return;
+      if (!isCivilWork) {
+        const $appNo = document.getElementById("application_no");
+        if (!$appNo.value.trim()) {
+          showToast("Application No is required", "error");
+          $appNo.focus();
+          return;
+        }
+      } else {
+         const workType = document.getElementById("work_type").value;
+         const zone = document.getElementById("zone").value;
+         const region = document.getElementById("region").value;
+         const division = document.getElementById("division").value;
+         const locName = document.getElementById("location_name").value;
+
+         if (!workType || !zone || !region || !division || !locName) {
+             showToast("Please fill all the dropdowns (Work Type, Zone, Region, Division, CCC)", "error");
+             return;
+         }
       }
+
       if (!$name.value.trim()) {
-        showToast("Applicant Name is required", "error");
+        showToast(isCivilWork ? "Project Name is required" : "Applicant Name is required", "error");
         $name.focus();
         return;
       }
@@ -162,7 +281,6 @@
 
       // Build payload
       const payload = {
-        application_no: $appNo.value.trim(),
         applicant: {
           name:  $name.value.trim(),
           contact: document.getElementById("applicant_contact").value.trim(),
@@ -170,18 +288,31 @@
           address: document.getElementById("applicant_address").value.trim(),
           type:    document.getElementById("applicant_type").value,
         },
-        division:         document.getElementById("division").value.trim(),
         application_date: document.getElementById("application_date").value || null,
         assigned_to:      document.getElementById("assigned_to").value.trim() || null,
         documents:        documents,
       };
 
+      // Only add application_no and division for standard blocks
+      if (!isCivilWork) {
+        payload.application_no = document.getElementById("application_no").value.trim();
+        payload.division = document.getElementById("division").value.trim();
+      } else {
+        // Add Civil Work specific fields
+        payload.work_type = document.getElementById("work_type").value;
+        payload.zone = document.getElementById("zone").value;
+        payload.region = document.getElementById("region").value;
+        payload.division = document.getElementById("division").value;
+        payload.location_type = "CCC";
+        payload.location_name = document.getElementById("location_name").value;
+      }
+
       $btn.disabled = true;
-      $btn.textContent = "Creating...";
+      $btn.textContent = "Saving...";
 
       try {
         const result = await blockApi.create(payload);
-        showToast("Application created ✅", "success");
+        showToast(isCivilWork ? "Project created ✅" : "Application created ✅", "success");
 
         setTimeout(() => {
           window.location.href = `/application-detail.html?block=${blockId}&id=${result.id}`;
@@ -189,7 +320,7 @@
       } catch (e) {
         showToast(e.message, "error");
         $btn.disabled = false;
-        $btn.textContent = "Create Application";
+        $btn.textContent = isCivilWork ? 'Create Project' : 'Create Application';
       }
     }
 
