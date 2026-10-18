@@ -304,13 +304,14 @@
           colSpan: 2, 
           styles: { halign: 'center', fillColor: [219, 234, 254], textColor: [30, 64, 175], fontStyle: 'bold' } 
         });
-        head[1].push({ content: 'Load', styles: { halign: 'center', fontSize: 9 } });
-        head[1].push({ content: '%', styles: { halign: 'center', fontSize: 9 } });
+        head[1].push({ content: 'Load', styles: { halign: 'center', fontSize: 8 } });
+        head[1].push({ content: '%', styles: { halign: 'center', fontSize: 8 } });
       });
 
       const body = reportData.map(div => {
          let peakStr = "-";
          if (div.peak_load > 0) {
+             // Using \n for forced line breaks in autoTable
              peakStr = `${div.peak_load.toFixed(2)}\n(at ${div.peak_hour} on ${reportDateFormatted})`;
          }
 
@@ -371,9 +372,12 @@
         head: head,
         body: body,
         theme: 'grid',
+        // EXPLICIT FIX: Add overflow and tableWidth to force text wrapping
+        tableWidth: 'auto', 
         styles: { 
-          fontSize: 8.5, 
-          cellPadding: 3, 
+          fontSize: 7.5, // Slightly smaller font to ensure it fits without overlapping
+          cellPadding: 2, // Reduced padding to give text more room
+          overflow: 'linebreak', // <--- THIS PREVENTS THE OVERLAPPING
           halign: 'center', 
           valign: 'middle',
           textColor: [15, 23, 42], 
@@ -386,13 +390,15 @@
           fontStyle: 'bold'
         },
         columnStyles: {
-          0: { minCellWidth: 35 },
-          2: { minCellWidth: 35 } 
+          0: { cellWidth: 30 }, // Division
+          1: { cellWidth: 16 }, // Inst Cap
+          2: { cellWidth: 32 }  // Peak Load
+          // The rest will auto-calculate to fit the page perfectly
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252]
         },
-        margin: { top: 33, left: 14, right: 14 },
+        margin: { top: 33, left: 10, right: 10 }, // Reduced margins slightly to maximize table width
         pageBreak: 'avoid'
       });
 
