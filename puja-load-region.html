@@ -34,15 +34,16 @@
 
     let blockConfig = null;
     let reportData = [];
-    let reportDate = "";
+    let reportDate = ""; 
     let reportDateFormatted = ""; 
     let reportHour = "";
     let missingDivisions = []; 
+    
+    let rangeData = {};
+    let dateRangeArray = [];
 
-    // Define the hours to display
     const displayHours = ["17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"];
 
-    // ---------- Render Shell ----------
     function renderShell() {
       const today = new Date().toISOString().split("T")[0];
       
@@ -56,8 +57,12 @@
         <section class="detail-card" style="margin-top: 16px;">
           <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 140px;">
-              <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Date</label>
-              <input type="date" id="dateInput" value="${today}" class="modal-input" style="margin-bottom: 0;" />
+              <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Start Date</label>
+              <input type="date" id="startDateInput" value="${today}" class="modal-input" style="margin-bottom: 0;" />
+            </div>
+            <div style="flex: 1; min-width: 140px;">
+              <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">End Date</label>
+              <input type="date" id="endDateInput" value="${today}" class="modal-input" style="margin-bottom: 0;" />
             </div>
             <div style="flex: 1; min-width: 120px;">
               <label style="font-size: 12px; font-weight: bold; color: var(--color-text-muted);">Hour</label>
@@ -70,42 +75,41 @@
         </section>
 
         <div id="reportContent" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
-          ${emptyState("⏳", "Select a date and click View")}
+          ${emptyState("⏳", "Select dates and click View")}
         </div>
       `;
     }
 
-    // ---------- Load Report ----------
     async function loadReport() {
-      const date = document.getElementById("dateInput").value;
+      const startDate = document.getElementById("startDateInput").value;
+      const endDate = document.getElementById("endDateInput").value;
       const time = document.getElementById("hourInput").value;
       
-      if (!date || !time) { showToast("Please select date and hour", "error"); return; }
+      if (!startDate || !endDate || !time) { showToast("Please select dates and hour", "error"); return; }
+      if (startDate > endDate) { showToast("Start Date cannot be after End Date", "error"); return; }
 
-      reportDate = date;
-      const [y, m, d] = date.split("-");
+      reportDate = endDate; 
+      const [y, m, d] = endDate.split("-");
       reportDateFormatted = `${d}-${m}-${y}`;
-
       reportHour = time;
+
       const content = document.getElementById("reportContent");
       content.innerHTML = emptyState("⏳", "Loading report...");
 
       try {
         if (!blockConfig) blockConfig = await blockApi.getConfig();
 
-        const data = await blockApi.list({ search: date });
-        const currEntries = data.items.filter(e => e.date === date);
+        const data = await blockApi.list({ search: endDate }); 
+        const currEntries = data.items.filter(e => e.date === endDate);
+        
+        const rangePeaks = await apiFetch(`/api/blocks/puja_load_demand/report/date-range-peaks?start_date=${startDate}&end_date=${endDate}`);
 
         const divisionsMap = {};
         missingDivisions = []; 
 
         blockConfig.divisions.forEach(div => {
            const capacity = div.substations.reduce((sum, s) => sum + s.capacity_mva, 0);
-           divisionsMap[div.name] = {
-              name: div.name,
-              capacity: capacity,
-              hours: {} 
-           };
+           divisionsMap[div.name] = { name: div.name, capacity: capacity, hours: {} };
         });
 
         currEntries.forEach(entry => {
@@ -136,19 +140,43 @@
            }
         });
 
+        dateRangeArray = [];
+        let curr = new Date(startDate);
+        let last = new Date(endDate);
+        while (curr <= last) {
+            const cy = curr.getFullYear();
+            const cm = String(curr.getMonth() + 1).padStart(2, '0');
+            const cd = String(curr.getDate()).padStart(2, '0');
+            dateRangeArray.push(`${cy}-${cm}-${cd}`);
+            curr.setDate(curr.getDate() + 1);
+        }
+
+        rangeData = {};
+        reportData.forEach(div => {
+            rangeData[div.name] = {};
+            dateRangeArray.forEach(dateStr => {
+                if (rangePeaks[div.name] && rangePeaks[div.name][dateStr]) {
+                    rangeData[div.name][dateStr] = {
+                        load: rangePeaks[div.name][dateStr].load,
+                        time: rangePeaks[div.name][dateStr].time
+                    };
+                } else {
+                    rangeData[div.name][dateStr] = { load: 0, time: "-" };
+                }
+            });
+        });
+
         renderGrid();
       } catch (e) {
         content.innerHTML = emptyState("⚠️", "Failed to load", e.message);
       }
     }
 
-    // ---------- Render the Grid ----------
     function renderGrid() {
       const content = document.getElementById("reportContent");
       
       let grandTotalCapacity = 0;
       let grandTotalPeak = 0;
-      
       const regionHourlyTotals = {};
       displayHours.forEach(h => { regionHourlyTotals[h] = 0; });
 
@@ -182,7 +210,6 @@
           <tr>
             <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; text-align: left; vertical-align: middle; min-width: 100px; white-space: nowrap;">${escapeHtml(div.name)}</td>
             <td style="${tdStyle}">${div.capacity.toFixed(2)}</td>
-            
             <td style="${tdStyle} min-width: 120px;">
                 ${div.peak_load > 0 
                   ? `<div style="font-weight: bold; font-size: 14px;">${div.peak_load.toFixed(2)}</div>
@@ -196,16 +223,12 @@
            if (entry) {
               const pct = ((entry.total_load_mva / div.capacity) * 100).toFixed(1);
               regionHourlyTotals[h] += entry.total_load_mva; 
-              
               rowHtml += `
                 <td style="${tdStyle}">${entry.total_load_mva.toFixed(2)}</td>
                 <td style="${tdStyle} color: #64748b;">${pct}%</td>
               `;
            } else {
-              rowHtml += `
-                <td style="${tdStyle} color: #cbd5e1;">-</td>
-                <td style="${tdStyle} color: #cbd5e1;">-</td>
-              `;
+              rowHtml += `<td style="${tdStyle} color: #cbd5e1;">-</td><td style="${tdStyle} color: #cbd5e1;">-</td>`;
            }
         });
 
@@ -218,29 +241,60 @@
           const load = regionHourlyTotals[h];
           if (load > 0) {
               const pct = ((load / grandTotalCapacity) * 100).toFixed(1);
-              totalRowHourlyHtml += `
-                <td style="${tdStyle}">${load.toFixed(2)}</td>
-                <td style="${tdStyle} color: #64748b;">${pct}%</td>
-              `;
+              totalRowHourlyHtml += `<td style="${tdStyle}">${load.toFixed(2)}</td><td style="${tdStyle} color: #64748b;">${pct}%</td>`;
           } else {
-              totalRowHourlyHtml += `
-                <td style="${tdStyle} color: #cbd5e1;">-</td>
-                <td style="${tdStyle} color: #cbd5e1;">-</td>
-              `;
+              totalRowHourlyHtml += `<td style="${tdStyle} color: #cbd5e1;">-</td><td style="${tdStyle} color: #cbd5e1;">-</td>`;
           }
       });
 
+      let rangeHeaders = `
+        <th style="padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 50px;">Sl No</th>
+        <th style="padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 150px;">Name of Division</th>
+        <th style="padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 100px;">Installed Capacity</th>
+      `;
+      
+      dateRangeArray.forEach(dateStr => {
+          const [y, m, d] = dateStr.split("-");
+          rangeHeaders += `<th style="padding: 8px; border: 1px solid #cbd5e1; background: #e2e8f0; min-width: 80px;">${d}/${m}/${y}</th>`;
+      });
+
+      let rangeRows = reportData.map((div, index) => {
+          let row = `
+            <tr>
+              <td style="${tdStyle}">${index + 1}</td>
+              <td style="${tdStyle} font-weight: bold; text-align: left;">${escapeHtml(div.name)}</td>
+              <td style="${tdStyle}">${div.capacity.toFixed(2)}</td>
+          `;
+
+          dateRangeArray.forEach(dateStr => {
+              const peak = rangeData[div.name][dateStr];
+              if (peak && peak.load > 0) {
+                  row += `
+                    <td style="${tdStyle}">
+                        <div style="font-weight: bold; font-size: 13px;">${peak.load.toFixed(2)}</div>
+                        <div style="font-size: 10px; color: #64748b;">at ${peak.time}</div>
+                    </td>
+                  `;
+              } else {
+                  row += `<td style="${tdStyle} color: #cbd5e1;">-</td>`;
+              }
+          });
+
+          row += `</tr>`;
+          return row;
+      }).join("");
+
       content.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
-          <h2 class="section-title" style="margin: 0;">Division-wise Hourly System Load-Darjeeling Region</h2>
-          <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
+          <h2 class="section-title" style="margin: 0;">Division-wise Hourly System Load (End Date: ${reportDateFormatted})</h2>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-primary" onclick="downloadExcel()" style="width: auto; padding: 8px 16px; background: #16a34a;">📊 Download Excel</button>
+            <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
+          </div>
         </div>
 
-        <table style="width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: auto;">
-          <thead>
-            <tr>${tableHeaders}</tr>
-            ${subHeaders}
-          </thead>
+        <table style="width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: auto; margin-bottom: 40px;">
+          <thead><tr>${tableHeaders}</tr>${subHeaders}</thead>
           <tbody>
             ${tableRows}
             <tr style="background: #f8fafc; font-weight: bold;">
@@ -251,85 +305,69 @@
             </tr>
           </tbody>
         </table>
+
+        <div style="margin-bottom: 15px;">
+            <h2 class="section-title" style="margin: 0;">Division-wise Peak Load (Selected Date Range)</h2>
+        </div>
+        
+        <table style="width: 100%; min-width: 800px; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: auto; margin-bottom: 50px;">
+            <thead><tr>${rangeHeaders}</tr></thead>
+            <tbody>${rangeRows}</tbody>
+        </table>
       `;
     }
 
-    // ---------- Check Data & Download PDF ----------
     async function downloadPDF() {
       if (missingDivisions.length > 0) {
-        const confirmMsg = `The following divisions have not entered data for ${reportHour} hrs:\n\n${missingDivisions.join(", ")}\n\nDo you still want to download the report?`;
-        
-        const proceed = await showConfirm({
-          title: "Missing Data",
-          message: confirmMsg,
-          confirmText: "Yes, Download",
-          cancelText: "Cancel"
-        });
-
+        const confirmMsg = `The following divisions have not entered data for ${reportHour} hrs on ${reportDateFormatted}:\n\n${missingDivisions.join(", ")}\n\nDo you still want to download the report?`;
+        const proceed = await showConfirm({ title: "Missing Data", message: confirmMsg, confirmText: "Yes, Download", cancelText: "Cancel" });
         if (!proceed) return; 
       }
-
       generatePDF();
     }
 
     function generatePDF() {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'landscape', format: 'a4' });
+      // Use 'a3' landscape to fit both tables on a single page
+      const doc = new jsPDF({ orientation: 'landscape', format: 'a3' });
       const pageWidth = doc.internal.pageSize.getWidth();
 
-      // Main Title (Centered)
+      // --- TITLE ---
       doc.setFontSize(16);
       doc.setTextColor(30, 64, 175); 
       doc.setFont("helvetica", "bold");
-      doc.text(`Division-wise Hourly System Load-Darjeeling Region`, pageWidth / 2, 20, { align: 'center' });
+      doc.text(`PUJA Load Demand Report`, pageWidth / 2, 15, { align: 'center' });
       
-      // Subtitle (Date) - Bold and Centered
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setTextColor(15, 23, 42); 
       doc.setFont("helvetica", "normal");
-      doc.text(`Date: ${reportDateFormatted}`, pageWidth / 2, 27, { align: 'center' });
+      const [sy, sm, sd] = dateRangeArray[0].split("-");
+      const [ey, em, ed] = dateRangeArray[dateRangeArray.length-1].split("-");
+      doc.text(`Date Range: ${sd}-${sm}-${sy} to ${ed}-${em}-${ey}`, pageWidth / 2, 22, { align: 'center' });
 
-      let head = [
-        [
-          { content: 'Division', rowSpan: 2 },
-          { content: 'Inst. Cap\n(MVA)', rowSpan: 2 },
-          { content: 'Peak Load\n(Time & Date)', rowSpan: 2 }
-        ],
-        []
-      ];
+      // --- TABLE 1: HOURLY LOAD (END DATE) ---
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Division-wise Hourly System Load (End Date: ${reportDateFormatted})`, 14, 30);
 
+      let head1 = [ [ { content: 'Division', rowSpan: 2 }, { content: 'Inst. Cap\n(MVA)', rowSpan: 2 }, { content: 'Peak Load\n(Time & Date)', rowSpan: 2 } ], [] ];
       displayHours.forEach(h => {
-        head[0].push({ 
-          content: h, 
-          colSpan: 2, 
-          styles: { halign: 'center', fillColor: [219, 234, 254], textColor: [30, 64, 175], fontStyle: 'bold' } 
-        });
-        head[1].push({ content: 'Load', styles: { halign: 'center', fontSize: 8 } });
-        head[1].push({ content: '%', styles: { halign: 'center', fontSize: 8 } });
+        head1[0].push({ content: h, colSpan: 2, styles: { halign: 'center', fillColor: [219, 234, 254], textColor: [30, 64, 175], fontStyle: 'bold' } });
+        head1[1].push({ content: 'Load', styles: { halign: 'center', fontSize: 8 } });
+        head1[1].push({ content: '%', styles: { halign: 'center', fontSize: 8 } });
       });
 
-      const body = reportData.map(div => {
+      const body1 = reportData.map(div => {
          let peakStr = "-";
-         if (div.peak_load > 0) {
-             // Using \n for forced line breaks in autoTable
-             peakStr = `${div.peak_load.toFixed(2)}\n(at ${div.peak_hour} on ${reportDateFormatted})`;
-         }
-
-         let row = [
-            { content: div.name, styles: { fontStyle: 'bold', halign: 'left' } },
-            div.capacity.toFixed(2),
-            peakStr
-         ];
-         
+         if (div.peak_load > 0) peakStr = `${div.peak_load.toFixed(2)}\n(at ${div.peak_hour})`;
+         let row = [ { content: div.name, styles: { fontStyle: 'bold', halign: 'left' } }, div.capacity.toFixed(2), peakStr ];
          displayHours.forEach(h => {
             const entry = div.hours[h];
             if (entry) {
                 const pct = ((entry.total_load_mva / div.capacity) * 100).toFixed(1);
-                row.push(entry.total_load_mva.toFixed(2));
-                row.push(pct + "%");
+                row.push(entry.total_load_mva.toFixed(2)); row.push(pct + "%");
             } else {
-                row.push("-");
-                row.push("-");
+                row.push("-"); row.push("-");
             }
          });
          return row;
@@ -337,76 +375,123 @@
 
       const regionHourlyTotals = {};
       displayHours.forEach(h => { regionHourlyTotals[h] = 0; });
-      
       let grandTotalCapacity = 0;
       reportData.forEach(div => {
          grandTotalCapacity += div.capacity;
-         displayHours.forEach(h => {
-            const entry = div.hours[h];
-            if (entry) regionHourlyTotals[h] += entry.total_load_mva;
-         });
+         displayHours.forEach(h => { const entry = div.hours[h]; if (entry) regionHourlyTotals[h] += entry.total_load_mva; });
       });
 
-      let totalRow = [
-         { content: "TOTAL REGION", styles: { fontStyle: 'bold', halign: 'left' } },
-         { content: grandTotalCapacity.toFixed(2), styles: { fontStyle: 'bold' } },
-         { content: "—", styles: { fontStyle: 'bold' } } 
-      ];
-      
+      let totalRow = [ { content: "TOTAL REGION", styles: { fontStyle: 'bold', halign: 'left' } }, { content: grandTotalCapacity.toFixed(2), styles: { fontStyle: 'bold' } }, { content: "—", styles: { fontStyle: 'bold' } } ];
       displayHours.forEach(h => {
          const load = regionHourlyTotals[h];
          if (load > 0) {
              const pct = ((load / grandTotalCapacity) * 100).toFixed(1);
-             totalRow.push({ content: load.toFixed(2), styles: { fontStyle: 'bold' } });
-             totalRow.push({ content: pct + "%", styles: { fontStyle: 'bold' } });
+             totalRow.push({ content: load.toFixed(2), styles: { fontStyle: 'bold' } }); totalRow.push({ content: pct + "%", styles: { fontStyle: 'bold' } });
          } else {
-             totalRow.push({ content: "-", styles: { fontStyle: 'bold' } });
-             totalRow.push({ content: "-", styles: { fontStyle: 'bold' } });
+             totalRow.push({ content: "-", styles: { fontStyle: 'bold' } }); totalRow.push({ content: "-", styles: { fontStyle: 'bold' } });
          }
       });
-      
-      body.push(totalRow);
+      body1.push(totalRow);
 
       doc.autoTable({
-        startY: 33,
-        head: head,
-        body: body,
-        theme: 'grid',
-        // EXPLICIT FIX: Add overflow and tableWidth to force text wrapping
-        tableWidth: 'auto', 
-        styles: { 
-          fontSize: 7.5, // Slightly smaller font to ensure it fits without overlapping
-          cellPadding: 2, // Reduced padding to give text more room
-          overflow: 'linebreak', // <--- THIS PREVENTS THE OVERLAPPING
-          halign: 'center', 
-          valign: 'middle',
-          textColor: [15, 23, 42], 
-          lineColor: [203, 213, 225], 
-          lineWidth: 0.1
-        },
-        headStyles: { 
-          fillColor: [241, 245, 249], 
-          textColor: [15, 23, 42],
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { cellWidth: 30 }, // Division
-          1: { cellWidth: 16 }, // Inst Cap
-          2: { cellWidth: 32 }  // Peak Load
-          // The rest will auto-calculate to fit the page perfectly
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252]
-        },
-        margin: { top: 33, left: 10, right: 10 }, // Reduced margins slightly to maximize table width
-        pageBreak: 'avoid'
+        startY: 33, head: head1, body: body1, theme: 'grid', tableWidth: 'auto', 
+        styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', halign: 'center', valign: 'middle', textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.1 },
+        headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
+        columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 15 }, 2: { cellWidth: 35 } },
+        alternateRowStyles: { fillColor: [248, 250, 252] }, margin: { left: 14, right: 14 }
       });
 
-      // Updated PDF Filename
-      doc.save(`Hourly_Load_Report_${reportHour}_${reportDateFormatted}.pdf`);
+      // --- TABLE 2: DATE RANGE PEAKS (Directly Below Table 1) ---
+      let currentY = doc.lastAutoTable.finalY + 8; // Tighter spacing
+      
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Division-wise Peak Load (Selected Date Range)`, 14, currentY);
+
+      let head2 = [ ["Sl No", "Name of Division", "Inst. Capacity"] ];
+      dateRangeArray.forEach(dateStr => {
+          const [y, m, d] = dateStr.split("-");
+          head2[0].push(`${d}/${m}/${y}`);
+      });
+
+      let body2 = reportData.map((div, index) => {
+          let row = [ index + 1, { content: div.name, styles: { fontStyle: 'bold', halign: 'left' } }, div.capacity.toFixed(2) ];
+          dateRangeArray.forEach(dateStr => {
+              const peak = rangeData[div.name][dateStr];
+              if (peak && peak.load > 0) {
+                  row.push(`${peak.load.toFixed(2)}\nat ${peak.time}`);
+              } else {
+                  row.push("-");
+              }
+          });
+          return row;
+      });
+
+      doc.autoTable({
+        startY: currentY + 3, head: head2, body: body2, theme: 'grid', tableWidth: 'auto', 
+        styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', halign: 'center', valign: 'middle', textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.1 },
+        headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
+        columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 40 }, 2: { cellWidth: 25 } },
+        alternateRowStyles: { fillColor: [248, 250, 252] }, margin: { left: 14, right: 14 }
+      });
+
+      doc.save(`Load_Report_${dateRangeArray[0]}_to_${dateRangeArray[dateRangeArray.length-1]}.pdf`);
     }
 
-    // ---------- Init ----------
+    function downloadExcel() {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        csvContent += `Division-wise Hourly System Load (End Date: ${reportDateFormatted})\n\n`;
+        let headers1 = ["Division", "Inst. Capacity (MVA)", "Peak Load (MVA)", "Peak Time"];
+        displayHours.forEach(h => { headers1.push(`${h} Load`, `${h} %`); });
+        csvContent += headers1.join(",") + "\n";
+
+        reportData.forEach(div => {
+            let row = [`"${div.name}"`, div.capacity.toFixed(2), div.peak_load.toFixed(2), div.peak_load > 0 ? `"at ${div.peak_hour}"` : "-"];
+            displayHours.forEach(h => {
+                const entry = div.hours[h];
+                if (entry) {
+                    row.push(entry.total_load_mva.toFixed(2));
+                    row.push(((entry.total_load_mva / div.capacity) * 100).toFixed(1) + "%");
+                } else {
+                    row.push("-", "-");
+                }
+            });
+            csvContent += row.join(",") + "\n";
+        });
+
+        csvContent += "\n\n"; 
+
+        csvContent += `Division-wise Peak Load (Range: ${dateRangeArray[0]} to ${dateRangeArray[dateRangeArray.length-1]})\n\n`;
+        let headers2 = ["Sl No", "Name of Division", "Installed Capacity"];
+        dateRangeArray.forEach(dateStr => {
+            const [y, m, d] = dateStr.split("-");
+            headers2.push(`${d}/${m}/${y}`);
+        });
+        csvContent += headers2.join(",") + "\n";
+
+        reportData.forEach((div, index) => {
+            let row = [index + 1, `"${div.name}"`, div.capacity.toFixed(2)];
+            dateRangeArray.forEach(dateStr => {
+                const peak = rangeData[div.name][dateStr];
+                if (peak && peak.load > 0) {
+                    row.push(`"${peak.load.toFixed(2)} at ${peak.time}"`);
+                } else {
+                    row.push("-");
+                }
+            });
+            csvContent += row.join(",") + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Load_Report_${dateRangeArray[0]}_to_${dateRangeArray[dateRangeArray.length-1]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     renderShell();
   </script>
 </body>
