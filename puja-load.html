@@ -37,7 +37,8 @@
           backUrl: "/dashboard.html",
           actions: [
             { icon: "🔄", onClick: "loadData()", title: "Refresh" },
-            ...(isDivisionUser ? [] : [{ icon: "📊", onClick: "goToRegion()", title: "Region Report" }])
+            // Added Region Report icon for ALL users (Admins + Division Users)
+            { icon: "📊", onClick: "goToRegion()", title: "Region Report" }
           ]
         })}
 
