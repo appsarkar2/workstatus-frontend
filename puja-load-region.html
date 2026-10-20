@@ -250,13 +250,16 @@
       let rangeHeaders = `
         <th style="padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 50px;">Sl No</th>
         <th style="padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 150px;">Name of Division</th>
-        <th style="padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 100px;">Installed Capacity</th>
+        <th style="padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; min-width: 100px;">Inst. Capacity (MVA)</th>
       `;
       
       dateRangeArray.forEach(dateStr => {
           const [y, m, d] = dateStr.split("-");
           rangeHeaders += `<th style="padding: 8px; border: 1px solid #cbd5e1; background: #e2e8f0; min-width: 80px;">${d}/${m}/${y}</th>`;
       });
+
+      let totalRegionRange = {};
+      dateRangeArray.forEach(dateStr => { totalRegionRange[dateStr] = 0; });
 
       let rangeRows = reportData.map((div, index) => {
           let row = `
@@ -269,6 +272,7 @@
           dateRangeArray.forEach(dateStr => {
               const peak = rangeData[div.name][dateStr];
               if (peak && peak.load > 0) {
+                  totalRegionRange[dateStr] += peak.load;
                   row += `
                     <td style="${tdStyle}">
                         <div style="font-weight: bold; font-size: 13px;">${peak.load.toFixed(2)}</div>
@@ -284,6 +288,16 @@
           return row;
       }).join("");
 
+      let totalRangeCells = "";
+      dateRangeArray.forEach(dateStr => {
+          const sum = totalRegionRange[dateStr];
+          if (sum > 0) {
+              totalRangeCells += `<td style="${tdStyle} font-weight: bold;">${sum.toFixed(2)}</td>`;
+          } else {
+              totalRangeCells += `<td style="${tdStyle} color: #cbd5e1;">-</td>`;
+          }
+      });
+
       const [sy, sm, sd] = dateRangeArray[0].split("-");
       const [ey, em, ed] = dateRangeArray[dateRangeArray.length-1].split("-");
       const startDateFormatted = `${sd}-${sm}-${sy}`;
@@ -291,7 +305,7 @@
 
       content.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
-          <h2 class="section-title" style="margin: 0; flex: 1;">Division-wise Hourly System Load as on : ${reportDateFormatted}</h2>
+          <h2 class="section-title" style="margin: 0; flex: 1;">Division-wise Hourly System Load in MVA as on : ${reportDateFormatted}</h2>
           <div style="display: flex; gap: 10px;">
             <button class="btn-primary" onclick="downloadExcel()" style="width: auto; padding: 8px 16px; background: #16a34a;">📊 Download Excel</button>
             <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
@@ -312,12 +326,19 @@
         </table>
 
         <div style="margin-bottom: 15px; width: 100%;">
-            <h2 class="section-title" style="margin: 0; text-align: center;">Division-wise Peak Load (${startDateFormatted} to ${endDateFormatted})</h2>
+            <h2 class="section-title" style="margin: 0; text-align: center;">Division-wise Peak Load in MVA (${startDateFormatted} to ${endDateFormatted})</h2>
         </div>
         
         <table style="width: 100%; min-width: 800px; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: auto; margin-bottom: 50px;">
             <thead><tr>${rangeHeaders}</tr></thead>
-            <tbody>${rangeRows}</tbody>
+            <tbody>
+                ${rangeRows}
+                <tr style="background: #f8fafc; font-weight: bold;">
+                    <td colspan="2" style="padding: 8px; border: 1px solid #cbd5e1; text-align: left; vertical-align: middle;">TOTAL REGION</td>
+                    <td style="${tdStyle}">${grandTotalCapacity.toFixed(2)}</td>
+                    ${totalRangeCells}
+                </tr>
+            </tbody>
         </table>
       `;
     }
@@ -333,20 +354,17 @@
 
     function generatePDF() {
       const { jsPDF } = window.jspdf;
-      // Use 'a3' landscape to fit both tables on a single page
       const doc = new jsPDF({ orientation: 'landscape', format: 'a3' });
       const pageWidth = doc.internal.pageSize.getWidth();
 
-      // --- TITLE (Changed as requested) ---
-      doc.setFontSize(18);
+      doc.setFontSize(16);
       doc.setTextColor(30, 64, 175); 
       doc.setFont("helvetica", "bold");
       doc.text(`PUJA Load Demand Report Darjeeling Region`, pageWidth / 2, 15, { align: 'center' });
-
-      // --- TABLE 1: HOURLY LOAD ---
+      
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
-      doc.text(`Division-wise Hourly System Load as on : ${reportDateFormatted}`, pageWidth / 2, 25, { align: 'center' });
+      doc.text(`Division-wise Hourly System Load in MVA as on : ${reportDateFormatted}`, pageWidth / 2, 25, { align: 'center' });
 
       let head1 = [ [ { content: 'Division', rowSpan: 2 }, { content: 'Inst. Cap\n(MVA)', rowSpan: 2 }, { content: 'Peak Load\n(Time & Date)', rowSpan: 2 } ], [] ];
       displayHours.forEach(h => {
@@ -404,22 +422,25 @@
       
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
-      // Heading updated to be centered and match UI
       const [sy, sm, sd] = dateRangeArray[0].split("-");
       const [ey, em, ed] = dateRangeArray[dateRangeArray.length-1].split("-");
-      doc.text(`Division-wise Peak Load (${sd}-${sm}-${sy} to ${ed}-${em}-${ey})`, pageWidth / 2, currentY, { align: 'center' });
+      doc.text(`Division-wise Peak Load in MVA (${sd}-${sm}-${sy} to ${ed}-${em}-${ey})`, pageWidth / 2, currentY, { align: 'center' });
 
-      let head2 = [ ["Sl No", "Name of Division", "Inst. Capacity"] ];
+      let head2 = [ ["Sl No", "Name of Division", "Inst. Capacity\n(MVA)"] ];
       dateRangeArray.forEach(dateStr => {
           const [y, m, d] = dateStr.split("-");
           head2[0].push(`${d}/${m}/${y}`);
       });
+
+      let totalRegionRange = {};
+      dateRangeArray.forEach(dateStr => { totalRegionRange[dateStr] = 0; });
 
       let body2 = reportData.map((div, index) => {
           let row = [ index + 1, { content: div.name, styles: { fontStyle: 'bold', halign: 'left' } }, div.capacity.toFixed(2) ];
           dateRangeArray.forEach(dateStr => {
               const peak = rangeData[div.name][dateStr];
               if (peak && peak.load > 0) {
+                  totalRegionRange[dateStr] += peak.load;
                   row.push(`${peak.load.toFixed(2)}\nat ${peak.time}`);
               } else {
                   row.push("-");
@@ -427,6 +448,17 @@
           });
           return row;
       });
+
+      let totalRangeRow = [ { content: "TOTAL REGION", colSpan: 2, styles: { fontStyle: 'bold', halign: 'left' } }, { content: grandTotalCapacity.toFixed(2), styles: { fontStyle: 'bold' } } ];
+      dateRangeArray.forEach(dateStr => {
+          const sum = totalRegionRange[dateStr];
+          if (sum > 0) {
+              totalRangeRow.push({ content: sum.toFixed(2), styles: { fontStyle: 'bold' } });
+          } else {
+              totalRangeRow.push({ content: "-", styles: { fontStyle: 'bold' } });
+          }
+      });
+      body2.push(totalRangeRow);
 
       doc.autoTable({
         startY: currentY + 3, head: head2, body: body2, theme: 'grid', tableWidth: 'auto', 
@@ -442,7 +474,7 @@
     function downloadExcel() {
         let csvContent = "data:text/csv;charset=utf-8,";
         
-        csvContent += `Division-wise Hourly System Load as on : ${reportDateFormatted}\n\n`;
+        csvContent += `Division-wise Hourly System Load in MVA as on : ${reportDateFormatted}\n\n`;
         let headers1 = ["Division", "Inst. Capacity (MVA)", "Peak Load (MVA)", "Peak Time"];
         displayHours.forEach(h => { headers1.push(`${h} Load`, `${h} %`); });
         csvContent += headers1.join(",") + "\n";
@@ -465,20 +497,24 @@
 
         const [sy, sm, sd] = dateRangeArray[0].split("-");
         const [ey, em, ed] = dateRangeArray[dateRangeArray.length-1].split("-");
-        csvContent += `Division-wise Peak Load (${sd}-${sm}-${sy} to ${ed}-${em}-${ey})\n\n`;
+        csvContent += `Division-wise Peak Load in MVA (${sd}-${sm}-${sy} to ${ed}-${em}-${ey})\n\n`;
         
-        let headers2 = ["Sl No", "Name of Division", "Installed Capacity"];
+        let headers2 = ["Sl No", "Name of Division", "Inst. Capacity (MVA)"];
         dateRangeArray.forEach(dateStr => {
             const [y, m, d] = dateStr.split("-");
             headers2.push(`${d}/${m}/${y}`);
         });
         csvContent += headers2.join(",") + "\n";
 
+        let totalRegionRangeExcel = {};
+        dateRangeArray.forEach(dateStr => { totalRegionRangeExcel[dateStr] = 0; });
+
         reportData.forEach((div, index) => {
             let row = [index + 1, `"${div.name}"`, div.capacity.toFixed(2)];
             dateRangeArray.forEach(dateStr => {
                 const peak = rangeData[div.name][dateStr];
                 if (peak && peak.load > 0) {
+                    totalRegionRangeExcel[dateStr] += peak.load;
                     row.push(`"${peak.load.toFixed(2)} at ${peak.time}"`);
                 } else {
                     row.push("-");
@@ -486,6 +522,17 @@
             });
             csvContent += row.join(",") + "\n";
         });
+
+        let totalRowExcel = [`"TOTAL REGION"`, `""`, grandTotalCapacity.toFixed(2)];
+        dateRangeArray.forEach(dateStr => {
+            const sum = totalRegionRangeExcel[dateStr];
+            if (sum > 0) {
+                totalRowExcel.push(sum.toFixed(2));
+            } else {
+                totalRowExcel.push("-");
+            }
+        });
+        csvContent += totalRowExcel.join(",") + "\n";
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
