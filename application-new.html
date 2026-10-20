@@ -107,13 +107,18 @@
             </select>
 
             <label for="division">Division *</label>
-            <select id="division" onchange="updateLocations()" disabled required>
+            <select id="division" onchange="updateLocationTypes()" disabled required>
                 <option value="">Select Region first...</option>
             </select>
 
-            <label for="location_name">Customer Care Centre (CCC) *</label>
-            <select id="location_name" disabled required>
+            <label for="location_type">Location Type *</label>
+            <select id="location_type" onchange="updateLocationNames()" disabled required>
                 <option value="">Select Division first...</option>
+            </select>
+
+            <label for="location_name">Specific Location *</label>
+            <select id="location_name" disabled required>
+                <option value="">Select Location Type first...</option>
             </select>
           `}
 
@@ -202,17 +207,25 @@
             });
             regSelect.disabled = false;
         }
+        
         // Reset child dropdowns
         document.getElementById("division").innerHTML = `<option value="">Select Region first...</option>`;
         document.getElementById("division").disabled = true;
-        document.getElementById("location_name").innerHTML = `<option value="">Select Division first...</option>`;
-        document.getElementById("location_name").disabled = true;
+        
+        const typeSelect = document.getElementById("location_type");
+        typeSelect.innerHTML = `<option value="">Select Division first...</option>`;
+        typeSelect.disabled = true;
+
+        const locSelect = document.getElementById("location_name");
+        locSelect.innerHTML = `<option value="">Select Location Type first...</option>`;
+        locSelect.disabled = true;
     }
 
     function updateDivisions() {
         const zone = document.getElementById("zone").value;
         const region = document.getElementById("region").value;
         const divSelect = document.getElementById("division");
+        
         divSelect.innerHTML = `<option value="" disabled selected>Select Division...</option>`;
         
         if (zone && region && orgData.zones[zone].regions[region]) {
@@ -221,23 +234,63 @@
             });
             divSelect.disabled = false;
         }
-        // Reset child dropdown
-        document.getElementById("location_name").innerHTML = `<option value="">Select Division first...</option>`;
-        document.getElementById("location_name").disabled = true;
+        
+        // Reset child dropdowns
+        const typeSelect = document.getElementById("location_type");
+        typeSelect.innerHTML = `<option value="">Select Division first...</option>`;
+        typeSelect.disabled = true;
+
+        const locSelect = document.getElementById("location_name");
+        locSelect.innerHTML = `<option value="">Select Location Type first...</option>`;
+        locSelect.disabled = true;
     }
 
-    function updateLocations() {
+    function updateLocationTypes() {
+        const division = document.getElementById("division").value;
+        const typeSelect = document.getElementById("location_type");
+        
+        if (division) {
+            typeSelect.innerHTML = `
+                <option value="" disabled selected>Select Location Type...</option>
+                <option value="Sub-stations">Sub-station</option>
+                <option value="CCCs">Customer Care Centre (CCC)</option>
+            `;
+            typeSelect.disabled = false;
+        } else {
+            typeSelect.disabled = true;
+        }
+
+        // Reset child dropdowns
+        const locSelect = document.getElementById("location_name");
+        locSelect.innerHTML = `<option value="">Select Location Type first...</option>`;
+        locSelect.disabled = true;
+    }
+
+    function updateLocationNames() {
         const zone = document.getElementById("zone").value;
         const region = document.getElementById("region").value;
         const division = document.getElementById("division").value;
+        const type = document.getElementById("location_type").value;
         const locSelect = document.getElementById("location_name");
-        locSelect.innerHTML = `<option value="" disabled selected>Select CCC...</option>`;
         
-        if (zone && region && division && orgData.zones[zone].regions[region][division]) {
-            orgData.zones[zone].regions[region][division].forEach(ccc => {
-                locSelect.innerHTML += `<option value="${ccc}">${ccc}</option>`;
-            });
-            locSelect.disabled = false;
+        locSelect.innerHTML = `<option value="" disabled selected>Select specific location...</option>`;
+        
+        if (zone && region && division && type && orgData.zones[zone].regions[region][division]) {
+            const dataGroup = orgData.zones[zone].regions[region][division][type];
+            
+            if (dataGroup) {
+                // Handle both Arrays and Objects (MongoDB maps)
+                if (typeof dataGroup === 'object' && !Array.isArray(dataGroup)) {
+                    Object.keys(dataGroup).forEach(key => {
+                        locSelect.innerHTML += `<option value="${key}">${key}</option>`;
+                    });
+                } else if (Array.isArray(dataGroup)) {
+                    dataGroup.forEach(item => {
+                        locSelect.innerHTML += `<option value="${item}">${item}</option>`;
+                    });
+                }
+                locSelect.disabled = false;
+            }
         }
     }
 
@@ -259,10 +312,11 @@
          const zone = document.getElementById("zone").value;
          const region = document.getElementById("region").value;
          const division = document.getElementById("division").value;
+         const locType = document.getElementById("location_type").value;
          const locName = document.getElementById("location_name").value;
 
-         if (!workType || !zone || !region || !division || !locName) {
-             showToast("Please fill all the dropdowns (Work Type, Zone, Region, Division, CCC)", "error");
+         if (!workType || !zone || !region || !division || !locType || !locName) {
+             showToast("Please fill all the dropdowns", "error");
              return;
          }
       }
@@ -303,7 +357,7 @@
         payload.zone = document.getElementById("zone").value;
         payload.region = document.getElementById("region").value;
         payload.division = document.getElementById("division").value;
-        payload.location_type = "CCC";
+        payload.location_type = document.getElementById("location_type").value;
         payload.location_name = document.getElementById("location_name").value;
       }
 
