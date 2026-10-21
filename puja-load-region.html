@@ -42,6 +42,7 @@
     
     let rangeData = {};
     let dateRangeArray = [];
+    let grandTotalCapacity = 0;
 
     const displayHours = ["17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"];
 
@@ -181,7 +182,7 @@
     function renderGrid() {
       const content = document.getElementById("reportContent");
       
-      let grandTotalCapacity = 0;
+      grandTotalCapacity = 0;
       let grandTotalPeak = 0;
       const regionHourlyTotals = {};
       displayHours.forEach(h => { regionHourlyTotals[h] = 0; });
@@ -309,11 +310,16 @@
       const startDateFormatted = `${sd}-${sm}-${sy}`;
       const endDateFormatted = `${ed}-${em}-${ey}`;
 
+      // Role-based button rendering
+      const excelButtonHtml = user.role !== "division_user" 
+        ? `<button class="btn-primary" onclick="downloadExcel()" style="width: auto; padding: 8px 16px; background: #16a34a;">📊 Download Excel</button>` 
+        : "";
+
       content.innerHTML = `
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
           <h2 class="section-title" style="margin: 0; flex: 1;">Division-wise Hourly System Load in MVA as on : ${reportDateFormatted}</h2>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-primary" onclick="downloadExcel()" style="width: auto; padding: 8px 16px; background: #16a34a;">📊 Download Excel</button>
+            ${excelButtonHtml}
             <button class="btn-primary" onclick="downloadPDF()" style="width: auto; padding: 8px 16px; background: #dc2626;">📄 Download PDF</button>
           </div>
         </div>
@@ -366,7 +372,6 @@
       doc.setFontSize(16);
       doc.setTextColor(30, 64, 175); 
       doc.setFont("helvetica", "bold");
-      // Use dynamic title here
       doc.text(reportTitle, pageWidth / 2, 15, { align: 'center' });
       
       doc.setFontSize(11);
@@ -398,9 +403,7 @@
 
       const regionHourlyTotals = {};
       displayHours.forEach(h => { regionHourlyTotals[h] = 0; });
-      let grandTotalCapacity = 0;
       reportData.forEach(div => {
-         grandTotalCapacity += div.capacity;
          displayHours.forEach(h => { const entry = div.hours[h]; if (entry) regionHourlyTotals[h] += entry.total_load_mva; });
       });
 
