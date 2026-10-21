@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Civil Work Project — WorkStatus</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+</head>
+<body class="app-body">
+
+  <div id="app"></div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
+
+  <script>
+    const params  = new URLSearchParams(window.location.search);
+    const blockId = params.get("block") || "civil_work";
+    const blockApi = BlockAPI(blockId);
+    
+    const user = getCurrentUser();
+    if (user.role === "division_user") {
+      window.location.href = "/dashboard.html";
+    }
+
+    const root = document.getElementById("app");
+
+    root.innerHTML = `
+      ${header({
+        title: "New Civil Work Project",
+        back: true,
+        backOnClick: `location.href='/block-detail.html?block=${blockId}'`,
+      })}
+      <div class="form-wrap">
+        <div id="formContent">
+          ${emptyState("⏳", "Loading form...")}
+        </div>
+      </div>
+    `;
+
+    let blockConfig = null;
+    let orgData = {};
+
+    async function loadForm() {
+      try {
+        blockConfig = await blockApi.getConfig();
+        // Fetch the Organization Structure from MongoDB
+        orgData = await apiFetch("/api/org-structure");
+        renderForm();
+      } catch (e) {
+        document.getElementById("formContent").innerHTML = emptyState("⚠️", e.message || "Failed to load form");
+      }
+    }
+
+    function renderForm() {
+      const cfg = blockConfig;
+      const docs = cfg.documents_required || [];
+
+      document.getElementById("formContent").innerHTML = `
+        <div class="form-section">
+          <div class="form-section-title">📋 Project Details</div>
+
+          <label for="work_type">Work Type *</label>
+          <select id="work_type" required>
+            <option value="" disabled selected>Select Work Type...</option>
+            <option value="New Capex Job">New Capex Job</option>
+            <option value="Maintenance Job">Maintenance Job</option>
+          </select>
+
+          <label for="zone">Zone *</label>
+          <select id="zone" onchange="updateRegions()" required>
+              <option value="" disabled selected>Select Zone...</option>
+          </select>
+
+          <label for="region">Region *</label>
+          <select id="region" onchange="updateDivisions()" disabled required>
+              <option value="">Select Zone first...</option>
+          </select>
+
+          <label for="division">Division *</label>
+          <select id="division" onchange="updateLocationTypes()" disabled required>
+              <option value="">Select Region first...</option>
+          </select>
+
+          <label for="location_type">Location Type *</label>
+          <select id="location_type" onchange="updateLocationNames()" disabled required>
+              <option value="">Select Division first...</option>
+              <option value="Sub-stations">Sub-station</option>
+              <option value="CCCs">Customer Care Centre (CCC)</option>
+          </select>
+
+          <label for="location_name">Specific Location *</label>
+          <select id="location_name" disabled required>
+              <option value="">Select Location Type first...</option>
+          </select>
+
+          <label for="application_date">Start Date</label>
+          <input id="application_date" type="date" />
+
+          <label for="assigned_to">Assigned To</label>
+          <input id="assigned_to" type="text" placeholder="e.g. manager1" />
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">👤 Work Information</div>
+
+          <label for="applicant_name">Project / Work Name *</label>
+          <input id="applicant_name" type="text" placeholder="e.g. Substation Upgrade Phase 1" required />
+
+          <label for="applicant_contact">Site In-charge Contact</label>
+          <input id="applicant_contact" type="tel" placeholder="e.g. 9876543210" />
+
+          <label for="applicant_email">Email</label>
+          <input id="applicant_email" type="email" placeholder="email@example.com" />
+
+          <label for="applicant_address">Work Scope / Description</label>
+          <input id="applicant_address" type="text" placeholder="Brief details about the work" />
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">📎 Documents Received</div>
+          <div class="docs-checklist">
+            ${docs.map(d => `
+              <label class="doc-item">
+                <input type="checkbox" data-doc="${d.key || d}" />
+                <span>${escapeHtml(d.label || d)}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitForm()">Create Project</button>
+        </div>
+      `;
+
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("application_date").value = today;
+
+      // Populate Zone Dropdown
+      if (orgData.zones) {
+          const zoneSelect = document.getElementById("zone");
+          Object.keys(orgData.zones).forEach(z => {
+              zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+          });
+      }
+
+      document.getElementById("applicant_name").focus();
+    }
+
+    // ── Cascading Dropdown Logic ──
+    function updateRegions() {
+        const zone = document.getElementById("zone").value;
+        const regSelect = document.getElementById("region");
+        regSelect.innerHTML = `<option value="" disabled selected>Select Region...</option>`;
+        
+        if (zone && orgData.zones[zone]) {
+            Object.keys(orgData.zones[zone].regions).forEach(r => {
+                regSelect.innerHTML += `<option value="${r}">${r}</option>`;
+            });
+            regSelect.disabled = false;
+        }
+        
+        document.getElementById("division").innerHTML = `<option value="">Select Region first...</option>`;
+        document.getElementById("division").disabled = true;
+        
+        const typeSelect = document.getElementById("location_type");
+        typeSelect.innerHTML = `<option value="">Select Division first...</option>`;
+        typeSelect.disabled = true;
+
+        const locSelect = document.getElementById("location_name");
+        locSelect.innerHTML = `<option value="">Select Location Type first...</option>`;
+        locSelect.disabled = true;
+    }
+
+    function updateDivisions() {
+        const zone = document.getElementById("zone").value;
+        const region = document.getElementById("region").value;
+        const divSelect = document.getElementById("division");
+        
+        divSelect.innerHTML = `<option value="" disabled selected>Select Division...</option>`;
+        
+        if (zone && region && orgData.zones[zone].regions[region]) {
+            Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
+                divSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+            divSelect.disabled = false;
+        }
+        
+        const typeSelect = document.getElementById("location_type");
+        typeSelect.innerHTML = `<option value="">Select Division first...</option>`;
+        typeSelect.disabled = true;
+
+        const locSelect = document.getElementById("location_name");
+        locSelect.innerHTML = `<option value="">Select Location Type first...</option>`;
+        locSelect.disabled = true;
+    }
+
+    function updateLocationTypes() {
+        const division = document.getElementById("division").value;
+        const typeSelect = document.getElementById("location_type");
+        
+        if (division) {
+            typeSelect.innerHTML = `
+                <option value="" disabled selected>Select Location Type...</option>
+                <option value="Sub-stations">Sub-station</option>
+                <option value="CCCs">Customer Care Centre (CCC)</option>
+            `;
+            typeSelect.disabled = false;
+        } else {
+            typeSelect.disabled = true;
+        }
+
+        const locSelect = document.getElementById("location_name");
+        locSelect.innerHTML = `<option value="">Select Location Type first...</option>`;
+        locSelect.disabled = true;
+    }
+
+    function updateLocationNames() {
+        const zone = document.getElementById("zone").value;
+        const region = document.getElementById("region").value;
+        const division = document.getElementById("division").value;
+        const type = document.getElementById("location_type").value;
+        const locSelect = document.getElementById("location_name");
+        
+        locSelect.innerHTML = `<option value="" disabled selected>Select specific location...</option>`;
+        
+        if (zone && region && division && type && orgData.zones[zone].regions[region][division]) {
+            const dataGroup = orgData.zones[zone].regions[region][division][type];
+            
+            if (dataGroup) {
+                // Handle both Arrays (CCCs) and Objects (Sub-stations)
+                if (typeof dataGroup === 'object' && !Array.isArray(dataGroup)) {
+                    Object.keys(dataGroup).forEach(key => {
+                        locSelect.innerHTML += `<option value="${key}">${key}</option>`;
+                    });
+                } else if (Array.isArray(dataGroup)) {
+                    dataGroup.forEach(item => {
+                        locSelect.innerHTML += `<option value="${item}">${item}</option>`;
+                    });
+                }
+                locSelect.disabled = false;
+            }
+        }
+    }
+
+    async function submitForm() {
+      const $name   = document.getElementById("applicant_name");
+      const $btn    = document.getElementById("submitBtn");
+
+      const workType = document.getElementById("work_type").value;
+      const zone = document.getElementById("zone").value;
+      const region = document.getElementById("region").value;
+      const division = document.getElementById("division").value;
+      const locType = document.getElementById("location_type").value;
+      const locName = document.getElementById("location_name").value;
+
+      if (!workType || !zone || !region || !division || !locType || !locName) {
+          showToast("Please fill all the dropdowns", "error");
+          return;
+      }
+
+      if (!$name.value.trim()) {
+        showToast("Project Name is required", "error");
+        $name.focus();
+        return;
+      }
+
+      const documents = {};
+      document.querySelectorAll("[data-doc]").forEach(cb => {
+        documents[cb.dataset.doc] = cb.checked;
+      });
+
+      const payload = {
+        applicant: {
+          name:  $name.value.trim(),
+          contact: document.getElementById("applicant_contact").value.trim(),
+          email:   document.getElementById("applicant_email").value.trim(),
+          address: document.getElementById("applicant_address").value.trim(),
+          type:    "Civil Work",
+        },
+        application_date: document.getElementById("application_date").value || null,
+        assigned_to:      document.getElementById("assigned_to").value.trim() || null,
+        documents:        documents,
+        
+        // Civil Work specific
+        work_type: workType,
+        zone: zone,
+        region: region,
+        division: division,
+        location_type: locType,
+        location_name: locName
+      };
+
+      $btn.disabled = true;
+      $btn.textContent = "Saving...";
+
+      try {
+        const result = await blockApi.create(payload);
+        showToast("Project created ✅", "success");
+        setTimeout(() => { window.location.href = `/application-detail.html?block=${blockId}&id=${result.id}`; }, 500);
+      } catch (e) {
+        showToast(e.message, "error");
+        $btn.disabled = false;
+        $btn.textContent = "Create Project";
+      }
+    }
+
+    function cancelForm() {
+      window.location.href = `/block-detail.html?block=${blockId}`;
+    }
+
+    loadForm();
+  </script>
+</body>
+</html>

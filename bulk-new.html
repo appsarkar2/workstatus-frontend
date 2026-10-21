@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Bulk Connection — WorkStatus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+  <link rel="stylesheet" href="/css/pages.css" />
+  
+  <style>
+    :root {
+        --bg-base: #f0f4f8;
+        --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.6);
+        --glass-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --primary: #3b82f6;
+        --primary-light: #eff6ff;
+        --border: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; }
+    body { background: var(--bg-gradient); font-family: 'Inter', -apple-system, sans-serif; margin: 0; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    .app-container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+
+    /* Header */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+    .page-title h1 { font-size: 28px; font-weight: 800; color: var(--text-main); margin: 0 0 6px 0; letter-spacing: -0.5px; }
+    .page-title p { font-size: 15px; color: var(--text-muted); margin: 0; font-weight: 500; }
+    
+    .btn-back { background: white; color: var(--text-main); border: 1px solid var(--border); padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .btn-back:hover { background: var(--bg-base); }
+
+    /* Glass Card */
+    .card { background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px; border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); }
+
+    .input-group { margin-bottom: 24px; }
+    .input-group label { display: block; font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; }
+    .input-field { width: 100%; padding: 16px; border: 2px solid var(--border); border-radius: 12px; background: #f8fafc; font-size: 15px; font-weight: 500; color: var(--text-main); transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .input-field:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px var(--primary-light); }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 30px; }
+    .btn-secondary { background: #f1f5f9; color: var(--text-main); border: none; padding: 16px 32px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.2s; }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-primary { background: var(--text-main); color: white; border: none; padding: 16px 40px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2); transition: 0.2s; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(15, 23, 42, 0.3); }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="app-container" id="app">
+    <!-- JS will render form here -->
+</div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+  <script src="/js/ui/components.js"></script>
+
+  <script>
+    const params  = new URLSearchParams(window.location.search);
+    const blockId = params.get("block") || "bulk_connection";
+    const blockApi = BlockAPI(blockId);
+    const app = document.getElementById("app");
+
+    const user = getCurrentUser();
+    if (user.role === "division_user") {
+      window.location.href = "/dashboard.html";
+    }
+
+    function renderForm() {
+      const today = new Date().toISOString().split("T")[0];
+
+      app.innerHTML = `
+        <div class="page-header">
+            <div class="page-title">
+                <h1>New Bulk Connection</h1>
+                <p>Create a new application</p>
+            </div>
+            <a href="/block-detail.html?block=${blockId}" class="btn-back">← Back to List</a>
+        </div>
+
+        <div class="card">
+            <h3 style="font-size: 18px; font-weight: 800; margin-top: 0; margin-bottom: 24px;">👤 Applicant Information</h3>
+            
+            <div class="input-group">
+                <label>Applicant Name *</label>
+                <input id="applicant_name" type="text" class="input-field" placeholder="Full name" required />
+            </div>
+
+            <div class="input-group">
+                <label>Contact Number</label>
+                <input id="applicant_contact" type="tel" class="input-field" placeholder="e.g. 9876543210" />
+            </div>
+
+            <div class="input-group">
+                <label>Address</label>
+                <input id="applicant_address" type="text" class="input-field" placeholder="Full address" />
+            </div>
+
+            <div class="input-group">
+                <label>Application Date</label>
+                <input id="application_date" type="date" class="input-field" value="${today}" />
+            </div>
+
+            <h3 style="font-size: 18px; font-weight: 800; margin-top: 40px; margin-bottom: 24px;">⚡ Connection Details</h3>
+
+            <div class="input-group">
+                <label>Division</label>
+                <select id="division" class="input-field">
+                    <option value="" disabled selected>Select Division...</option>
+                    <option value="Siliguri Town">Siliguri Town</option>
+                    <option value="Siliguri Sub Urban">Siliguri Sub Urban</option>
+                    <option value="Kurseong">Kurseong</option>
+                    <option value="Darjeeling">Darjeeling</option>
+                    <option value="Kalimpong">Kalimpong</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Connection Type</label>
+                <select id="applicant_type" class="input-field">
+                    <option value="LT">LT</option>
+                    <option value="11 KV HT">11 KV HT</option>
+                    <option value="33 KV HT">33 KV HT</option>
+                    <option value="SOLAR">SOLAR</option>
+                    <option value="PROCEDURE-B">PROCEDURE-B</option>
+                    <option value="UDER SPECIFICE">UDER SPECIFICE</option>
+                </select>
+            </div>
+
+            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
+                <label style="display: block; font-size: 13px; font-weight: 800; margin-bottom: 16px;">Proposed Contract Demand (KVA)</label>
+                <div class="form-grid">
+                    <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">1st Yr.</label>
+                        <input id="demand_1st" type="number" class="input-field" placeholder="e.g. 100" style="padding: 12px;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">5th Yr.</label>
+                        <input id="demand_5th" type="number" class="input-field" placeholder="e.g. 100" style="padding: 12px;" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions" style="border-top: none;">
+                <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
+                <button class="btn-primary" id="submitBtn" onclick="submitForm()">Create Application</button>
+            </div>
+        </div>
+      `;
+
+      document.getElementById("applicant_name").focus();
+    }
+
+    async function submitForm() {
+      const $name  = document.getElementById("applicant_name");
+      const $btn   = document.getElementById("submitBtn");
+
+      if (!$name.value.trim()) { showToast("Applicant Name is required", "error"); $name.focus(); return; }
+
+      const payload = {
+        applicant: {
+          name:  $name.value.trim(),
+          contact: document.getElementById("applicant_contact").value.trim(),
+          address: document.getElementById("applicant_address").value.trim(),
+          type:    document.getElementById("applicant_type").value,
+          email:   "", // Not needed anymore
+        },
+        division:         document.getElementById("division").value,
+        application_date: document.getElementById("application_date").value || null,
+        proposed_demand_1st: document.getElementById("demand_1st").value,
+        proposed_demand_5th: document.getElementById("demand_5th").value,
+      };
+
+      $btn.disabled = true;
+      $btn.textContent = "Creating...";
+
+      try {
+        const result = await blockApi.create(payload);
+        showToast("Application created ✅", "success");
+        setTimeout(() => { window.location.href = `/application-detail.html?block=${blockId}&id=${result.id}`; }, 500);
+      } catch (e) {
+        showToast(e.message, "error");
+        $btn.disabled = false;
+        $btn.textContent = "Create Application";
+      }
+    }
+
+    function cancelForm() {
+      window.location.href = `/block-detail.html?block=${blockId}`;
+    }
+
+    renderForm();
+  </script>
+</body>
+</html>
