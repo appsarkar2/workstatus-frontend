@@ -13,71 +13,59 @@
   
   <style>
     :root {
-        --bg-main: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a; --text-muted: #64748b;
-        --primary: #3b82f6; --primary-light: #eff6ff; --success: #10b981; --success-light: #ecfdf5;
-        --danger: #ef4444; --border: #e2e8f0; --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-        --shadow-md: 0 4px 20px -2px rgba(0,0,0,0.05); --shadow-lg: 0 20px 40px -10px rgba(0,0,0,0.08);
+        --bg-main: #f8fafc; 
+        --card-bg: #ffffff; 
+        --text-main: #0f172a; 
+        --text-muted: #64748b;
+        --primary: #3b82f6; 
+        --primary-light: #eff6ff; 
+        --success: #10b981; 
+        --danger: #ef4444; 
+        --border: #cbd5e1; 
     }
     * { box-sizing: border-box; }
     body { background-color: var(--bg-main); font-family: 'Inter', -apple-system, sans-serif; margin: 0; min-height: 100vh; color: var(--text-main); }
-    .app-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+    .app-container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
 
-    /* Header */
-    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; }
-    .page-title h1 { font-size: 32px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px; }
-    .page-title p { font-size: 16px; color: var(--text-muted); margin: 0; font-weight: 500; }
-    .btn-back { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.2s; box-shadow: var(--shadow-sm); }
-    .btn-back:hover { background: #f8fafc; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-primary { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    .btn-primary:hover { background: #2563eb; }
+    /* Header Buttons */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border); }
+    .page-title h1 { font-size: 22px; font-weight: 800; margin: 0; color: var(--text-main); }
+    .page-title p { font-size: 14px; color: var(--text-muted); margin: 4px 0 0 0; }
+    
+    .header-actions { display: flex; gap: 10px; }
+    .btn { border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; text-decoration: none; transition: 0.2s; }
+    .btn-back { background: #f1f5f9; color: var(--text-main); }
+    .btn-edit { background: var(--primary); color: white; }
+    .btn-delete { background: var(--danger); color: white; }
 
-    /* Top Ribbon */
-    .top-ribbon { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
-    .ribbon-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; align-items: center; gap: 20px; box-shadow: var(--shadow-sm); }
-    .ribbon-icon { font-size: 28px; background: #f1f5f9; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: var(--primary); }
-    .ribbon-text .val { font-size: 18px; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
-    .ribbon-text .lbl { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    /* Tables */
+    .table-container { background: white; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+    th, td { border: 1px solid var(--border); padding: 10px; text-align: center; vertical-align: middle; }
+    th { background: #f8fafc; font-weight: 800; color: var(--text-main); }
+    .bg-light { background: #f1f5f9; }
 
-    /* Cards */
-    .card { background: var(--card-bg); border-radius: 24px; padding: 40px; border: 1px solid var(--border); box-shadow: var(--shadow-lg); margin-bottom: 30px; }
+    .section-title { font-size: 16px; font-weight: 800; margin: 0 0 15px 0; text-align: center; padding-top: 15px; }
 
-    /* Data Grid */
-    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    .data-group { display: flex; flex-direction: column; gap: 6px; }
-    .data-group.full { grid-column: span 2; }
-    .data-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-    .data-value { font-size: 16px; font-weight: 600; }
-    .data-value.large { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-    .divider { height: 1px; background: var(--border); margin: 24px 0; }
+    /* Stepper Progress in Table Format */
+    .stage-done { color: var(--success); font-weight: 800; }
+    .stage-active { color: var(--primary); font-weight: 800; }
+    .stage-pending { color: var(--text-muted); }
 
-    /* Vertical Stepper */
-    .stepper-container { position: relative; padding-left: 20px; }
-    .stepper-line { position: absolute; left: 40px; top: 20px; bottom: 20px; width: 2px; background: var(--border); z-index: 1; }
-    .step-item { display: flex; gap: 24px; position: relative; z-index: 2; margin-bottom: 30px; }
-    .step-item:last-child { margin-bottom: 0; }
-    .step-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--card-bg); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; border: 3px solid var(--border); color: var(--text-muted); flex-shrink: 0; }
-    .step-icon.completed { border-color: var(--success); background: var(--success-light); color: var(--success); }
-    .step-icon.in_progress { border-color: var(--primary); background: var(--primary-light); color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
-    .step-content { background: var(--bg-main); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-    .step-title { font-size: 16px; font-weight: 800; color: var(--text-main); }
-    .step-meta { font-size: 13px; color: var(--text-muted); }
-    .step-action-btn { margin-top: 10px; align-self: flex-start; background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
-
-    /* Modals */
+    /* Modal */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; z-index: 9999; opacity: 0; transition: opacity 0.3s; }
     .modal-overlay.show { display: block; opacity: 1; }
-    .modal-box { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-radius: 32px 32px 0 0; padding: 40px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); z-index: 10000; max-width: 650px; margin: 0 auto; box-shadow: 0 -20px 60px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; }
-    .modal-overlay.show .modal-box { transform: translateY(0); }
+    .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); background: var(--card-bg); border-radius: 12px; padding: 30px; z-index: 10000; width: 100%; max-width: 650px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; transition: transform 0.2s; }
+    .modal-overlay.show .modal-box { transform: translate(-50%, -50%) scale(1); }
     
-    .modal-handle { width: 56px; height: 6px; background: #e2e8f0; border-radius: 6px; margin: -20px auto 30px auto; }
-    .input-group { margin-bottom: 24px; }
-    .input-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
-    .input-field { width: 100%; padding: 16px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-main); font-size: 15px; font-weight: 500; color: var(--text-main); transition: all 0.2s; font-family: 'Inter', sans-serif; }
-    .input-field:focus { outline: none; border-color: var(--primary); background: var(--card-bg); box-shadow: 0 0 0 4px var(--primary-light); }
-    .input-field:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; border-color: #cbd5e1; }
+    .input-group { margin-bottom: 20px; }
+    .input-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .input-field { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); font-size: 14px; font-family: 'Inter', sans-serif; }
+    .input-field:focus { outline: none; border-color: var(--primary); background: white; }
+    .input-field:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
     
-    .demand-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 10px; }
-    @media (max-width: 600px) { .demand-grid { grid-template-columns: 1fr 1fr; } .data-grid { grid-template-columns: 1fr; } .page-header { flex-direction: column; gap: 20px; } }
+    .demand-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    @media (max-width: 768px) { .demand-grid { grid-template-columns: 1fr 1fr; } .page-header { flex-direction: column; align-items: flex-start; gap: 15px; } }
   </style>
 </head>
 <body>
@@ -87,10 +75,8 @@
   <!-- Edit Application Modal -->
   <div id="editModal" class="modal-overlay" onclick="closeEditModal()">
       <div class="modal-box" onclick="event.stopPropagation()">
-          <div class="modal-handle"></div>
-          <h2 style="font-size: 22px; margin-top: 0; margin-bottom: 24px;">Edit Application Details</h2>
+          <h2 style="font-size: 20px; margin-top: 0; margin-bottom: 20px;">Edit Application Details</h2>
           
-          <!-- Cascading Dropdowns -->
           <div class="input-group">
               <label>Zone</label>
               <select id="editZone" class="input-field" onchange="updateRegions()">
@@ -119,7 +105,6 @@
               </select>
           </div>
 
-          <!-- Type -->
           <div class="input-group">
               <label>Type</label>
               <select id="editType" class="input-field" onchange="toggleCustomType()">
@@ -137,27 +122,25 @@
               <input id="editCustomType" type="text" class="input-field" placeholder="Please specify..." />
           </div>
 
-          <!-- Address -->
           <div class="input-group">
               <label>Address</label>
               <input id="editAddress" type="text" class="input-field" placeholder="Full address" />
           </div>
 
-          <!-- Demands -->
-          <div style="background: var(--bg-main); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
+          <div style="background: var(--bg-main); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px;">
               <label style="display: block; font-size: 13px; font-weight: 800; margin-bottom: 10px;">Proposed Contract Demand (KVA)</label>
               <div class="demand-grid">
-                  <div><label style="font-size: 11px; color: var(--text-muted);">1st Yr.</label><input id="editDemand1st" type="number" class="input-field" style="padding: 10px;" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">2nd Yr.</label><input id="editDemand2nd" type="number" class="input-field" style="padding: 10px;" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">3rd Yr.</label><input id="editDemand3rd" type="number" class="input-field" style="padding: 10px;" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">4th Yr.</label><input id="editDemand4th" type="number" class="input-field" style="padding: 10px;" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">5th Yr.</label><input id="editDemand5th" type="number" class="input-field" style="padding: 10px;" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">1st Yr.</label><input id="editDemand1st" type="number" class="input-field" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">2nd Yr.</label><input id="editDemand2nd" type="number" class="input-field" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">3rd Yr.</label><input id="editDemand3rd" type="number" class="input-field" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">4th Yr.</label><input id="editDemand4th" type="number" class="input-field" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">5th Yr.</label><input id="editDemand5th" type="number" class="input-field" /></div>
               </div>
           </div>
           
-          <div style="display: flex; gap: 12px; margin-top: 10px;">
-              <button onclick="closeEditModal()" style="flex: 1; background: #f1f5f9; color: var(--text-main); border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer;">Cancel</button>
-              <button onclick="saveEdit()" style="flex: 2; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer;">Save Changes</button>
+          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+              <button onclick="closeEditModal()" class="btn" style="background: #f1f5f9; color: var(--text-main);">Cancel</button>
+              <button onclick="saveEdit()" class="btn btn-edit">Save Changes</button>
           </div>
       </div>
   </div>
@@ -197,148 +180,110 @@
 
     function renderDashboard() {
       const e = currentApp;
-      const stages = e.stages || [];
-      const totalStages = stages.length;
       
-      const completedStages = stages.filter(s => s.status === 'completed').length;
-      const progressPct = Math.round((completedStages / totalStages) * 100) || 0;
-
-      let stepsHtml = "";
-      stages.forEach((stage) => {
-          let statusClass = stage.status === 'in_progress' ? 'in_progress' : (stage.status === 'completed' ? 'completed' : 'pending');
-          let iconHtml = stage.status === 'completed' ? '✓' : stage.stage_no;
-          
-          let metaLine = "Pending";
-          if (stage.status === "completed") {
-              metaLine = `Completed by <b>${escapeHtml(stage.completed_by || 'System')}</b> · ${formatDate(stage.completed_at)}`;
-          } else if (stage.status === "in_progress") {
-              metaLine = `In progress · Started ${timeAgo(stage.started_at)}`;
-          }
-
-          let actionBtn = stage.status === "in_progress" 
-              ? `<button class="step-action-btn" onclick="openDrawer(${stage.stage_no}, '${escapeHtml(stage.name)}', '${stage.status}')">Update Stage</button>` 
-              : "";
-
-          stepsHtml += `
-            <div class="step-item">
-                <div class="step-icon ${statusClass}">${iconHtml}</div>
-                <div class="step-content">
-                    <div class="step-title">${stage.stage_no}. ${escapeHtml(stage.name)}</div>
-                    <div class="step-meta">${metaLine}</div>
-                    ${stage.remarks ? `<div style="font-size: 13px; color: var(--text-muted); font-style: italic;">"${escapeHtml(stage.remarks)}"</div>` : ""}
-                    ${actionBtn}
-                </div>
-            </div>
-          `;
-      });
+      // Calculate table grid data
+      const demandFields = [
+        e.proposed_demand_1st, e.proposed_demand_2nd, e.proposed_demand_3rd, 
+        e.proposed_demand_4th, e.proposed_demand_5th
+      ];
 
       app.innerHTML = `
         <div class="app-container">
+            
+            <!-- Header -->
             <div class="page-header">
                 <div class="page-title">
-                    <h1>${e.application_no}</h1>
-                    <p>${e.applicant ? e.applicant.name : "Unknown Applicant"}</p>
+                    <h1>${e.application_no} — ${e.applicant ? e.applicant.name : "Unknown"}</h1>
+                    <p>Created on ${formatDate(e.created_at)} | Status: ${e.status.toUpperCase()}</p>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="header-actions">
                     ${renderActionButtons(e)}
-                    <a href="/block-detail.html?block=${blockId}" class="btn-back">← Back to List</a>
+                    <a href="/block-detail.html?block=${blockId}" class="btn btn-back">← Back to List</a>
                 </div>
             </div>
 
-            <div class="top-ribbon">
-                <div class="ribbon-item">
-                    <div class="ribbon-icon">📍</div>
-                    <div class="ribbon-text">
-                        <div class="val">${e.division || "N/A"} ${e.substation ? `<br><span style="font-size:12px; color:var(--text-muted);">${e.substation}</span>` : ""}</div>
-                        <div class="lbl">Division / Sub-station</div>
-                    </div>
-                </div>
-                <div class="ribbon-item">
-                    <div class="ribbon-icon">📅</div>
-                    <div class="ribbon-text">
-                        <div class="val">${e.application_date || "—"}</div>
-                        <div class="lbl">Start Date</div>
-                    </div>
-                </div>
-                <div class="ribbon-item">
-                    <div class="ribbon-icon">👤</div>
-                    <div class="ribbon-text">
-                        <div class="val">${e.assigned_to || "Unassigned"}</div>
-                        <div class="lbl">Assigned To</div>
-                    </div>
-                </div>
+            <!-- Section 1: General Information -->
+            <h3 class="section-title">Application Details</h3>
+            <div class="table-container">
+                <table>
+                    <tbody>
+                        <tr>
+                            <th style="width: 20%;">Applicant Name</th>
+                            <td style="text-align: left; font-weight: bold;">${e.applicant?.name || "—"}</td>
+                            <th style="width: 20%;">Contact</th>
+                            <td style="text-align: left;">${e.applicant?.contact || "—"}</td>
+                        </tr>
+                        <tr>
+                            <th>Division</th>
+                            <td style="text-align: left;">${e.division || "—"}</td>
+                            <th>Sub-station</th>
+                            <td style="text-align: left;">${e.substation || "—"}</td>
+                        </tr>
+                        <tr>
+                            <th>Type</th>
+                            <td style="text-align: left;">${e.applicant?.type || "—"}</td>
+                            <th>Address</th>
+                            <td style="text-align: left;">${e.applicant?.address || "—"}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="card">
-                <h3 style="font-size: 20px; font-weight: 800; margin-top: 0; margin-bottom: 24px;">Application Details</h3>
-                
-                <div class="data-grid">
-                    <div class="data-group full">
-                        <div class="data-label">Applicant Name</div>
-                        <div class="data-value large">${e.applicant ? e.applicant.name : "—"}</div>
-                    </div>
-                    
-                    <div class="data-group full">
-                        <div class="data-label">Address</div>
-                        <div class="data-value">${e.applicant ? (e.applicant.address || "—") : "—"}</div>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="data-grid">
-                    <div class="data-group">
-                        <div class="data-label">Contact</div>
-                        <div class="data-value">${e.applicant ? (e.applicant.contact || "—") : "—"}</div>
-                    </div>
-                    <div class="data-group">
-                        <div class="data-label">Type</div>
-                        <div class="data-value">${e.applicant ? (e.applicant.type || "—") : "—"}</div>
-                    </div>
-                    <div class="data-group full">
-                        <div class="data-label">Proposed Demand (1st - 5th Yr)</div>
-                        <div class="data-value">
-                            ${e.proposed_demand_1st || "—"} / ${e.proposed_demand_2nd || "—"} / ${e.proposed_demand_3rd || "—"} / ${e.proposed_demand_4th || "—"} / ${e.proposed_demand_5th || "—"} KVA
-                        </div>
-                    </div>
-                </div>
+            <!-- Section 2: Proposed Demand Table -->
+            <h3 class="section-title">Proposed Contract Demand (KVA)</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>1st Year</th>
+                            <th>2nd Year</th>
+                            <th>3rd Year</th>
+                            <th>4th Year</th>
+                            <th>5th Year</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            ${demandFields.map(d => `<td style="font-weight: bold; font-size: 16px; color: var(--primary);">${d || "—"}</td>`).join("")}
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <h3 style="font-size: 20px; font-weight: 800; margin: 0;">Workflow Progress</h3>
-                    <span style="background: var(--primary-light); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 14px;">${progressPct}% Complete</span>
-                </div>
-                
-                <div class="stepper-container">
-                    <div class="stepper-line"></div>
-                    ${stepsHtml}
-                </div>
+            <!-- Section 3: Workflow Progress Table -->
+            <h3 class="section-title">Workflow Progress</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">Stage</th>
+                            <th style="text-align: left;">Stage Name</th>
+                            <th>Status</th>
+                            <th>Completed By</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(e.stages || []).map(s => {
+                            let statusHtml = "";
+                            if (s.status === "completed") statusHtml = `<span class="stage-done">✓ Completed</span>`;
+                            else if (s.status === "in_progress") statusHtml = `<span class="stage-active">⏳ In Progress</span>`;
+                            else statusHtml = `<span class="stage-pending">Pending</span>`;
+
+                            return `
+                                <tr>
+                                    <td class="bg-light" style="font-weight: bold;">${s.stage_no}</td>
+                                    <td style="text-align: left; font-weight: bold;">${escapeHtml(s.name)}</td>
+                                    <td>${statusHtml}</td>
+                                    <td>${s.completed_by ? escapeHtml(s.completed_by) : "—"}</td>
+                                    <td>${s.completed_at ? formatDate(s.completed_at) : "—"}</td>
+                                </tr>
+                            `;
+                        }).join("")}
+                    </tbody>
+                </table>
             </div>
 
-        </div>
-
-        <div class="modal-overlay" id="drawerOverlay" onclick="closeDrawer()">
-            <div class="modal-box" onclick="event.stopPropagation()">
-                <div class="modal-handle"></div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
-                    <div>
-                        <h2 style="font-size: 24px; margin: 0 0 8px 0; font-weight: 800;" id="drawerTitle">Stage</h2>
-                        <span id="drawerBadge" style="display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase;">In Progress</span>
-                    </div>
-                    <button onclick="closeDrawer()" style="background: var(--bg-main); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;">✕</button>
-                </div>
-                
-                <div class="input-group">
-                    <label>Remarks</label>
-                    <input type="text" id="stageRemarks" class="input-field" placeholder="Add a note..." />
-                </div>
-                
-                <div style="display: flex; gap: 16px; margin-top: 40px;">
-                    <button onclick="closeDrawer()" style="flex: 1; background: var(--bg-main); color: var(--text-main); border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer;">Cancel</button>
-                    <button onclick="markComplete()" style="flex: 2; background: var(--success); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">✅ Mark Complete</button>
-                </div>
-            </div>
         </div>
       `;
     }
@@ -348,15 +293,13 @@
         let html = "";
 
         if (user.role === "admin" || user.role === "super_admin") {
-            html += `<button class="btn-primary" style="background: #ef4444; margin-right: 8px;" onclick="deleteApplication()">Delete</button>`;
-            html += `<button class="btn-primary" onclick="openEditModal()">Edit Details</button>`;
+            html += `<button class="btn btn-delete" onclick="deleteApplication()">Delete</button>`;
+            html += `<button class="btn btn-edit" onclick="openEditModal()">Edit Details</button>`;
         } 
         else if (user.role === "manager") {
             const editCount = app.edit_count || 0;
-            
-            // Logic: Managers can only edit twice.
             if (editCount < 2) {
-                html += `<button class="btn-primary" onclick="openEditModal()">Edit Details</button>`;
+                html += `<button class="btn btn-edit" onclick="openEditModal()">Edit Details</button>`;
             }
         }
 
@@ -408,7 +351,7 @@
         document.getElementById("editSubstation").disabled = true;
     }
 
-        function updateSubStations() {
+    function updateSubStations() {
         const zone = document.getElementById("editZone").value;
         const region = document.getElementById("editRegion").value;
         const division = document.getElementById("editDivision").value;
@@ -418,30 +361,18 @@
         
         if (zone && region && division && orgData.zones[zone].regions[region][division]) {
             const divData = orgData.zones[zone].regions[region][division];
-            
-            // Check if "Sub-stations" exists in the division data
             if (divData["Sub-stations"]) {
                 const subData = divData["Sub-stations"];
-                
-                // FIX: Handle if it's an Object (like a dictionary) vs Array
                 if (Array.isArray(subData)) {
                     subData.forEach(sub => {
                         subSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
                     });
                 } else if (typeof subData === 'object') {
-                    // If it's an object, extract the values, not the keys (0, 1, 2)
                     Object.values(subData).forEach(sub => {
                         subSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
                     });
                 }
             } 
-            // Fallback if "Sub-stations" is just the array directly under division
-            else if (Array.isArray(divData)) {
-                divData.forEach(sub => {
-                    subSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
-                });
-            }
-            
             subSelect.disabled = false;
         }
     }
@@ -456,15 +387,9 @@
         }
     }
 
-    // --- Open Edit Modal Logic ---
     function openEditModal() {
-        const user = getCurrentUser();
-        const editCount = currentApp.edit_count || 0;
-
-        // 1. Populate Zone Dropdown first
         populateZones();
 
-        // 2. Auto-select existing location
         if (currentApp.division) {
             let foundZone = null, foundRegion = null;
             for (const z in orgData.zones) {
@@ -489,7 +414,6 @@
             }
         }
         
-        // 3. Populate Type
         const currentType = currentApp.applicant?.type || "LT";
         const standardTypes = ["LT", "11 KV HT", "33 KV HT", "SOLAR", "PROCEDURE-B"];
         if (standardTypes.includes(currentType)) {
@@ -501,31 +425,12 @@
             document.getElementById("editCustomType").value = currentType;
         }
 
-        // 4. Populate Address & Demands
         document.getElementById("editAddress").value = currentApp.applicant?.address || "";
         document.getElementById("editDemand1st").value = currentApp.proposed_demand_1st || "";
         document.getElementById("editDemand2nd").value = currentApp.proposed_demand_2nd || "";
         document.getElementById("editDemand3rd").value = currentApp.proposed_demand_3rd || "";
         document.getElementById("editDemand4th").value = currentApp.proposed_demand_4th || "";
         document.getElementById("editDemand5th").value = currentApp.proposed_demand_5th || "";
-
-        // 5. MANAGER 2ND EDIT LOCK LOGIC
-        if (user.role === "manager" && editCount === 1) {
-            // Lock everything except Sub-station
-            document.getElementById("editZone").disabled = true;
-            document.getElementById("editRegion").disabled = true;
-            document.getElementById("editDivision").disabled = true;
-            document.getElementById("editType").disabled = true;
-            document.getElementById("editCustomType").disabled = true;
-            document.getElementById("editAddress").disabled = true;
-            document.getElementById("editDemand1st").disabled = true;
-            document.getElementById("editDemand2nd").disabled = true;
-            document.getElementById("editDemand3rd").disabled = true;
-            document.getElementById("editDemand4th").disabled = true;
-            document.getElementById("editDemand5th").disabled = true;
-            
-            // Sub-station remains enabled
-        }
 
         document.getElementById("editModal").classList.add("show");
     }
@@ -535,49 +440,31 @@
     }
 
     async function saveEdit() {
-        const user = getCurrentUser();
-        const editCount = currentApp.edit_count || 0;
         const newSubstation = document.getElementById("editSubstation").value;
+        const newDivision = document.getElementById("editDivision").value;
 
-        let payload = {};
+        if (!newDivision) { showToast("Please select a Division", "error"); return; }
 
-        // If Manager on 2nd edit, ONLY send the substation
-        if (user.role === "manager" && editCount === 1) {
-            if (!newSubstation) {
-                showToast("Please select a Sub-station.", "error");
-                return;
-            }
-            payload = { substation: newSubstation };
-        } 
-        // Normal edit logic
-        else {
-            const newDivision = document.getElementById("editDivision").value;
-            if (!newDivision) {
-                showToast("Please select a Division", "error");
-                return;
-            }
-
-            let newType = document.getElementById("editType").value;
-            if (newType === "Under Specify") {
-                newType = document.getElementById("editCustomType").value.trim();
-                if (!newType) { showToast("Please enter a custom type.", "error"); return; }
-            }
-
-            payload = {
-                division: newDivision,
-                substation: newSubstation,
-                applicant: {
-                    ...currentApp.applicant,
-                    type: newType,
-                    address: document.getElementById("editAddress").value
-                },
-                proposed_demand_1st: document.getElementById("editDemand1st").value,
-                proposed_demand_2nd: document.getElementById("editDemand2nd").value,
-                proposed_demand_3rd: document.getElementById("editDemand3rd").value,
-                proposed_demand_4th: document.getElementById("editDemand4th").value,
-                proposed_demand_5th: document.getElementById("editDemand5th").value
-            };
+        let newType = document.getElementById("editType").value;
+        if (newType === "Under Specify") {
+            newType = document.getElementById("editCustomType").value.trim();
+            if (!newType) { showToast("Please enter a custom type.", "error"); return; }
         }
+
+        const payload = {
+            division: newDivision,
+            substation: newSubstation,
+            applicant: {
+                ...currentApp.applicant,
+                type: newType,
+                address: document.getElementById("editAddress").value
+            },
+            proposed_demand_1st: document.getElementById("editDemand1st").value,
+            proposed_demand_2nd: document.getElementById("editDemand2nd").value,
+            proposed_demand_3rd: document.getElementById("editDemand3rd").value,
+            proposed_demand_4th: document.getElementById("editDemand4th").value,
+            proposed_demand_5th: document.getElementById("editDemand5th").value
+        };
 
         try {
             await blockApi.update(appId, payload);
@@ -601,33 +488,6 @@
             await blockApi.delete(appId);
             showToast("Application deleted", "success");
             setTimeout(() => { window.location.href = `/block-detail.html?block=${blockId}`; }, 1000);
-        } catch (e) {
-            showToast(e.message, "error");
-        }
-    }
-
-    let activeStageNo = null;
-    function openDrawer(stageNo, stageName, status) {
-        activeStageNo = stageNo;
-        document.getElementById('drawerTitle').innerText = `${stageNo}. ${stageName}`;
-        document.getElementById('drawerOverlay').classList.add('show');
-    }
-
-    function closeDrawer() {
-        document.getElementById('drawerOverlay').classList.remove('show');
-    }
-
-    async function markComplete() {
-        const remarks = document.getElementById("stageRemarks").value;
-        try {
-            await blockApi.updateStage(appId, {
-                stage_no: activeStageNo,
-                status: "completed",
-                remarks: remarks
-            });
-            showToast("Stage completed ✅", "success");
-            closeDrawer();
-            loadData();
         } catch (e) {
             showToast(e.message, "error");
         }

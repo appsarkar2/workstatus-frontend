@@ -3,17 +3,143 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#1e40af" />
-  <title>Block — WorkStatus</title>
+  <title>Block Dashboard — WorkStatus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/base.css" />
   <link rel="stylesheet" href="/css/layout.css" />
   <link rel="stylesheet" href="/css/components.css" />
   <link rel="stylesheet" href="/css/modals.css" />
   <link rel="stylesheet" href="/css/pages.css" />
+  
+  <style>
+    :root {
+        --bg-main: #f4f7f9; 
+        --card-bg: #ffffff; 
+        --text-main: #0f172a; 
+        --text-muted: #64748b;
+        --primary: #3b82f6; 
+        --primary-light: #eff6ff;
+        --success: #10b981; 
+        --warning: #f59e0b;
+        --border: #e2e8f0; 
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 20px -2px rgba(0,0,0,0.05);
+    }
+    * { box-sizing: border-box; }
+    body { background-color: var(--bg-main); font-family: 'Inter', -apple-system, sans-serif; margin: 0; min-height: 100vh; color: var(--text-main); }
+    .app-container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+
+    /* Header */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .page-title h1 { font-size: 28px; font-weight: 800; margin: 0; }
+    .page-title p { font-size: 14px; color: var(--text-muted); margin: 4px 0 0 0; }
+    
+    .header-actions { display: flex; gap: 12px; }
+    .btn { padding: 12px 24px; border-radius: 10px; font-weight: 700; text-decoration: none; transition: 0.2s; cursor: pointer; border: none; font-size: 14px; }
+    .btn-back { background: white; color: var(--text-main); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .btn-back:hover { background: #f8fafc; }
+    .btn-new { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+    .btn-new:hover { background: #2563eb; transform: translateY(-1px); }
+
+    /* Filters */
+    .filters-card { background: white; border-radius: 16px; padding: 20px 24px; border: 1px solid var(--border); box-shadow: var(--shadow-md); display: flex; gap: 20px; margin-bottom: 30px; align-items: flex-end; }
+    .filter-group { flex: 1; }
+    .filter-group label { display: block; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .filter-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; background: #f8fafc; cursor: pointer; transition: 0.2s; }
+    .filter-select:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px var(--primary-light); }
+    .filter-select:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+
+    /* Section Headers */
+    .section-header { display: flex; align-items: center; gap: 10px; margin-top: 30px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+    .section-header h2 { font-size: 20px; font-weight: 800; margin: 0; color: var(--text-main); }
+    .section-header .badge-total { background: var(--primary-light); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 800; }
+
+    /* Stage Cards Grid */
+    .stage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .stage-card { 
+        background: white; 
+        border: 1px solid var(--border); 
+        border-radius: 16px; 
+        padding: 20px; 
+        cursor: pointer; 
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        box-shadow: var(--shadow-sm); 
+        position: relative;
+        overflow: hidden;
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between; 
+    }
+    .stage-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 12px 25px -5px rgba(0,0,0,0.1); }
+    
+    .stage-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--border); transition: 0.2s; }
+    .stage-card.active::before { background: var(--primary); }
+    .stage-card.active { background: linear-gradient(180deg, #ffffff 0%, var(--primary-light) 100%); border-color: #bfdbfe; }
+
+    .stage-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; z-index: 1; }
+    .stage-num { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; }
+    .stage-card.active .stage-num { background: white; color: var(--primary); }
+    
+    .stage-count { font-size: 32px; font-weight: 900; color: var(--text-main); line-height: 1; z-index: 1; }
+    .stage-card.active .stage-count { color: var(--primary); }
+    
+    .stage-title { font-size: 14px; font-weight: 700; color: var(--text-main); line-height: 1.4; z-index: 1; margin-top: 8px; }
+    
+    .click-hint { margin-top: 15px; font-size: 11px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 4px; opacity: 0; transition: 0.2s; transform: translateX(-10px); }
+    .stage-card:hover .click-hint { opacity: 1; transform: translateX(0); }
+    
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; z-index: 9999; opacity: 0; transition: opacity 0.3s; }
+    .modal-overlay.show { display: block; opacity: 1; }
+    .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); background: var(--card-bg); border-radius: 20px; padding: 0; z-index: 10000; width: 90%; max-width: 900px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column; transition: transform 0.2s; }
+    .modal-overlay.show .modal-box { transform: translate(-50%, -50%) scale(1); }
+    
+    .modal-header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 20px 20px 0 0; }
+    .modal-title { font-size: 20px; font-weight: 800; margin: 0; color: var(--text-main); }
+    .modal-close { background: white; border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+    .modal-close:hover { background: #f1f5f9; color: var(--text-main); }
+    .modal-body { padding: 0; overflow-y: auto; flex: 1; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+    th, td { border-bottom: 1px solid var(--border); padding: 16px 24px; text-align: center; vertical-align: middle; }
+    th { background: white; font-weight: 800; color: var(--text-muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; }
+    .row-clickable { cursor: pointer; transition: 0.2s; }
+    .row-clickable:hover { background: #f8fafc; }
+
+    @media (max-width: 768px) { 
+        .page-header { flex-direction: column; align-items: flex-start; gap: 15px; } 
+        .filters-card { flex-direction: column; gap: 15px; }
+        .stage-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body class="app-body">
 
   <div id="app"></div>
+
+  <!-- Modal for Viewing Applications -->
+  <div id="listModal" class="modal-overlay" onclick="closeListModal()">
+      <div class="modal-box" onclick="event.stopPropagation()">
+          <div class="modal-header">
+              <h3 class="modal-title" id="modalTitle">Applications</h3>
+              <button class="modal-close" onclick="closeListModal()">✕</button>
+          </div>
+          <div class="modal-body">
+              <table>
+                  <thead>
+                      <tr>
+                          <th style="text-align: left;">App No</th>
+                          <th style="text-align: left;">Applicant</th>
+                          <th style="text-align: left;">Location</th>
+                          <th>Action</th>
+                      </tr>
+                  </thead>
+                  <tbody id="modalTableBody"></tbody>
+              </table>
+          </div>
+      </div>
+  </div>
 
   <script src="/js/core/utils.js"></script>
   <script src="/js/core/auth-guard.js"></script>
@@ -22,197 +148,256 @@
   <script src="/js/ui/components.js"></script>
 
   <script>
-    // ── Read block ID from URL ──
     const params  = new URLSearchParams(window.location.search);
     const blockId = params.get("block") || "bulk_connection";
-    const user    = getCurrentUser();
-    const app     = document.getElementById("app");
-
-    // ── Security Check: Block division users from other blocks ──
-    if (user.role === "division_user" && blockId !== "puja_load_demand") {
-      app.innerHTML = `
-        ${header({ title: "Access Denied", back: true, backUrl: "/dashboard.html" })}
-        <section class="app-header-card" style="margin-top: 20px;">
-          ${emptyState("🚫", "Access Denied", "You do not have permission to view this block. Please use the PUJA Load Demand block.")}
-        </section>
-      `;
-      throw new Error("Access denied"); // Stops the rest of the script from running
-    }
-
-    // ── Create block API client (works for any block) ──
     const blockApi = BlockAPI(blockId);
+    const app = document.getElementById("app");
+    
+    // Shortened 13 Stages
+    const STAGES = [
+        "App. Received & Doc. Verification",
+        "Physical Inspection & Tech. Feasibility",
+        "Quotation Served",
+        "Deposition of Quotation Amount",
+        "Work Order & PO Generation",
+        "Agreement Execution",
+        "Work Completion Report",
+        "Consumer Outgoing Ready",
+        "EI Approval Submission",
+        "Commercial Clearance",
+        "Meter Installation",
+        "Meter Report Submission",
+        "Master Card Creation"
+    ];
 
-    // ── Render page shell first (loading state) ──
-    app.innerHTML = `
-      ${header({
-        title: "Block",
-        back: true,
-        backUrl: "/dashboard.html",
-        actions: [
-          { icon: "🔄", onClick: "refreshList()", title: "Refresh" },
-          { icon: "🔔", onClick: "showToast('Notifications coming soon','info')", title: "Notifications" }
-        ]
-      })}
+    let rawApplications = [];
+    let orgData = {};
+    
+    let filterZone = "";
+    let filterRegion = "";
+    let filterDivision = "";
 
-      <section class="block-header-card">
-        <div class="block-header-icon" id="blockIcon">📦</div>
-        <div class="block-header-info">
-          <div class="block-header-name" id="blockName">Loading...</div>
-          <div class="block-header-sub" id="blockSub">Please wait</div>
-        </div>
-      </section>
-
-      <section class="stats-row">
-        <div class="stat-card">
-          <div class="stat-num" id="statTotal">—</div>
-          <div class="stat-label">Total</div>
-        </div>
-        <div class="stat-card stat-pending">
-          <div class="stat-num" id="statPending">—</div>
-          <div class="stat-label">Pending</div>
-        </div>
-        <div class="stat-card stat-progress">
-          <div class="stat-num" id="statProgress">—</div>
-          <div class="stat-label">In Progress</div>
-        </div>
-        <div class="stat-card stat-completed">
-          <div class="stat-num" id="statCompleted">—</div>
-          <div class="stat-label">Completed</div>
-        </div>
-      </section>
-
-      ${searchBar("searchInput", "Search by application no or name...")}
-
-      <section class="tasks-section">
-        <div class="section-header">
-          <h2 class="section-title">Applications</h2>
-          <button class="small-btn" onclick="goNew()">+ New</button>
-        </div>
-        <div id="appList" class="task-list">
-          ${emptyState("⏳", "Loading applications...")}
-        </div>
-      </section>
-
-      ${fab("+", "goNew()", "New application")}
-    `;
-
-    // ── Icon mapping (backend config icon names → emoji) ──
-    const ICON_MAP = {
-      box: "📦", bolt: "⚡", plug: "🔌",
-      wrench: "🔧", chart: "📊", upload: "📤",
-    };
-
-    // ── State ──
-    let allApps = [];
-    let blockMeta = null;
-
-    // ── Load block config (name, icon, color) ──
-    async function loadBlockMeta() {
+    async function loadData() {
       try {
-        const cfg = await blockApi.getConfig();
-        blockMeta = cfg;
-
-        document.getElementById("blockIcon").textContent = ICON_MAP[cfg.icon] || "📦";
-        document.getElementById("blockName").textContent = cfg.name || "Block";
-        document.getElementById("blockSub").textContent  = `Manage ${cfg.name || "block"} applications`;
-        document.getElementById("headerTitle") && (document.getElementById("headerTitle").textContent = cfg.name);
-        document.title = `${cfg.name} — WorkStatus`;
+        const [data, orgStructure] = await Promise.all([
+          blockApi.list(),
+          apiFetch("/api/org-structure")
+        ]);
+        rawApplications = data.items || [];
+        orgData = orgStructure;
+        renderDashboard();
       } catch (e) {
-        // Fallback: use block ID as name
-        document.getElementById("blockName").textContent = blockId.replace(/_/g, " ");
-        document.getElementById("blockSub").textContent  = "Manage applications";
-        console.warn("Could not load block config:", e.message);
+        app.innerHTML = `<div style="text-align: center; padding: 50px; color: red;">Error: ${e.message}</div>`;
       }
     }
 
-    // ── Load stats ──
-    async function loadStats() {
-      try {
-        const s = await blockApi.getStats();
-        document.getElementById("statTotal").textContent     = s.total       ?? 0;
-        document.getElementById("statPending").textContent   = s.in_progress ?? 0;
-        document.getElementById("statProgress").textContent  = s.in_progress ?? 0;
-        document.getElementById("statCompleted").textContent = s.completed   ?? 0;
-      } catch (e) {
-        console.error("Stats error:", e.message);
-      }
+    function onFilterChange() {
+        filterZone = document.getElementById("filterZone").value;
+        filterRegion = document.getElementById("filterRegion").value;
+        filterDivision = document.getElementById("filterDivision").value;
+        renderDashboard();
     }
 
-    // ── Load applications ──
-    async function loadApps() {
-      const list = document.getElementById("appList");
-      list.innerHTML = emptyState("⏳", "Loading...");
+    function updateFilterRegions() {
+        const zone = document.getElementById("filterZone").value;
+        const regSelect = document.getElementById("filterRegion");
+        const divSelect = document.getElementById("filterDivision");
+        
+        regSelect.innerHTML = `<option value="">All Regions</option>`;
+        divSelect.innerHTML = `<option value="">All Divisions</option>`;
+        divSelect.disabled = true;
 
-      try {
-        const data = await blockApi.list();
-        allApps = data.items || [];
-        renderApps(allApps);
-      } catch (e) {
-        list.innerHTML = emptyState("⚠️", "Failed to load", e.message);
-      }
+        if (zone && orgData.zones[zone]) {
+            Object.keys(orgData.zones[zone].regions).forEach(r => {
+                regSelect.innerHTML += `<option value="${r}">${r}</option>`;
+            });
+            regSelect.disabled = false;
+        } else {
+            regSelect.disabled = true;
+        }
+        onFilterChange();
     }
 
-    // ── Render application list ──
-    function renderApps(apps) {
-      const list = document.getElementById("appList");
+    function updateFilterDivisions() {
+        const zone = document.getElementById("filterZone").value;
+        const region = document.getElementById("filterRegion").value;
+        const divSelect = document.getElementById("filterDivision");
+        
+        divSelect.innerHTML = `<option value="">All Divisions</option>`;
 
-      if (!apps.length) {
-        list.innerHTML = emptyState("📭", "No applications yet", 'Click "+ New" to add one');
-        return;
-      }
+        if (zone && region && orgData.zones[zone].regions[region]) {
+            Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
+                divSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+            divSelect.disabled = false;
+        } else {
+            divSelect.disabled = true;
+        }
+        onFilterChange();
+    }
 
-      const totalStages = (blockMeta?.stages?.length) || 13;
+    function renderDashboard() {
+      // 1. Apply Filters
+      let filteredApps = rawApplications.filter(a => {
+          let match = true;
+          if (filterZone && a.zone !== filterZone) match = false;
+          if (filterRegion && a.region !== filterRegion) match = false;
+          if (filterDivision && a.division !== filterDivision) match = false;
+          return match;
+      });
 
-      list.innerHTML = apps.map((a) => {
-        const stage = a.current_stage || 1;
-        const pct   = Math.round((stage / totalStages) * 100);
+      // 2. Calculate Counts for all 13 stages
+      let stageCounts = {};
+      for (let i = 1; i <= 13; i++) stageCounts[i] = 0;
 
-        return `
-          <div class="task-item app-card" onclick="openApp('${a._id}')">
-            <div class="app-card-top">
-              <div class="task-title">${escapeHtml(a.application_no)} — ${escapeHtml(a.applicant?.name || "—")}</div>
-              ${statusBadge(a.status)}
+      filteredApps.forEach(a => {
+          if (a.status === 'in_progress' && a.current_stage >= 1 && a.current_stage <= 13) {
+              stageCounts[a.current_stage] = (stageCounts[a.current_stage] || 0) + 1;
+          }
+      });
+
+      // 3. Build HTML for Pending Applications (Stages 1-3)
+      let pendingAppCards = "";
+      let pendingAppTotal = 0;
+      for (let i = 1; i <= 3; i++) {
+          const stageName = STAGES[i-1];
+          const count = stageCounts[i];
+          pendingAppTotal += count;
+          const activeClass = count > 0 ? "active" : "";
+          
+          pendingAppCards += `
+            <div class="stage-card ${activeClass}" onclick="showStageApps(${i}, '${escapeHtml(stageName)}')">
+                <div>
+                    <div class="stage-header">
+                        <span class="stage-num">Stage ${i}</span>
+                        <span class="stage-count">${count}</span>
+                    </div>
+                    <div class="stage-title">${stageName}</div>
+                </div>
+                <div class="click-hint">View Applications →</div>
             </div>
-            <div class="task-sub">
-              📍 ${escapeHtml(a.division || "—")} · 📊 Stage ${stage} of ${totalStages}
+          `;
+      }
+
+      // 4. Build HTML for Pending Connections (Stages 4-13)
+      let pendingConnCards = "";
+      let pendingConnTotal = 0;
+      for (let i = 4; i <= 13; i++) {
+          const stageName = STAGES[i-1];
+          const count = stageCounts[i];
+          pendingConnTotal += count;
+          const activeClass = count > 0 ? "active" : "";
+          
+          pendingConnCards += `
+            <div class="stage-card ${activeClass}" onclick="showStageApps(${i}, '${escapeHtml(stageName)}')">
+                <div>
+                    <div class="stage-header">
+                        <span class="stage-num">Stage ${i}</span>
+                        <span class="stage-count">${count}</span>
+                    </div>
+                    <div class="stage-title">${stageName}</div>
+                </div>
+                <div class="click-hint">View Applications →</div>
             </div>
-            <div class="task-sub">
-              👤 ${escapeHtml(a.assigned_to || "Unassigned")} · 🕒 ${timeAgo(a.updated_at || a.created_at)}
+          `;
+      }
+
+      // 5. Render UI
+      app.innerHTML = `
+        <div class="app-container">
+            
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Bulk Connection Dashboard</h1>
+                    <p>Stage-wise pendency report</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/dashboard.html" class="btn btn-back">← Back to App</a>
+                    <button class="btn btn-new" onclick="window.location.href='/application-new.html?block=${blockId}'">+ New Application</button>
+                </div>
             </div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-          </div>
-        `;
-      }).join("");
+
+            <!-- Filters -->
+            <div class="filters-card">
+                <div class="filter-group">
+                    <label>Zone</label>
+                    <select id="filterZone" class="filter-select" onchange="updateFilterRegions()">
+                        <option value="">All Zones</option>
+                        ${orgData.zones ? Object.keys(orgData.zones).map(z => `<option value="${z}">${z}</option>`).join('') : ''}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Region</label>
+                    <select id="filterRegion" class="filter-select" onchange="updateFilterDivisions()" disabled>
+                        <option value="">All Regions</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Division</label>
+                    <select id="filterDivision" class="filter-select" onchange="onFilterChange()" disabled>
+                        <option value="">All Divisions</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section: Pending Applications -->
+            <div class="section-header">
+                <h2>Pending Applications</h2>
+                <span class="badge-total">${pendingAppTotal} Total</span>
+            </div>
+            <div class="stage-grid">
+                ${pendingAppCards}
+            </div>
+
+            <!-- Section: Pending Connections -->
+            <div class="section-header">
+                <h2>Pending Connections</h2>
+                <span class="badge-total">${pendingConnTotal} Total</span>
+            </div>
+            <div class="stage-grid">
+                ${pendingConnCards}
+            </div>
+
+        </div>
+      `;
     }
 
-    // ── Search filter ──
-    document.addEventListener("input", (e) => {
-      if (e.target.id !== "searchInput") return;
-      const q = e.target.value.toLowerCase();
-      const filtered = allApps.filter(a =>
-        (a.application_no || "").toLowerCase().includes(q) ||
-        (a.applicant?.name || "").toLowerCase().includes(q)
-      );
-      renderApps(filtered);
-    });
+    // --- Modal Logic ---
+    function showStageApps(stageNo, stageName) {
+        let appsInStage = rawApplications.filter(a => {
+            let match = true;
+            if (filterZone && a.zone !== filterZone) match = false;
+            if (filterRegion && a.region !== filterRegion) match = false;
+            if (filterDivision && a.division !== filterDivision) match = false;
+            
+            return match && a.status === 'in_progress' && a.current_stage === stageNo;
+        });
 
-    // ── Navigation ──
-    function goNew() {
-      window.location.href = `/application-new.html?block=${encodeURIComponent(blockId)}`;
-    }
-    function openApp(id) {
-      window.location.href = `/application-detail.html?block=${encodeURIComponent(blockId)}&id=${id}`;
-    }
-    function refreshList() {
-      loadBlockMeta();
-      loadStats();
-      loadApps();
+        document.getElementById("modalTitle").textContent = `Stage ${stageNo}: ${stageName} (${appsInStage.length})`;
+        
+        let rowsHtml = appsInStage.map(a => {
+            return `
+                <tr class="row-clickable" onclick="window.location.href='/application-detail.html?block=${blockId}&id=${a._id}'">
+                    <td style="text-align: left; font-weight: 800; color: var(--primary);">${a.application_no}</td>
+                    <td style="text-align: left; font-weight: 600;">${a.applicant?.name || "—"}</td>
+                    <td style="text-align: left; font-size: 12px;">
+                        ${a.division || "Unassigned"}<br>
+                        <span style="color:var(--text-muted); font-size: 11px;">${a.substation || ""}</span>
+                    </td>
+                    <td><button class="btn btn-new" style="padding: 6px 12px; font-size: 12px;">Open</button></td>
+                </tr>
+            `;
+        }).join("");
+
+        document.getElementById("modalTableBody").innerHTML = rowsHtml || `<tr><td colspan="4" style="padding: 40px; color: var(--text-muted); font-weight: 600;">✅ No applications pending in this stage.</td></tr>`;
+        document.getElementById("listModal").classList.add("show");
     }
 
-    // ── Boot ──
-    loadBlockMeta();
-    loadStats();
-    loadApps();
+    function closeListModal() {
+        document.getElementById("listModal").classList.remove("show");
+    }
+
+    loadData();
   </script>
 </body>
 </html>

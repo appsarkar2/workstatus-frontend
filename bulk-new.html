@@ -27,7 +27,7 @@
 
     * { box-sizing: border-box; }
     body { background: var(--bg-gradient); font-family: 'Inter', -apple-system, sans-serif; margin: 0; min-height: 100vh; -webkit-font-smoothing: antialiased; }
-    .app-container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+    .app-container { max-width: 700px; margin: 0 auto; padding: 30px 20px; }
 
     /* Header */
     .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
@@ -50,8 +50,6 @@
     .btn-secondary:hover { background: #e2e8f0; }
     .btn-primary { background: var(--text-main); color: white; border: none; padding: 16px 40px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2); transition: 0.2s; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(15, 23, 42, 0.3); }
-    
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   </style>
 </head>
 <body>
@@ -72,15 +70,14 @@
     const blockApi = BlockAPI(blockId);
     const app = document.getElementById("app");
 
-    const user = getCurrentUser();
-    if (user.role === "division_user") {
-      window.location.href = "/dashboard.html";
-    }
-
+    // The division user is allowed to create applications, but only with basic info.
+    // The manager/admin will fill the rest later.
+    
     function renderForm() {
       const today = new Date().toISOString().split("T")[0];
 
       app.innerHTML = `
+        <!-- Header -->
         <div class="page-header">
             <div class="page-title">
                 <h1>New Bulk Connection</h1>
@@ -89,6 +86,7 @@
             <a href="/block-detail.html?block=${blockId}" class="btn-back">← Back to List</a>
         </div>
 
+        <!-- Main Form Card -->
         <div class="card">
             <h3 style="font-size: 18px; font-weight: 800; margin-top: 0; margin-bottom: 24px;">👤 Applicant Information</h3>
             
@@ -112,46 +110,13 @@
                 <input id="application_date" type="date" class="input-field" value="${today}" />
             </div>
 
-            <h3 style="font-size: 18px; font-weight: 800; margin-top: 40px; margin-bottom: 24px;">⚡ Connection Details</h3>
-
-            <div class="input-group">
-                <label>Division</label>
-                <select id="division" class="input-field">
-                    <option value="" disabled selected>Select Division...</option>
-                    <option value="Siliguri Town">Siliguri Town</option>
-                    <option value="Siliguri Sub Urban">Siliguri Sub Urban</option>
-                    <option value="Kurseong">Kurseong</option>
-                    <option value="Darjeeling">Darjeeling</option>
-                    <option value="Kalimpong">Kalimpong</option>
-                </select>
+            <div style="background: #eff6ff; padding: 16px; border-radius: 12px; margin-top: 30px; border: 1px solid #bfdbfe;">
+                <p style="margin: 0; font-size: 13px; color: #1e40af; font-weight: 500;">
+                    ℹ️ <strong>Note:</strong> Please provide the basic information. Other technical details (Sub-station, Demand, etc.) will be updated by the Manager in the next step.
+                </p>
             </div>
 
-            <div class="input-group">
-                <label>Connection Type</label>
-                <select id="applicant_type" class="input-field">
-                    <option value="LT">LT</option>
-                    <option value="11 KV HT">11 KV HT</option>
-                    <option value="33 KV HT">33 KV HT</option>
-                    <option value="SOLAR">SOLAR</option>
-                    <option value="PROCEDURE-B">PROCEDURE-B</option>
-                    <option value="UDER SPECIFICE">UDER SPECIFICE</option>
-                </select>
-            </div>
-
-            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
-                <label style="display: block; font-size: 13px; font-weight: 800; margin-bottom: 16px;">Proposed Contract Demand (KVA)</label>
-                <div class="form-grid">
-                    <div>
-                        <label style="font-size: 11px; color: var(--text-muted);">1st Yr.</label>
-                        <input id="demand_1st" type="number" class="input-field" placeholder="e.g. 100" style="padding: 12px;" />
-                    </div>
-                    <div>
-                        <label style="font-size: 11px; color: var(--text-muted);">5th Yr.</label>
-                        <input id="demand_5th" type="number" class="input-field" placeholder="e.g. 100" style="padding: 12px;" />
-                    </div>
-                </div>
-            </div>
-
+            <!-- Actions -->
             <div class="form-actions" style="border-top: none;">
                 <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
                 <button class="btn-primary" id="submitBtn" onclick="submitForm()">Create Application</button>
@@ -168,18 +133,24 @@
 
       if (!$name.value.trim()) { showToast("Applicant Name is required", "error"); $name.focus(); return; }
 
+      // Build the minimal payload
       const payload = {
         applicant: {
           name:  $name.value.trim(),
           contact: document.getElementById("applicant_contact").value.trim(),
           address: document.getElementById("applicant_address").value.trim(),
-          type:    document.getElementById("applicant_type").value,
-          email:   "", // Not needed anymore
+          type:    "LT", // Default type, will be updated by Manager
+          email:   "",   // Not needed for now
         },
-        division:         document.getElementById("division").value,
         application_date: document.getElementById("application_date").value || null,
-        proposed_demand_1st: document.getElementById("demand_1st").value,
-        proposed_demand_5th: document.getElementById("demand_5th").value,
+        // All other fields are left blank for the Manager to fill
+        division: "",
+        substation: "",
+        proposed_demand_1st: "",
+        proposed_demand_2nd: "",
+        proposed_demand_3rd: "",
+        proposed_demand_4th: "",
+        proposed_demand_5th: ""
       };
 
       $btn.disabled = true;
