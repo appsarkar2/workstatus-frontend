@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Application Details — WorkStatus</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/base.css" />
   <link rel="stylesheet" href="/css/layout.css" />
@@ -13,59 +14,73 @@
   
   <style>
     :root {
-        --bg-main: #f8fafc; 
-        --card-bg: #ffffff; 
-        --text-main: #0f172a; 
-        --text-muted: #64748b;
-        --primary: #3b82f6; 
-        --primary-light: #eff6ff; 
-        --success: #10b981; 
-        --danger: #ef4444; 
-        --border: #cbd5e1; 
+        --bg-main: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a; --text-muted: #64748b;
+        --primary: #3b82f6; --primary-light: #eff6ff; --success: #10b981; --success-light: #ecfdf5; 
+        --danger: #ef4444; --warning: #f59e0b;
+        --border: #cbd5e1; --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 20px -2px rgba(0,0,0,0.05); --shadow-lg: 0 20px 40px -10px rgba(0,0,0,0.08);
     }
     * { box-sizing: border-box; }
     body { background-color: var(--bg-main); font-family: 'Inter', -apple-system, sans-serif; margin: 0; min-height: 100vh; color: var(--text-main); }
-    .app-container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+    .app-container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
 
-    /* Header Buttons */
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border); }
-    .page-title h1 { font-size: 22px; font-weight: 800; margin: 0; color: var(--text-main); }
-    .page-title p { font-size: 14px; color: var(--text-muted); margin: 4px 0 0 0; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; }
+    .page-title h1 { font-size: 32px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px; }
+    .page-title p { font-size: 16px; color: var(--text-muted); margin: 0; font-weight: 500; }
+    .btn-back { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+    .btn-back:hover { background: #f8fafc; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-primary { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-primary:hover { background: #2563eb; }
+
+    .top-ribbon { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+    .ribbon-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; align-items: center; gap: 20px; box-shadow: var(--shadow-sm); }
+    .ribbon-icon { font-size: 28px; background: #f1f5f9; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: var(--primary); }
+    .ribbon-text .val { font-size: 18px; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+    .ribbon-text .lbl { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .card { background: var(--card-bg); border-radius: 24px; padding: 40px; border: 1px solid var(--border); box-shadow: var(--shadow-lg); margin-bottom: 30px; }
+
+    .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .data-group { display: flex; flex-direction: column; gap: 6px; }
+    .data-group.full { grid-column: span 2; }
+    .data-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .data-value { font-size: 16px; font-weight: 600; }
+    .data-value.large { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+    .workflow-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 20px; }
+    .workflow-table th { padding: 16px; font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; letter-spacing: 0.5px; }
+    .workflow-table td { padding: 18px 16px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
     
-    .header-actions { display: flex; gap: 10px; }
-    .btn { border: none; padding: 10px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; text-decoration: none; transition: 0.2s; }
-    .btn-back { background: #f1f5f9; color: var(--text-main); }
-    .btn-edit { background: var(--primary); color: white; }
-    .btn-delete { background: var(--danger); color: white; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+    .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .badge-green { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .badge-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-gray { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    
+    .badge-red-pulse { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; animation: pulse-red 2s infinite; }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
 
-    /* Tables */
-    .table-container { background: white; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
-    th, td { border: 1px solid var(--border); padding: 10px; text-align: center; vertical-align: middle; }
-    th { background: #f8fafc; font-weight: 800; color: var(--text-main); }
-    .bg-light { background: #f1f5f9; }
+    .step-action-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .step-action-btn.locked { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
 
-    .section-title { font-size: 16px; font-weight: 800; margin: 0 0 15px 0; text-align: center; padding-top: 15px; }
-
-    /* Stepper Progress in Table Format */
-    .stage-done { color: var(--success); font-weight: 800; }
-    .stage-active { color: var(--primary); font-weight: 800; }
-    .stage-pending { color: var(--text-muted); }
-
-    /* Modal */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; z-index: 9999; opacity: 0; transition: opacity 0.3s; }
     .modal-overlay.show { display: block; opacity: 1; }
-    .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); background: var(--card-bg); border-radius: 12px; padding: 30px; z-index: 10000; width: 100%; max-width: 650px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; transition: transform 0.2s; }
-    .modal-overlay.show .modal-box { transform: translate(-50%, -50%) scale(1); }
+    .modal-box { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-radius: 32px 32px 0 0; padding: 40px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); z-index: 10000; max-width: 650px; margin: 0 auto; box-shadow: 0 -20px 60px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; }
+    .modal-overlay.show .modal-box { transform: translateY(0); }
     
-    .input-group { margin-bottom: 20px; }
-    .input-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
-    .input-field { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); font-size: 14px; font-family: 'Inter', sans-serif; }
-    .input-field:focus { outline: none; border-color: var(--primary); background: white; }
-    .input-field:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+    .modal-handle { width: 56px; height: 6px; background: #e2e8f0; border-radius: 6px; margin: -20px auto 30px auto; }
+    .input-group { margin-bottom: 24px; }
+    .input-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+    .input-field { width: 100%; padding: 16px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-main); font-size: 15px; font-weight: 500; color: var(--text-main); transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .input-field:focus { outline: none; border-color: var(--primary); background: var(--card-bg); box-shadow: 0 0 0 4px var(--primary-light); }
     
-    .demand-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-    @media (max-width: 768px) { .demand-grid { grid-template-columns: 1fr 1fr; } .page-header { flex-direction: column; align-items: flex-start; gap: 15px; } }
+    .demand-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 10px; }
+    @media (max-width: 768px) { .demand-grid { grid-template-columns: 1fr 1fr; } .data-grid { grid-template-columns: 1fr; } .page-header { flex-direction: column; gap: 20px; } .top-ribbon { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -75,72 +90,70 @@
   <!-- Edit Application Modal -->
   <div id="editModal" class="modal-overlay" onclick="closeEditModal()">
       <div class="modal-box" onclick="event.stopPropagation()">
-          <h2 style="font-size: 20px; margin-top: 0; margin-bottom: 20px;">Edit Application Details</h2>
+          <div class="modal-handle"></div>
+          <h2 style="font-size: 22px; margin-top: 0; margin-bottom: 24px;">Edit Application Details</h2>
           
           <div class="input-group">
               <label>Zone</label>
-              <select id="editZone" class="input-field" onchange="updateRegions()">
-                  <option value="" disabled selected>Select Zone...</option>
-              </select>
+              <select id="editZone" class="input-field" onchange="updateRegions()"><option value="" disabled selected>Select Zone...</option></select>
           </div>
-
           <div class="input-group">
               <label>Region</label>
-              <select id="editRegion" class="input-field" onchange="updateDivisions()" disabled>
-                  <option value="">Select Zone first...</option>
-              </select>
+              <select id="editRegion" class="input-field" onchange="updateDivisions()" disabled><option value="">Select Zone first...</option></select>
           </div>
-
           <div class="input-group">
               <label>Division</label>
-              <select id="editDivision" class="input-field" onchange="updateSubStations()" disabled>
-                  <option value="">Select Region first...</option>
-              </select>
+              <select id="editDivision" class="input-field" onchange="updateSubStations()" disabled><option value="">Select Region first...</option></select>
           </div>
-
           <div class="input-group">
               <label>Sub-station</label>
-              <select id="editSubstation" class="input-field" disabled>
-                  <option value="">Select Division first...</option>
-              </select>
+              <select id="editSubstation" class="input-field" disabled><option value="">Select Division first...</option></select>
           </div>
-
           <div class="input-group">
-              <label>Type</label>
-              <select id="editType" class="input-field" onchange="toggleCustomType()">
-                  <option value="LT">LT</option>
-                  <option value="11 KV HT">11 KV HT</option>
-                  <option value="33 KV HT">33 KV HT</option>
-                  <option value="SOLAR">SOLAR</option>
-                  <option value="PROCEDURE-B">PROCEDURE-B</option>
-                  <option value="Under Specify">Under Specify</option>
-              </select>
+              <label>Voltage Class</label>
+              <select id="editVoltageClass" class="input-field"><option value="LT">LT</option><option value="11 KV HT">11 KV HT</option><option value="33 KV HT">33 KV HT</option></select>
           </div>
-
-          <div class="input-group" id="customTypeGroup" style="display: none;">
-              <label>Enter Custom Type</label>
-              <input id="editCustomType" type="text" class="input-field" placeholder="Please specify..." />
+          <div class="input-group">
+              <label>Connection Type</label>
+              <select id="editConnectionType" class="input-field"><option value="Procedure-A">Procedure-A</option><option value="Procedure-B">Procedure-B</option><option value="Procedure-C">Procedure-C</option></select>
           </div>
-
           <div class="input-group">
               <label>Address</label>
               <input id="editAddress" type="text" class="input-field" placeholder="Full address" />
           </div>
-
-          <div style="background: var(--bg-main); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px;">
+          <div style="background: var(--bg-main); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
               <label style="display: block; font-size: 13px; font-weight: 800; margin-bottom: 10px;">Proposed Contract Demand (KVA)</label>
               <div class="demand-grid">
-                  <div><label style="font-size: 11px; color: var(--text-muted);">1st Yr.</label><input id="editDemand1st" type="number" class="input-field" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">2nd Yr.</label><input id="editDemand2nd" type="number" class="input-field" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">3rd Yr.</label><input id="editDemand3rd" type="number" class="input-field" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">4th Yr.</label><input id="editDemand4th" type="number" class="input-field" /></div>
-                  <div><label style="font-size: 11px; color: var(--text-muted);">5th Yr.</label><input id="editDemand5th" type="number" class="input-field" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">1st Yr.</label><input id="editDemand1st" type="number" class="input-field" style="padding: 10px;" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">2nd Yr.</label><input id="editDemand2nd" type="number" class="input-field" style="padding: 10px;" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">3rd Yr.</label><input id="editDemand3rd" type="number" class="input-field" style="padding: 10px;" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">4th Yr.</label><input id="editDemand4th" type="number" class="input-field" style="padding: 10px;" /></div>
+                  <div><label style="font-size: 11px; color: var(--text-muted);">5th Yr.</label><input id="editDemand5th" type="number" class="input-field" style="padding: 10px;" /></div>
               </div>
           </div>
           
-          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-              <button onclick="closeEditModal()" class="btn" style="background: #f1f5f9; color: var(--text-main);">Cancel</button>
-              <button onclick="saveEdit()" class="btn btn-edit">Save Changes</button>
+          <div style="display: flex; gap: 12px; margin-top: 10px;">
+              <button onclick="closeEditModal()" style="flex: 1; background: #f1f5f9; color: var(--text-main); border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer;">Cancel</button>
+              <button onclick="saveEdit()" style="flex: 2; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer;">Save Changes</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Stage Update Drawer -->
+  <div class="modal-overlay" id="drawerOverlay" onclick="closeDrawer()">
+      <div class="modal-box" onclick="event.stopPropagation()">
+          <div class="modal-handle"></div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+              <div>
+                  <h2 style="font-size: 24px; margin: 0 0 8px 0; font-weight: 800;" id="drawerTitle">Stage</h2>
+                  <span id="drawerBadge" style="display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase;">In Progress</span>
+              </div>
+              <button onclick="closeDrawer()" style="background: var(--bg-main); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;">✕</button>
+          </div>
+          <div id="drawerFormBody"></div>
+          <div style="display: flex; gap: 16px; margin-top: 40px;">
+              <button onclick="closeDrawer()" style="flex: 1; background: var(--bg-main); color: var(--text-main); border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer;">Cancel</button>
+              <button id="submitStageBtn" onclick="markComplete()" style="flex: 2; background: var(--success); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: 0.3s;">✅ Mark Stage Complete</button>
           </div>
       </div>
   </div>
@@ -178,110 +191,187 @@
       }
     }
 
+    function calculateSla(stage) {
+        if (stage.status !== 'completed' || !stage.actual_date || !stage.target_date) return null;
+        const actual = new Date(stage.actual_date);
+        const target = new Date(stage.target_date);
+        const diffTime = actual - target;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) return { days: diffDays, type: 'late' };
+        if (diffDays < 0) return { days: Math.abs(diffDays), type: 'early' };
+        return { days: 0, type: 'ontime' };
+    }
+
     function renderDashboard() {
       const e = currentApp;
+      const stages = e.stages || [];
+      const user = getCurrentUser();
       
-      // Calculate table grid data
-      const demandFields = [
-        e.proposed_demand_1st, e.proposed_demand_2nd, e.proposed_demand_3rd, 
-        e.proposed_demand_4th, e.proposed_demand_5th
-      ];
+      const ALLOWED_MAP = {
+          "hr_user": [1], "dro_h&r": [1], "commerce_manager_1": [2, 3], "commerce_manager_2": [5, 6, 7, 8],
+          "finance_user": [4], "dro_finance": [4], "commerce_manager_3": [9, 10, 11, 12, 13]
+      };
+      
+      const uname = (user.username || "").toLowerCase();
+      const allowedStages = ALLOWED_MAP[uname] || [];
+      const isAdmin = ["super_admin", "admin"].includes(user.role);
+
+      let stageRows = stages.map((s) => {
+          const sla = calculateSla(s);
+          let statusBadge = '';
+          let rowStyle = '';
+
+          if (s.status === 'completed') {
+              if (sla && sla.type === 'late') {
+                  statusBadge = `<span class="badge badge-red">❌ Late by ${sla.days} Days</span>`;
+                  rowStyle = "background-color: #fef2f2;";
+              } else if (sla && sla.type === 'early') {
+                  statusBadge = `<span class="badge badge-green">✅ Early by ${sla.days} Days</span>`;
+                  rowStyle = "background-color: #f0fdf4;";
+              } else {
+                  statusBadge = `<span class="badge badge-green">✅ On Time</span>`;
+              }
+          } else if (s.status === 'in_progress') {
+              const now = new Date();
+              const target = new Date(s.target_date);
+              if (now > target) {
+                  statusBadge = `<span class="badge badge-red-pulse">⚠️ In Progress (Breached)</span>`;
+                  rowStyle = "background-color: #fffbeb;";
+              } else {
+                  statusBadge = `<span class="badge badge-blue">🔄 In Progress</span>`;
+              }
+          } else {
+              statusBadge = `<span class="badge badge-gray">⏳ Pending</span>`;
+          }
+
+          const canEdit = isAdmin || allowedStages.includes(s.stage_no);
+          let actionBtn = "";
+          if (s.status === "in_progress") {
+              if (canEdit) {
+                  actionBtn = `<button class="step-action-btn" onclick="openDrawer(${s.stage_no}, '${escapeHtml(s.name)}', '${s.status}')">Update</button>`;
+              } else {
+                  actionBtn = `<button class="step-action-btn locked" disabled>🔒 Locked</button>`;
+              }
+          }
+
+          const compDate = s.actual_date ? formatDate(s.actual_date) : '—';
+          const targetDate = s.target_date ? formatDate(s.target_date) : '—';
+          const compBy = s.completed_by || '—';
+
+          return `
+              <tr style="${rowStyle}">
+                  <td style="font-weight: 800; color: #64748b;">#${s.stage_no}</td>
+                  <td>
+                      <div style="font-weight: 700; color: #0f172a;">${s.name}</div>
+                      <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Dept: ${s.dept || 'General'}</div>
+                  </td>
+                  <td>${statusBadge}</td>
+                  <td>
+                      <div style="font-weight: 600;">${compBy}</div>
+                      <div style="font-size: 11px; color: #64748b;">${compDate}</div>
+                  </td>
+                  <td>
+                      <div style="font-size: 12px; color: #64748b;">Target: ${targetDate}</div>
+                      ${sla && sla.type === 'late' ? `<div style="font-size: 12px; color: #dc2626; font-weight: bold; margin-top: 4px;">Actual: ${compDate}</div>` : ''}
+                  </td>
+                  <td style="text-align: right;">${actionBtn}</td>
+              </tr>
+          `;
+      }).join('');
 
       app.innerHTML = `
         <div class="app-container">
-            
-            <!-- Header -->
             <div class="page-header">
                 <div class="page-title">
-                    <h1>${e.application_no} — ${e.applicant ? e.applicant.name : "Unknown"}</h1>
-                    <p>Created on ${formatDate(e.created_at)} | Status: ${e.status.toUpperCase()}</p>
+                    <h1>${e.application_no}</h1>
+                    <p>${e.applicant ? e.applicant.name : "Unknown Applicant"}</p>
                 </div>
-                <div class="header-actions">
+                <div style="display: flex; gap: 10px; align-items: center;">
                     ${renderActionButtons(e)}
-                    <a href="/block-detail.html?block=${blockId}" class="btn btn-back">← Back to List</a>
+                    <a href="/block-detail.html?block=${blockId}" class="btn-back">← Back to List</a>
                 </div>
             </div>
 
-            <!-- Section 1: General Information -->
-            <h3 class="section-title">Application Details</h3>
-            <div class="table-container">
-                <table>
-                    <tbody>
-                        <tr>
-                            <th style="width: 20%;">Applicant Name</th>
-                            <td style="text-align: left; font-weight: bold;">${e.applicant?.name || "—"}</td>
-                            <th style="width: 20%;">Contact</th>
-                            <td style="text-align: left;">${e.applicant?.contact || "—"}</td>
-                        </tr>
-                        <tr>
-                            <th>Division</th>
-                            <td style="text-align: left;">${e.division || "—"}</td>
-                            <th>Sub-station</th>
-                            <td style="text-align: left;">${e.substation || "—"}</td>
-                        </tr>
-                        <tr>
-                            <th>Type</th>
-                            <td style="text-align: left;">${e.applicant?.type || "—"}</td>
-                            <th>Address</th>
-                            <td style="text-align: left;">${e.applicant?.address || "—"}</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="top-ribbon">
+                <div class="ribbon-item">
+                    <div class="ribbon-icon">📍</div>
+                    <div class="ribbon-text">
+                        <div class="val">${e.division || "N/A"} ${e.substation ? `<br><span style="font-size:12px; color:var(--text-muted);">${e.substation}</span>` : ""}</div>
+                        <div class="lbl">Division / Sub-station</div>
+                    </div>
+                </div>
+                <div class="ribbon-item">
+                    <div class="ribbon-icon">📅</div>
+                    <div class="ribbon-text">
+                        <div class="val">${e.application_date || "—"}</div>
+                        <div class="lbl">Start Date</div>
+                    </div>
+                </div>
+                <div class="ribbon-item">
+                    <div class="ribbon-icon">👤</div>
+                    <div class="ribbon-text">
+                        <div class="val">${e.assigned_to || "Unassigned"}</div>
+                        <div class="lbl">Assigned To</div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Section 2: Proposed Demand Table -->
-            <h3 class="section-title">Proposed Contract Demand (KVA)</h3>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>1st Year</th>
-                            <th>2nd Year</th>
-                            <th>3rd Year</th>
-                            <th>4th Year</th>
-                            <th>5th Year</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            ${demandFields.map(d => `<td style="font-weight: bold; font-size: 16px; color: var(--primary);">${d || "—"}</td>`).join("")}
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="card">
+                <h3 style="font-size: 20px; font-weight: 800; margin-top: 0; margin-bottom: 24px;">Application Details</h3>
+                <div class="data-grid">
+                    <div class="data-group full">
+                        <div class="data-label">Applicant Name</div>
+                        <div class="data-value large">${e.applicant ? e.applicant.name : "—"}</div>
+                    </div>
+                    <div class="data-group full">
+                        <div class="data-label">Address</div>
+                        <div class="data-value">${e.applicant ? (e.applicant.address || "—") : "—"}</div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="data-grid">
+                    <div class="data-group">
+                        <div class="data-label">Contact</div>
+                        <div class="data-value">${e.applicant ? (e.applicant.contact || "—") : "—"}</div>
+                    </div>
+                    <div class="data-group">
+                        <div class="data-label">Voltage Class</div>
+                        <div class="data-value">${e.applicant ? (e.applicant.type || "—") : "—"}</div>
+                    </div>
+                    <div class="data-group">
+                        <div class="data-label">Connection Type</div>
+                        <div class="data-value">${e.connection_type || "—"}</div>
+                    </div>
+                    <div class="data-group full">
+                        <div class="data-label">Proposed Demand (1st - 5th Yr)</div>
+                        <div class="data-value">
+                            ${e.proposed_demand_1st || "—"} / ${e.proposed_demand_2nd || "—"} / ${e.proposed_demand_3rd || "—"} / ${e.proposed_demand_4th || "—"} / ${e.proposed_demand_5th || "—"} KVA
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Section 3: Workflow Progress Table -->
-            <h3 class="section-title">Workflow Progress</h3>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 10%;">Stage</th>
-                            <th style="text-align: left;">Stage Name</th>
-                            <th>Status</th>
-                            <th>Completed By</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${(e.stages || []).map(s => {
-                            let statusHtml = "";
-                            if (s.status === "completed") statusHtml = `<span class="stage-done">✓ Completed</span>`;
-                            else if (s.status === "in_progress") statusHtml = `<span class="stage-active">⏳ In Progress</span>`;
-                            else statusHtml = `<span class="stage-pending">Pending</span>`;
-
-                            return `
-                                <tr>
-                                    <td class="bg-light" style="font-weight: bold;">${s.stage_no}</td>
-                                    <td style="text-align: left; font-weight: bold;">${escapeHtml(s.name)}</td>
-                                    <td>${statusHtml}</td>
-                                    <td>${s.completed_by ? escapeHtml(s.completed_by) : "—"}</td>
-                                    <td>${s.completed_at ? formatDate(s.completed_at) : "—"}</td>
-                                </tr>
-                            `;
-                        }).join("")}
-                    </tbody>
-                </table>
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="font-size: 20px; font-weight: 800; margin: 0;">Workflow & SLA Tracker</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="workflow-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Stage</th>
+                                <th>Workflow Step</th>
+                                <th>SLA Status</th>
+                                <th>Completed By</th>
+                                <th>Dates</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${stageRows}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
@@ -291,141 +381,185 @@
     function renderActionButtons(app) {
         const user = getCurrentUser();
         let html = "";
-
-        if (user.role === "admin" || user.role === "super_admin") {
-            html += `<button class="btn btn-delete" onclick="deleteApplication()">Delete</button>`;
-            html += `<button class="btn btn-edit" onclick="openEditModal()">Edit Details</button>`;
-        } 
-        else if (user.role === "manager") {
-            const editCount = app.edit_count || 0;
-            if (editCount < 2) {
-                html += `<button class="btn btn-edit" onclick="openEditModal()">Edit Details</button>`;
-            }
+        if (user.role === "admin" || user.role === "super_admin" || user.role === "commerce_manager") {
+            html += `<button class="btn-primary" onclick="openEditModal()">Edit Details</button>`;
         }
-
         return html;
     }
 
-    // --- Cascading Dropdown Logic for Edit Modal ---
-    function populateZones() {
+    let activeStageNo = null;
+    function openDrawer(stageNo, stageName, status) {
+        activeStageNo = stageNo;
+        document.getElementById('drawerTitle').innerText = `${stageNo}. ${stageName}`;
+        
+        const drawerBody = document.getElementById('drawerFormBody');
+        const submitBtn = document.getElementById('submitStageBtn');
+        
+        submitBtn.innerHTML = "✅ Mark Stage Complete";
+        submitBtn.style.background = "var(--success)";
+        submitBtn.style.boxShadow = "0 4px 12px rgba(16,185,129,0.3)";
+
+        let formHtml = "";
+
+        if (stageNo === 1) {
+            formHtml = `
+                <div class="input-group">
+                    <label>Document Verification Remarks</label>
+                    <textarea id="stageRemarks" class="input-field" placeholder="E.g., All documents verified and found correct..." rows="3"></textarea>
+                </div>
+            `;
+        } 
+        else if (stageNo === 2) {
+            formHtml = `
+                <div class="input-group">
+                    <label>E-Office Note Ref No *</label>
+                    <input type="text" id="eOfficeNo" class="input-field" placeholder="e.g. E-Office/2026/XYZ" required />
+                </div>
+                <div class="input-group">
+                    <label>E-Office Date *</label>
+                    <input type="date" id="eOfficeDate" class="input-field" required />
+                </div>
+                <div class="input-group">
+                    <label>Inspection Report Received as on *</label>
+                    <input type="date" id="inspectionDate" class="input-field" required />
+                </div>
+                <div class="input-group">
+                    <label>Technically Feasible? *</label>
+                    <select id="isFeasible" class="input-field" onchange="toggleFeasibility(this.value)">
+                        <option value="true">✅ Yes, Feasible</option>
+                        <option value="false">❌ No, Not Feasible</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Remarks</label>
+                    <input type="text" id="stageRemarks" class="input-field" placeholder="Optional remarks..." />
+                </div>
+            `;
+        }
+        else if (stageNo === 3) {
+            formHtml = `
+                <div class="input-group">
+                    <label>Quotation Amount (₹) *</label>
+                    <input type="number" id="quotationAmount" class="input-field" placeholder="e.g. 50000" required />
+                </div>
+                <div class="input-group">
+                    <label>Quotation Served Date *</label>
+                    <input type="date" id="quotationDate" class="input-field" required />
+                </div>
+            `;
+        }
+        else if (stageNo === 4) {
+            formHtml = `
+                <div class="input-group">
+                    <label>Amount Deposited (₹) *</label>
+                    <input type="number" id="depositAmount" class="input-field" placeholder="e.g. 50000" required />
+                </div>
+                <div class="input-group">
+                    <label>Deposit Date *</label>
+                    <input type="date" id="depositDate" class="input-field" required />
+                </div>
+            `;
+        }
+        else {
+            formHtml = `
+                <div class="input-group">
+                    <label>Remarks</label>
+                    <input type="text" id="stageRemarks" class="input-field" placeholder="Add a note..." />
+                </div>
+            `;
+        }
+
+        drawerBody.innerHTML = formHtml;
+        document.getElementById('drawerOverlay').classList.add('show');
+    }
+
+    function toggleFeasibility(isFeasible) {
+        const btn = document.getElementById('submitStageBtn');
+        if (isFeasible === "false") {
+            btn.innerHTML = "❌ Mark Not Feasible (Reject)";
+            btn.style.background = "var(--danger)";
+            btn.style.boxShadow = "0 4px 12px rgba(239,68,68,0.3)";
+        } else {
+            btn.innerHTML = "✅ Mark Stage Complete";
+            btn.style.background = "var(--success)";
+            btn.style.boxShadow = "0 4px 12px rgba(16,185,129,0.3)";
+        }
+    }
+
+    function closeDrawer() {
+        document.getElementById('drawerOverlay').classList.remove('show');
+    }
+
+    async function markComplete() {
+        const payload = { stage_no: activeStageNo, status: "completed" };
+
+        if (activeStageNo === 1) {
+            payload.remarks = document.getElementById("stageRemarks")?.value || "";
+        } 
+        else if (activeStageNo === 2) {
+            payload.ref_no = document.getElementById("eOfficeNo").value;
+            payload.eoffice_date = document.getElementById("eOfficeDate").value;
+            payload.inspection_date = document.getElementById("inspectionDate").value;
+            payload.is_feasible = document.getElementById("isFeasible").value === "true";
+            payload.remarks = document.getElementById("stageRemarks")?.value || "";
+            
+            if (!payload.ref_no || !payload.eoffice_date || !payload.inspection_date) {
+                return showToast("Please fill all required date fields", "error");
+            }
+        }
+        else if (activeStageNo === 3) {
+            payload.quotation_amount = document.getElementById("quotationAmount").value;
+            payload.actual_date = document.getElementById("quotationDate").value;
+            if (!payload.quotation_amount || !payload.actual_date) return showToast("Please fill Quotation Amount and Date", "error");
+        }
+        else if (activeStageNo === 4) {
+            payload.deposit_amount = document.getElementById("depositAmount").value;
+            payload.actual_date = document.getElementById("depositDate").value;
+            if (!payload.deposit_amount || !payload.actual_date) return showToast("Please fill Deposit Amount and Date", "error");
+        }
+        else {
+            payload.remarks = document.getElementById("stageRemarks")?.value || "";
+        }
+
+        try {
+            await blockApi.updateStage(appId, payload);
+            showToast("Stage completed ✅", "success");
+            closeDrawer();
+            loadData();
+        } catch (e) {
+            showToast(e.message, "error");
+        }
+    }
+
+    // --- Edit Modal Logic (Base Details) ---
+    function openEditModal() {
         const zoneSelect = document.getElementById("editZone");
         zoneSelect.innerHTML = `<option value="" disabled selected>Select Zone...</option>`;
         Object.keys(orgData.zones).forEach(z => {
             zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
         });
-    }
-
-    function updateRegions() {
-        const zone = document.getElementById("editZone").value;
-        const regSelect = document.getElementById("editRegion");
-        regSelect.innerHTML = `<option value="" disabled selected>Select Region...</option>`;
-        
-        if (zone && orgData.zones[zone]) {
-            Object.keys(orgData.zones[zone].regions).forEach(r => {
-                regSelect.innerHTML += `<option value="${r}">${r}</option>`;
-            });
-            regSelect.disabled = false;
-        }
-        
-        document.getElementById("editDivision").innerHTML = `<option value="">Select Region first...</option>`;
-        document.getElementById("editDivision").disabled = true;
-        document.getElementById("editSubstation").innerHTML = `<option value="">Select Division first...</option>`;
-        document.getElementById("editSubstation").disabled = true;
-    }
-
-    function updateDivisions() {
-        const zone = document.getElementById("editZone").value;
-        const region = document.getElementById("editRegion").value;
-        const divSelect = document.getElementById("editDivision");
-        
-        divSelect.innerHTML = `<option value="" disabled selected>Select Division...</option>`;
-        
-        if (zone && region && orgData.zones[zone].regions[region]) {
-            Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
-                divSelect.innerHTML += `<option value="${d}">${d}</option>`;
-            });
-            divSelect.disabled = false;
-        }
-
-        document.getElementById("editSubstation").innerHTML = `<option value="">Select Division first...</option>`;
-        document.getElementById("editSubstation").disabled = true;
-    }
-
-    function updateSubStations() {
-        const zone = document.getElementById("editZone").value;
-        const region = document.getElementById("editRegion").value;
-        const division = document.getElementById("editDivision").value;
-        const subSelect = document.getElementById("editSubstation");
-        
-        subSelect.innerHTML = `<option value="" disabled selected>Select Sub-station...</option>`;
-        
-        if (zone && region && division && orgData.zones[zone].regions[region][division]) {
-            const divData = orgData.zones[zone].regions[region][division];
-            if (divData["Sub-stations"]) {
-                const subData = divData["Sub-stations"];
-                if (Array.isArray(subData)) {
-                    subData.forEach(sub => {
-                        subSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
-                    });
-                } else if (typeof subData === 'object') {
-                    Object.values(subData).forEach(sub => {
-                        subSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
-                    });
-                }
-            } 
-            subSelect.disabled = false;
-        }
-    }
-
-    function toggleCustomType() {
-        const typeSelect = document.getElementById("editType");
-        const customGroup = document.getElementById("customTypeGroup");
-        if (typeSelect.value === "Under Specify") {
-            customGroup.style.display = "block";
-        } else {
-            customGroup.style.display = "none";
-        }
-    }
-
-    function openEditModal() {
-        populateZones();
 
         if (currentApp.division) {
-            let foundZone = null, foundRegion = null;
             for (const z in orgData.zones) {
                 for (const r in orgData.zones[z].regions) {
                     if (orgData.zones[z].regions[r][currentApp.division]) {
-                        foundZone = z; foundRegion = r; break;
+                        document.getElementById("editZone").value = z;
+                        updateRegions();
+                        document.getElementById("editRegion").value = r;
+                        updateDivisions();
+                        document.getElementById("editDivision").value = currentApp.division;
+                        updateSubStations();
+                        if (currentApp.substation) document.getElementById("editSubstation").value = currentApp.substation;
+                        break;
                     }
                 }
-                if (foundZone) break;
-            }
-
-            if (foundZone && foundRegion) {
-                document.getElementById("editZone").value = foundZone;
-                updateRegions();
-                document.getElementById("editRegion").value = foundRegion;
-                updateDivisions();
-                document.getElementById("editDivision").value = currentApp.division;
-                updateSubStations();
-                if (currentApp.substation) {
-                    document.getElementById("editSubstation").value = currentApp.substation;
-                }
             }
         }
-        
-        const currentType = currentApp.applicant?.type || "LT";
-        const standardTypes = ["LT", "11 KV HT", "33 KV HT", "SOLAR", "PROCEDURE-B"];
-        if (standardTypes.includes(currentType)) {
-            document.getElementById("editType").value = currentType;
-            document.getElementById("customTypeGroup").style.display = "none";
-        } else {
-            document.getElementById("editType").value = "Under Specify";
-            document.getElementById("customTypeGroup").style.display = "block";
-            document.getElementById("editCustomType").value = currentType;
-        }
 
+        document.getElementById("editVoltageClass").value = currentApp.applicant?.type || "LT";
+        document.getElementById("editConnectionType").value = currentApp.connection_type || "Procedure-A";
         document.getElementById("editAddress").value = currentApp.applicant?.address || "";
+        
         document.getElementById("editDemand1st").value = currentApp.proposed_demand_1st || "";
         document.getElementById("editDemand2nd").value = currentApp.proposed_demand_2nd || "";
         document.getElementById("editDemand3rd").value = currentApp.proposed_demand_3rd || "";
@@ -435,28 +569,19 @@
         document.getElementById("editModal").classList.add("show");
     }
 
-    function closeEditModal() {
-        document.getElementById("editModal").classList.remove("show");
-    }
+    function closeEditModal() { document.getElementById("editModal").classList.remove("show"); }
 
     async function saveEdit() {
-        const newSubstation = document.getElementById("editSubstation").value;
         const newDivision = document.getElementById("editDivision").value;
-
         if (!newDivision) { showToast("Please select a Division", "error"); return; }
-
-        let newType = document.getElementById("editType").value;
-        if (newType === "Under Specify") {
-            newType = document.getElementById("editCustomType").value.trim();
-            if (!newType) { showToast("Please enter a custom type.", "error"); return; }
-        }
 
         const payload = {
             division: newDivision,
-            substation: newSubstation,
+            substation: document.getElementById("editSubstation").value,
+            connection_type: document.getElementById("editConnectionType").value,
             applicant: {
                 ...currentApp.applicant,
-                type: newType,
+                type: document.getElementById("editVoltageClass").value,
                 address: document.getElementById("editAddress").value
             },
             proposed_demand_1st: document.getElementById("editDemand1st").value,
@@ -476,20 +601,38 @@
         }
     }
 
-    async function deleteApplication() {
-        const confirm = await showConfirm({
-            title: "Delete Application",
-            message: "Are you sure you want to delete this application permanently?",
-            confirmText: "Yes, Delete"
-        });
-        if (!confirm) return;
-
-        try {
-            await blockApi.delete(appId);
-            showToast("Application deleted", "success");
-            setTimeout(() => { window.location.href = `/block-detail.html?block=${blockId}`; }, 1000);
-        } catch (e) {
-            showToast(e.message, "error");
+    // Dropdown cascading logic
+    function updateRegions() {
+        const zone = document.getElementById("editZone").value;
+        const regSelect = document.getElementById("editRegion");
+        regSelect.innerHTML = `<option value="" disabled selected>Select Region...</option>`;
+        if (zone && orgData.zones[zone]) {
+            Object.keys(orgData.zones[zone].regions).forEach(r => { regSelect.innerHTML += `<option value="${r}">${r}</option>`; });
+            regSelect.disabled = false;
+        }
+    }
+    function updateDivisions() {
+        const zone = document.getElementById("editZone").value;
+        const region = document.getElementById("editRegion").value;
+        const divSelect = document.getElementById("editDivision");
+        divSelect.innerHTML = `<option value="" disabled selected>Select Division...</option>`;
+        if (zone && region && orgData.zones[zone].regions[region]) {
+            Object.keys(orgData.zones[zone].regions[region]).forEach(d => { divSelect.innerHTML += `<option value="${d}">${d}</option>`; });
+            divSelect.disabled = false;
+        }
+    }
+    function updateSubStations() {
+        const zone = document.getElementById("editZone").value;
+        const region = document.getElementById("editRegion").value;
+        const division = document.getElementById("editDivision").value;
+        const subSelect = document.getElementById("editSubstation");
+        subSelect.innerHTML = `<option value="" disabled selected>Select Sub-station...</option>`;
+        if (zone && region && division && orgData.zones[zone].regions[region][division]) {
+            const divData = orgData.zones[zone].regions[region][division];
+            if (divData["Sub-stations"]) {
+                Object.values(divData["Sub-stations"]).forEach(sub => { subSelect.innerHTML += `<option value="${sub}">${sub}</option>`; });
+            }
+            subSelect.disabled = false;
         }
     }
 

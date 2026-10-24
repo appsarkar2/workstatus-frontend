@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#1e40af" />
   <title>WorkStatus — Home</title>
   <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link rel="stylesheet" href="/css/base.css" />
   <link rel="stylesheet" href="/css/layout.css" />
   <link rel="stylesheet" href="/css/components.css" />
@@ -27,6 +28,7 @@
   <script>
     // ── Auth guard already ran (auth-guard.js) ──
     const user = getCurrentUser();
+    const isHR = (user.username || "").toLowerCase() === "dro_h&r" || user.role === "hr_user";
 
     // ── Compose the page ──
     const app = document.getElementById("app");
@@ -52,14 +54,6 @@
 
       ${searchBar("searchInput", "Search blocks...")}
 
-      <section class="banner">
-        <div class="banner-text">
-          <div class="banner-title">Quick Actions</div>
-          <div class="banner-sub">Create a task or view today's work</div>
-        </div>
-        <button class="banner-btn" onclick="comingSoon('New Task')">New Task</button>
-      </section>
-
       <section class="blocks-section">
         <h2 class="section-title">My Blocks</h2>
         <div class="block-grid" id="blockGrid">
@@ -74,7 +68,13 @@
     async function loadBlocks() {
       try {
         const data = await RegistryAPI.listBlocks();
-        const blocks = data.blocks || [];
+        let blocks = data.blocks || [];
+
+        // HR FILTER: Hide everything except Bulk Connection for HR Users
+        if (isHR) {
+            blocks = blocks.filter(b => b.id === "bulk_connection");
+        }
+
         const grid = document.getElementById("blockGrid");
 
         if (!blocks.length) {

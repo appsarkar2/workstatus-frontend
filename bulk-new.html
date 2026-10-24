@@ -4,174 +4,414 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>New Bulk Connection — WorkStatus</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/base.css" />
   <link rel="stylesheet" href="/css/layout.css" />
   <link rel="stylesheet" href="/css/components.css" />
-  <link rel="stylesheet" href="/css/modals.css" />
-  <link rel="stylesheet" href="/css/pages.css" />
   
   <style>
-    :root {
-        --bg-base: #f0f4f8;
-        --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
-        --glass-bg: rgba(255, 255, 255, 0.85);
-        --glass-border: rgba(255, 255, 255, 0.6);
-        --glass-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
-        --text-main: #0f172a;
-        --text-muted: #64748b;
-        --primary: #3b82f6;
-        --primary-light: #eff6ff;
-        --border: #cbd5e1;
+    html, body {
+      background-color: #e2e8f0 !important;
+      margin: 0;
+      padding: 0;
     }
 
-    * { box-sizing: border-box; }
-    body { background: var(--bg-gradient); font-family: 'Inter', -apple-system, sans-serif; margin: 0; min-height: 100vh; -webkit-font-smoothing: antialiased; }
-    .app-container { max-width: 700px; margin: 0 auto; padding: 30px 20px; }
+    #bulk-new-page {
+      font-family: 'Inter', sans-serif;
+      color: #0f172a;
+      min-height: 100vh;
+      display: block;
+      background-color: #e2e8f0;
+    }
 
-    /* Header */
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
-    .page-title h1 { font-size: 28px; font-weight: 800; color: var(--text-main); margin: 0 0 6px 0; letter-spacing: -0.5px; }
-    .page-title p { font-size: 15px; color: var(--text-muted); margin: 0; font-weight: 500; }
+    /* Top Header */
+    #bulk-new-page .app-header {
+      background: #ffffff !important;
+      padding: 16px 30px;
+      border-bottom: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #bulk-new-page .btn-back { 
+      background: none; border: none; font-size: 20px; cursor: pointer; 
+      color: #64748b; display: flex; align-items: center; justify-content: center; 
+      width: 40px; height: 40px; border-radius: 50%; transition: 0.2s; 
+      margin-right: 15px;
+    }
+    #bulk-new-page .btn-back:hover { background: #f1f5f9; color: #0f172a; }
     
-    .btn-back { background: white; color: var(--text-main); border: 1px solid var(--border); padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; }
-    .btn-back:hover { background: var(--bg-base); }
+    #bulk-new-page .page-title h1 { 
+      font-size: 22px; font-weight: 800; margin: 0; color: #2563eb; 
+      letter-spacing: -0.5px;
+    }
+    
+    /* Main Container */
+    #bulk-new-page .form-container { 
+      max-width: 900px; 
+      margin: 30px auto; 
+      padding: 0 20px 60px 20px; 
+    }
+    
+    /* Form Cards */
+    #bulk-new-page .form-card { 
+      background: #ffffff; 
+      border-radius: 12px; 
+      border: 1px solid #cbd5e1; 
+      box-shadow: 0 4px 10px -2px rgba(0,0,0,0.06);
+      padding: 30px; 
+      margin-bottom: 24px; 
+    }
+    
+    #bulk-new-page .section-title { 
+      font-size: 16px; font-weight: 800; color: #0f172a; 
+      margin-top: 0; margin-bottom: 24px; 
+      display: flex; align-items: center; gap: 8px; 
+      border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; 
+    }
+    
+    /* Form Fields */
+    #bulk-new-page .form-group { margin-bottom: 20px; }
+    #bulk-new-page .form-group label { 
+      display: block; font-size: 13px; font-weight: 700; 
+      color: #334155; margin-bottom: 8px; 
+    }
+    #bulk-new-page .form-control { 
+      width: 100%; padding: 12px 14px; 
+      border: 1px solid #cbd5e1; border-radius: 8px; 
+      font-size: 14px; font-family: 'Inter', sans-serif; 
+      color: #0f172a; transition: 0.2s; background: #fff; 
+      box-sizing: border-box; 
+    }
+    #bulk-new-page .form-control:focus { 
+      outline: none; border-color: #2563eb; 
+      box-shadow: 0 0 0 3px #eff6ff; 
+    }
+    #bulk-new-page .form-control:disabled { 
+      background: #f8fafc; color: #94a3b8; cursor: not-allowed; 
+    }
+    #bulk-new-page .form-control::placeholder { color: #94a3b8; }
+    
+    /* Grid Layouts */
+    #bulk-new-page .row { display: flex; gap: 20px; }
+    #bulk-new-page .col { flex: 1; min-width: 0; }
+    #bulk-new-page .demand-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
 
-    /* Glass Card */
-    .card { background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px; border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); }
+    /* Form Actions */
+    #bulk-new-page .form-actions { 
+      display: flex; justify-content: flex-end; gap: 16px; margin-top: 30px; 
+    }
+    #bulk-new-page .btn { 
+      padding: 12px 24px; border-radius: 8px; font-weight: 700; 
+      font-size: 14px; cursor: pointer; transition: 0.2s; border: none; 
+    }
+    #bulk-new-page .btn-cancel { 
+      background: white; color: #0f172a; border: 1px solid #cbd5e1; 
+    }
+    #bulk-new-page .btn-cancel:hover { background: #f8fafc; }
+    #bulk-new-page .btn-submit { 
+      background: #2563eb; color: white; 
+      box-shadow: 0 4px 6px -1px rgba(37,99,235,0.2); 
+    }
+    #bulk-new-page .btn-submit:hover { background: #1d4ed8; }
 
-    .input-group { margin-bottom: 24px; }
-    .input-group label { display: block; font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; }
-    .input-field { width: 100%; padding: 16px; border: 2px solid var(--border); border-radius: 12px; background: #f8fafc; font-size: 15px; font-weight: 500; color: var(--text-main); transition: all 0.2s; font-family: 'Inter', sans-serif; }
-    .input-field:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px var(--primary-light); }
-
-    .form-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 30px; }
-    .btn-secondary { background: #f1f5f9; color: var(--text-main); border: none; padding: 16px 32px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.2s; }
-    .btn-secondary:hover { background: #e2e8f0; }
-    .btn-primary { background: var(--text-main); color: white; border: none; padding: 16px 40px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2); transition: 0.2s; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(15, 23, 42, 0.3); }
+    @media (max-width: 768px) {
+      #bulk-new-page .row { flex-direction: column; gap: 0; }
+      #bulk-new-page .demand-grid { grid-template-columns: 1fr 1fr; }
+      #bulk-new-page .form-actions { flex-direction: column; }
+      #bulk-new-page .btn { width: 100%; }
+    }
   </style>
 </head>
-<body>
+<body style="background-color: #e2e8f0 !important;">
 
-<div class="app-container" id="app">
-    <!-- JS will render form here -->
-</div>
+  <div id="bulk-new-page">
+    
+    <header class="app-header">
+      <button class="btn-back" onclick="window.location.href='/block-detail.html?block=bulk_connection'">←</button>
+      <div class="page-title">
+        <h1>New Bulk Connection Application</h1>
+      </div>
+    </header>
+
+    <div class="form-container">
+      <form id="newAppForm" onsubmit="submitForm(event)">
+        
+        <!-- Section 1: Applicant Information -->
+        <div class="form-card">
+          <h2 class="section-title">👤 Applicant Information</h2>
+          
+          <div class="form-group">
+            <label>Applicant Name *</label>
+            <input type="text" id="appName" class="form-control" placeholder="Enter full name" required />
+          </div>
+
+          <div class="row">
+            <div class="form-group col">
+              <label>Contact Number</label>
+              <input type="text" id="appContact" class="form-control" placeholder="e.g. 9876543210" />
+            </div>
+            <div class="form-group col">
+              <label>Application Date</label>
+              <input type="date" id="appDate" class="form-control" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Full Address</label>
+            <input type="text" id="appAddress" class="form-control" placeholder="Enter full postal address" />
+          </div>
+        </div>
+
+        <!-- Section 2: Location & Technical Details -->
+        <div class="form-card">
+          <h2 class="section-title">📍 Location & Technical Details</h2>
+
+          <div class="row">
+            <div class="form-group col">
+              <label>Zone *</label>
+              <select id="zone" class="form-control" onchange="updateRegions()" required>
+                <option value="">Select Zone...</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label>Region *</label>
+              <select id="region" class="form-control" onchange="updateDivisions()" disabled required>
+                <option value="">Select Zone first...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group col">
+              <label>Division *</label>
+              <select id="division" class="form-control" onchange="updateSubStations()" disabled required>
+                <option value="">Select Region first...</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label>Sub-station (Optional)</label>
+              <select id="substation" class="form-control" disabled>
+                <option value="">Select Division first...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group col">
+              <label>Connection Type *</label>
+              <select id="connectionType" class="form-control" required>
+                <option value="Procedure-A">Procedure-A</option>
+                <option value="Procedure-B">Procedure-B</option>
+                <option value="Procedure-C">Procedure-C</option>
+                <option value="Procedure-D">Procedure-D</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label>Voltage Class *</label>
+              <select id="voltageClass" class="form-control" required>
+                <option value="LT">LT</option>
+                <option value="11 KV HT">11 KV HT</option>
+                <option value="33 KV HT">33 KV HT</option>
+                <option value="Under Specify">Under Specify</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Proposed Demand -->
+        <div class="form-card">
+          <h2 class="section-title">⚡ Proposed Contract Demand (KVA)</h2>
+          <div class="demand-grid">
+            <div class="form-group">
+              <label>1st Year</label>
+              <input type="number" id="demand1" class="form-control" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label>2nd Year</label>
+              <input type="number" id="demand2" class="form-control" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label>3rd Year</label>
+              <input type="number" id="demand3" class="form-control" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label>4th Year</label>
+              <input type="number" id="demand4" class="form-control" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label>5th Year</label>
+              <input type="number" id="demand5" class="form-control" placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Assignment -->
+        <div class="form-card">
+          <h2 class="section-title">👥 Assignment</h2>
+          
+          <div class="form-group">
+            <label>Assign To Specific User (Optional)</label>
+            <select id="assignedTo" class="form-control">
+              <option value="">Leave blank to assign to HR Department Pool</option>
+              <option value="dro_h&r">dro_h&r (HR Manager)</option>
+              <option value="commerce_manager_1">commerce_manager_1 (Commerce 1)</option>
+              <option value="commerce_manager_2">commerce_manager_2 (Commerce 2)</option>
+              <option value="commerce_manager_3">commerce_manager_3 (Commerce 3)</option>
+              <option value="dro_finance">dro_finance (Finance)</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-cancel" onclick="window.location.href='/block-detail.html?block=bulk_connection'">Cancel</button>
+            <button type="submit" class="btn btn-submit" id="submitBtn">Create Application</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
 
   <script src="/js/core/utils.js"></script>
   <script src="/js/core/auth-guard.js"></script>
   <script src="/js/core/api.js"></script>
   <script src="/js/ui/modals.js"></script>
-  <script src="/js/ui/components.js"></script>
 
   <script>
-    const params  = new URLSearchParams(window.location.search);
-    const blockId = params.get("block") || "bulk_connection";
-    const blockApi = BlockAPI(blockId);
-    const app = document.getElementById("app");
+    document.addEventListener("DOMContentLoaded", () => {
+        document.body.style.backgroundColor = "#e2e8f0";
+        document.body.style.background = "#e2e8f0";
+    });
 
-    // The division user is allowed to create applications, but only with basic info.
-    // The manager/admin will fill the rest later.
-    
-    function renderForm() {
-      const today = new Date().toISOString().split("T")[0];
+    let orgData = {};
 
-      app.innerHTML = `
-        <!-- Header -->
-        <div class="page-header">
-            <div class="page-title">
-                <h1>New Bulk Connection</h1>
-                <p>Create a new application</p>
-            </div>
-            <a href="/block-detail.html?block=${blockId}" class="btn-back">← Back to List</a>
-        </div>
-
-        <!-- Main Form Card -->
-        <div class="card">
-            <h3 style="font-size: 18px; font-weight: 800; margin-top: 0; margin-bottom: 24px;">👤 Applicant Information</h3>
-            
-            <div class="input-group">
-                <label>Applicant Name *</label>
-                <input id="applicant_name" type="text" class="input-field" placeholder="Full name" required />
-            </div>
-
-            <div class="input-group">
-                <label>Contact Number</label>
-                <input id="applicant_contact" type="tel" class="input-field" placeholder="e.g. 9876543210" />
-            </div>
-
-            <div class="input-group">
-                <label>Address</label>
-                <input id="applicant_address" type="text" class="input-field" placeholder="Full address" />
-            </div>
-
-            <div class="input-group">
-                <label>Application Date</label>
-                <input id="application_date" type="date" class="input-field" value="${today}" />
-            </div>
-
-            <div style="background: #eff6ff; padding: 16px; border-radius: 12px; margin-top: 30px; border: 1px solid #bfdbfe;">
-                <p style="margin: 0; font-size: 13px; color: #1e40af; font-weight: 500;">
-                    ℹ️ <strong>Note:</strong> Please provide the basic information. Other technical details (Sub-station, Demand, etc.) will be updated by the Manager in the next step.
-                </p>
-            </div>
-
-            <!-- Actions -->
-            <div class="form-actions" style="border-top: none;">
-                <button class="btn-secondary" onclick="cancelForm()">Cancel</button>
-                <button class="btn-primary" id="submitBtn" onclick="submitForm()">Create Application</button>
-            </div>
-        </div>
-      `;
-
-      document.getElementById("applicant_name").focus();
-    }
-
-    async function submitForm() {
-      const $name  = document.getElementById("applicant_name");
-      const $btn   = document.getElementById("submitBtn");
-
-      if (!$name.value.trim()) { showToast("Applicant Name is required", "error"); $name.focus(); return; }
-
-      // Build the minimal payload
-      const payload = {
-        applicant: {
-          name:  $name.value.trim(),
-          contact: document.getElementById("applicant_contact").value.trim(),
-          address: document.getElementById("applicant_address").value.trim(),
-          type:    "LT", // Default type, will be updated by Manager
-          email:   "",   // Not needed for now
-        },
-        application_date: document.getElementById("application_date").value || null,
-        // All other fields are left blank for the Manager to fill
-        division: "",
-        substation: "",
-        proposed_demand_1st: "",
-        proposed_demand_2nd: "",
-        proposed_demand_3rd: "",
-        proposed_demand_4th: "",
-        proposed_demand_5th: ""
-      };
-
-      $btn.disabled = true;
-      $btn.textContent = "Creating...";
+    document.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("appDate").value = new Date().toISOString().split("T")[0];
 
       try {
-        const result = await blockApi.create(payload);
-        showToast("Application created ✅", "success");
-        setTimeout(() => { window.location.href = `/application-detail.html?block=${blockId}&id=${result.id}`; }, 500);
+        orgData = await apiFetch("/api/org-structure");
+        const zoneSelect = document.getElementById("zone");
+        if (orgData.zones) {
+          Object.keys(orgData.zones).forEach(z => {
+            zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+          });
+        }
       } catch (e) {
-        showToast(e.message, "error");
-        $btn.disabled = false;
-        $btn.textContent = "Create Application";
+        showToast("Failed to load org structure", "error");
+      }
+    });
+
+    function updateRegions() {
+      const zone = document.getElementById("zone").value;
+      const regSelect = document.getElementById("region");
+      const divSelect = document.getElementById("division");
+      const subSelect = document.getElementById("substation");
+      
+      regSelect.innerHTML = `<option value="">Select Region...</option>`;
+      divSelect.innerHTML = `<option value="">Select Region first...</option>`;
+      subSelect.innerHTML = `<option value="">Select Division first...</option>`;
+      divSelect.disabled = true;
+      subSelect.disabled = true;
+
+      if (zone && orgData.zones && orgData.zones[zone]) {
+        Object.keys(orgData.zones[zone].regions).forEach(r => {
+          regSelect.innerHTML += `<option value="${r}">${r}</option>`;
+        });
+        regSelect.disabled = false;
+      } else {
+        regSelect.disabled = true;
       }
     }
 
-    function cancelForm() {
-      window.location.href = `/block-detail.html?block=${blockId}`;
+    function updateDivisions() {
+      const zone = document.getElementById("zone").value;
+      const region = document.getElementById("region").value;
+      const divSelect = document.getElementById("division");
+      const subSelect = document.getElementById("substation");
+
+      divSelect.innerHTML = `<option value="">Select Division...</option>`;
+      subSelect.innerHTML = `<option value="">Select Division first...</option>`;
+      subSelect.disabled = true;
+
+      if (zone && region && orgData.zones && orgData.zones[zone] && orgData.zones[zone].regions[region]) {
+        Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
+          divSelect.innerHTML += `<option value="${d}">${d}</option>`;
+        });
+        divSelect.disabled = false;
+      } else {
+        divSelect.disabled = true;
+      }
     }
 
-    renderForm();
+    function updateSubStations() {
+      const zone = document.getElementById("zone").value;
+      const region = document.getElementById("region").value;
+      const division = document.getElementById("division").value;
+      const subSelect = document.getElementById("substation");
+
+      subSelect.innerHTML = `<option value="">Select Sub-station...</option>`;
+
+      if (zone && region && division && orgData.zones && orgData.zones[zone] && orgData.zones[zone].regions[region] && orgData.zones[zone].regions[region][division]) {
+        const divData = orgData.zones[zone].regions[region][division];
+        if (divData["Sub-stations"]) {
+          Object.values(divData["Sub-stations"]).forEach(sub => {
+            subSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+          });
+        }
+        subSelect.disabled = false;
+      } else {
+        subSelect.disabled = true;
+      }
+    }
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      btn.innerText = "Creating...";
+      btn.disabled = true;
+
+      const payload = {
+        applicant: {
+          name: document.getElementById("appName").value,
+          contact: document.getElementById("appContact").value,
+          address: document.getElementById("appAddress").value,
+          type: document.getElementById("voltageClass").value
+        },
+        application_date: document.getElementById("appDate").value,
+        division: document.getElementById("division").value,
+        substation: document.getElementById("substation").value,
+        connection_type: document.getElementById("connectionType").value,
+        proposed_demand_1st: document.getElementById("demand1").value,
+        proposed_demand_2nd: document.getElementById("demand2").value,
+        proposed_demand_3rd: document.getElementById("demand3").value,
+        proposed_demand_4th: document.getElementById("demand4").value,
+        proposed_demand_5th: document.getElementById("demand5").value,
+        assigned_to: document.getElementById("assignedTo").value || null,
+        documents: {}
+      };
+
+      try {
+        const res = await BlockAPI("bulk_connection").create(payload);
+        
+        showToast("Application created successfully!", "success");
+        setTimeout(() => {
+          window.location.href = `/application-detail.html?block=bulk_connection&id=${res.id}`;
+        }, 1000);
+
+      } catch (error) {
+        showToast(error.message, "error");
+        btn.innerText = "Create Application";
+        btn.disabled = false;
+      }
+    }
   </script>
 </body>
 </html>
