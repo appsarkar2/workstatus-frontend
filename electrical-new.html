@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Electrical Scheme — WorkStatus</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  
+  <style>
+    html, body { background-color: #e2e8f0 !important; margin: 0; padding: 0; }
+    #elec-new-page { font-family: 'Inter', sans-serif; color: #0f172a; min-height: 100vh; background-color: #e2e8f0; display: block; }
+    
+    /* Top Header */
+    #elec-new-page .app-header { background: #ffffff !important; padding: 16px 30px; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
+    #elec-new-page .btn-back { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; transition: 0.2s; margin-right: 15px; }
+    #elec-new-page .btn-back:hover { background: #f1f5f9; color: #0f172a; }
+    #elec-new-page .page-title h1 { font-size: 22px; font-weight: 800; margin: 0; color: #2563eb; letter-spacing: -0.5px; }
+    
+    /* Form Layout */
+    #elec-new-page .form-container { max-width: 900px; margin: 30px auto; padding: 0 20px 60px 20px; }
+    #elec-new-page .form-card { background: #ffffff; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: 0 4px 10px -2px rgba(0,0,0,0.06); padding: 30px; margin-bottom: 24px; }
+    #elec-new-page .section-title { font-size: 15px; font-weight: 800; color: #2563eb; margin-top: 0; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    /* Form Fields */
+    #elec-new-page .form-group { margin-bottom: 20px; }
+    #elec-new-page .form-group label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; }
+    #elec-new-page .form-control { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; color: #0f172a; transition: 0.2s; background: #f8fafc; box-sizing: border-box; }
+    #elec-new-page .form-control:focus { outline: none; border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px #eff6ff; }
+    #elec-new-page .form-control:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+    
+    /* Grid Layouts */
+    #elec-new-page .row { display: flex; gap: 20px; }
+    #elec-new-page .col { flex: 1; min-width: 0; }
+    
+    /* Sticky Actions */
+    #elec-new-page .form-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 30px; padding: 20px; background: white; border-top: 1px solid #cbd5e1; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 12px 12px; }
+    #elec-new-page .btn { padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; border: none; }
+    #elec-new-page .btn-cancel { background: #f1f5f9; color: #475569; }
+    #elec-new-page .btn-submit { background: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.2); }
+    
+    @media (max-width: 768px) { #elec-new-page .row { flex-direction: column; gap: 0; } }
+  </style>
+</head>
+<body style="background-color: #e2e8f0 !important;">
+  <div id="elec-new-page">
+    
+    <header class="app-header">
+      <button class="btn-back" onclick="window.location.href='/electrical-dashboard.html'">←</button>
+      <div class="page-title"><h1>Add New Scheme</h1></div>
+    </header>
+
+    <div class="form-container">
+      <form id="newAppForm" onsubmit="submitForm(event)">
+        
+        <!-- GENERAL INFORMATION -->
+        <div class="form-card">
+          <h2 class="section-title">ℹ️ General Information</h2>
+          <div class="row">
+            <div class="form-group col">
+              <label>Region *</label>
+              <select id="region" class="form-control" onchange="updateDivisions()" required>
+                <option value="">Loading Regions...</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label>Division *</label>
+              <select id="division" class="form-control" disabled required>
+                <option value="">Select Region first...</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="form-group col">
+              <label>Scheme Head *</label>
+              <select id="schemeHead" class="form-control" required>
+                <option value="">Select Scheme Head...</option>
+                <option value="New SS">New SS</option>
+                <option value="Control Room Extension / Modification">Control Room Extension / Modification</option>
+                <option value="PTR Augmentation / New PTR">PTR Augmentation / New PTR</option>
+                <option value="33KV Second Source / Tapping Source">33KV Second Source / Tapping Source</option>
+                <option value="Augmentation of Conductor Size">Augmentation of Conductor Size</option>
+                <option value="Bifurcation of Feeders">Bifurcation of Feeders</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label>Related SS</label>
+              <input type="text" id="relatedSs" class="form-control" placeholder="Related SS..." />
+            </div>
+          </div>
+        </div>
+
+        <!-- SCHEME DETAILS -->
+        <div class="form-card">
+          <h2 class="section-title">📋 Scheme Details</h2>
+          <div class="form-group">
+            <label>Name of Scheme *</label>
+            <input type="text" id="schemeName" class="form-control" placeholder="e.g. 2nd source for Laskarhat SS from Salas SS" required />
+          </div>
+          <div class="row">
+            <div class="form-group col">
+              <label>Existing Parameter (Capacity/RL/Size)</label>
+              <input type="text" id="existingParam" class="form-control" placeholder="Enter existing parameter" />
+            </div>
+            <div class="form-group col">
+              <label>Proposed Parameter (Capacity/RL/Size)</label>
+              <input type="text" id="proposedParam" class="form-control" placeholder="Enter proposed parameter" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Loading (%) / Peak Load (A)</label>
+            <input type="text" id="loadingPeak" class="form-control" placeholder="e.g. 85% / 120A" />
+          </div>
+          <div class="form-group">
+            <label>Major Material Requirement</label>
+            <textarea id="majorMaterial" class="form-control" rows="3" placeholder="List major materials required..."></textarea>
+          </div>
+        </div>
+
+        <!-- TIMELINE & STATUS -->
+        <div class="form-card">
+          <h2 class="section-title">⏱️ Timeline & Status</h2>
+          <div class="row">
+            <div class="form-group col">
+              <label>Priority</label>
+              <select id="priority" class="form-control">
+                <option value="Phase-I">Phase-I</option>
+                <option value="Phase-II">Phase-II</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label>Target Date</label>
+              <input type="date" id="targetDate" class="form-control" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="form-group col">
+              <label>TAA No.</label>
+              <input type="text" id="taaNo" class="form-control" placeholder="TAA No." />
+            </div>
+            <div class="form-group col">
+              <label>eOffice Ref.</label>
+              <input type="text" id="eofficeRef" class="form-control" placeholder="eOffice Ref." />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Detail Work Status</label>
+            <textarea id="detailedStatus" class="form-control" rows="3" placeholder="Current progress details..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel" onclick="window.location.href='/electrical-dashboard.html'">Cancel</button>
+          <button type="submit" class="btn btn-submit" id="submitBtn">Save Scheme</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/ui/modals.js"></script>
+
+  <script>
+    let orgData = {};
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // Fetch your dynamic org structure from MongoDB
+        orgData = await apiFetch("/api/org-structure");
+        const regionSelect = document.getElementById("region");
+        
+        if (orgData.zones) {
+          regionSelect.innerHTML = `<option value="">Select Region...</option>`;
+          Object.keys(orgData.zones).forEach(zoneName => {
+            // We map zones to "Region" since the UI calls it Region
+            regionSelect.innerHTML += `<option value="${zoneName}">${zoneName}</option>`;
+          });
+        }
+      } catch (e) {
+        showToast("Failed to load regions from database", "error");
+        document.getElementById("region").innerHTML = `<option value="">Error loading regions</option>`;
+      }
+    });
+
+    function updateDivisions() {
+      const region = document.getElementById("region").value;
+      const divSelect = document.getElementById("division");
+      
+      divSelect.innerHTML = `<option value="">Select Division...</option>`;
+      
+      if (region && orgData.zones && orgData.zones[region]) {
+        // Loop through the regions mapped under the selected zone
+        Object.keys(orgData.zones[region].regions).forEach(regionName => {
+          divSelect.innerHTML += `<option value="${regionName}">${regionName}</option>`;
+        });
+        divSelect.disabled = false;
+      } else {
+        divSelect.disabled = true;
+      }
+    }
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      btn.innerText = "Saving...";
+      btn.disabled = true;
+
+      const payload = {
+        applicant: { name: "Electrical Scheme", contact: "", address: "" },
+        region: document.getElementById("region").value,
+        division: document.getElementById("division").value,
+        scheme_head: document.getElementById("schemeHead").value,
+        related_ss: document.getElementById("relatedSs").value,
+        scheme_name: document.getElementById("schemeName").value,
+        existing_parameter: document.getElementById("existingParam").value,
+        proposed_parameter: document.getElementById("proposedParam").value,
+        loading_peak: document.getElementById("loadingPeak").value,
+        major_material: document.getElementById("majorMaterial").value,
+        priority: document.getElementById("priority").value,
+        target_date: document.getElementById("targetDate").value,
+        taa_no: document.getElementById("taaNo").value,
+        eoffice_ref: document.getElementById("eofficeRef").value,
+        detailed_status: document.getElementById("detailedStatus").value
+      };
+
+      try {
+        const res = await BlockAPI("electrical_works").create(payload);
+        showToast("Scheme created successfully!", "success");
+        setTimeout(() => {
+          window.location.href = `/electrical-dashboard.html`; // Go back to SI Works Dashboard
+        }, 1000);
+      } catch (error) {
+        showToast(error.message, "error");
+        btn.innerText = "Save Scheme";
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

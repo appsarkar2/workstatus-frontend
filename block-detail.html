@@ -111,9 +111,12 @@
     
     let STAGES = [];
     let isCivilWork = blockId === "civil_work";
+    let isElectrical = blockId === "electrical_works";
 
     if (isCivilWork) {
         STAGES = ["Inception", "Proposal", "Estimation", "Funding", "Approval & T&AA", "Tendering", "PO Placement", "Site Handover", "Completion", "Financial Closure"];
+    } else if (isElectrical) {
+        STAGES = ["Application Received & Site Verification", "Technical Feasibility & Estimation", "Work Order & Budget Approval", "Material Procurement", "Execution & Installation", "Testing, Handover & Closure"];
     } else {
         STAGES = ["App. Received & Doc. Verification", "Physical Inspection & Tech. Feasibility", "Quotation Served", "Deposition of Quotation Amount", "Work Order & PO Generation", "Agreement Execution", "Work Completion Report", "Consumer Outgoing Ready", "EI Approval Submission", "Commercial Clearance", "Meter Installation", "Meter Report Submission", "Master Card Creation"];
     }
@@ -122,9 +125,7 @@
     const app = document.getElementById("app");
     
     const user = getCurrentUser();
-    // Check if user is Admin or Super Admin
     const isAdmin = ["super_admin", "admin"].includes(user.role);
-    // Check if user is HR (to restrict their view)
     const isHR = (user.username || "").toLowerCase() === "dro_h&r" || user.role === "hr_user";
 
     let rawApplications = [];
@@ -256,7 +257,6 @@
       let pendingAppCards = "";
       let pendingAppTotal = 0;
       
-      // If HR, they only see Stage 1. Everyone else sees the normal split.
       let splitPoint = isHR ? 1 : (isCivilWork ? 5 : 3);
       
       for (let i = 1; i <= splitPoint; i++) {
@@ -268,7 +268,6 @@
       let pendingConnCards = "";
       let pendingConnTotal = 0;
       
-      // Only build the connections section if they are NOT HR
       if (!isHR) {
           for (let i = splitPoint + 1; i <= STAGES.length; i++) {
               const count = stageCounts[i];
@@ -277,20 +276,24 @@
           }
       }
 
-      // Hide SLA Report if HR
       const slaButton = (isAdmin && !isCivilWork) ? `<button class="btn btn-danger" onclick="showSLAReport()">🚨 View Full SLA Report</button>` : '';
+      
+      // Dynamic Title and Button Text
+      const blockTitle = isCivilWork ? 'Civil Work' : (isElectrical ? 'Electrical Works' : 'Bulk Connection');
+      const itemName = isCivilWork ? 'Project' : (isElectrical ? 'Scheme' : 'Application');
+      const newFormUrl = `/${blockId === 'electrical_works' ? 'electrical' : 'bulk'}-new.html?block=${blockId}`;
 
       app.innerHTML = `
         <div class="app-container">
             <div class="page-header">
                 <div class="page-title">
-                    <h1>${isCivilWork ? 'Civil Work' : 'Bulk Connection'} Dashboard</h1>
+                    <h1>${blockTitle} Dashboard</h1>
                     <p>${isHR ? 'HR View - Stage 1 Verification' : 'Stage-wise pendency report'}</p>
                 </div>
                 <div class="header-actions">
                     <a href="/dashboard.html" class="btn btn-back">← Back to App</a>
                     ${slaButton}
-                    <button class="btn btn-new" onclick="window.location.href='/bulk-new.html?block=${blockId}'">+ New ${isCivilWork ? 'Project' : 'Application'}</button>
+                    <button class="btn btn-new" onclick="window.location.href='${newFormUrl}'">+ New ${itemName}</button>
                 </div>
             </div>
 
@@ -312,12 +315,11 @@
                 </div>
             </div>
 
-            <div class="section-header"><h2>Pending ${isCivilWork ? 'Projects' : 'Applications'}</h2><span class="badge-total">${pendingAppTotal} Total</span></div>
+            <div class="section-header"><h2>Pending ${itemName}s</h2><span class="badge-total">${pendingAppTotal} Total</span></div>
             <div class="stage-grid">${pendingAppCards}</div>
 
-            <!-- Only show Connections if NOT HR -->
             ${!isHR ? `
-            <div class="section-header"><h2>Pending ${isCivilWork ? 'Execution' : 'Connections'}</h2><span class="badge-total">${pendingConnTotal} Total</span></div>
+            <div class="section-header"><h2>Pending ${isCivilWork ? 'Execution' : (isElectrical ? 'Execution' : 'Connections')}</h2><span class="badge-total">${pendingConnTotal} Total</span></div>
             <div class="stage-grid">${pendingConnCards}</div>
             ` : ''}
         </div>
@@ -343,16 +345,36 @@
 
             document.getElementById("modalTitle").innerHTML = modalTitle;
             
+            // Update Table Headers dynamically for Electrical
+            const thead = document.querySelector("#listModal thead tr");
+            if (isElectrical) {
+                thead.innerHTML = `
+                    <th style="text-align: left;">Scheme No</th>
+                    <th style="text-align: left;">Scheme Details</th>
+                    <th style="text-align: left;">Location</th>
+                    <th>Delay</th>
+                    <th>Action</th>
+                `;
+            } else {
+                thead.innerHTML = `
+                    <th style="text-align: left;">App No</th>
+                    <th style="text-align: left;">Applicant Details</th>
+                    <th style="text-align: left;">Location</th>
+                    <th>Delay</th>
+                    <th>Action</th>
+                `;
+            }
+
             const myAllowedStages = {
-                "hr_user": [1], "dro_h&r": [1], "commerce_manager_1": [2, 3], "commerce_manager_2": [5, 6, 7, 8],
-                "finance_user": [4], "dro_finance": [4], "commerce_manager_3": [9, 10, 11, 12, 13]
+                "hr_user": [1], "dro_h&r": [1], "commerce_manager_1": [2, 3, 4, 5, 6], "commerce_manager_2": [5, 6, 7, 8],
+                "finance_user": [3], "dro_finance": [3], "commerce_manager_3": [9, 10, 11, 12, 13]
             }[(user.username || "").toLowerCase()] || [];
             
             const canDeleteInThisStage = isAdmin || myAllowedStages.includes(stageNo);
             
             let rowsHtml = appsInStage.map(a => {
-                const appName = a.applicant?.name || "Unknown";
-                const appContact = a.applicant?.contact || "—";
+                const appName = isElectrical ? (a.scheme_name || "Unknown Scheme") : (a.applicant?.name || "Unknown");
+                const appContact = isElectrical ? (a.scheme_head || "—") : (a.applicant?.contact || "—");
                 const divName = a.division || "Unassigned";
                 const subStation = a.substation || "—";
                 const appNo = a.application_no || a.project_no || "—";
@@ -390,17 +412,17 @@
 
     async function deleteApp(event, appId, appNo) {
         event.stopPropagation();
-        const confirmMsg = `Are you sure you want to permanently delete application ${appNo}?\n\nThis action cannot be undone.`;
+        const confirmMsg = `Are you sure you want to permanently delete ${appNo}?\n\nThis action cannot be undone.`;
         if (!confirm(confirmMsg)) return;
 
         try {
             await apiFetch(`/api/blocks/${blockId}/${appId}`, { method: 'DELETE' });
-            showToast("Application deleted successfully", "success");
+            showToast("Deleted successfully", "success");
             rawApplications = rawApplications.filter(a => a._id !== appId);
             renderDashboard();
             closeListModal();
         } catch (err) {
-            showToast(err.message || "Failed to delete application", "error");
+            showToast(err.message || "Failed to delete", "error");
         }
     }
 

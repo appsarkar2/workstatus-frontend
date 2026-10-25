@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLA Breach Report</title>
+  <!-- Emoji Favicon to fix the 404 error -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <style>
+    body { background-color: #f4f7f9; font-family: 'Inter', sans-serif; margin: 0; color: #0f172a; }
+    .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+    .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+    .btn-back { background: white; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 8px; cursor: pointer; text-decoration: none; color: #333; font-weight: 600; }
+    .page-title h1 { font-size: 24px; font-weight: 800; margin: 0; }
+    .page-title p { margin: 5px 0 0 0; color: #64748b; font-size: 14px; }
+    
+    .filters-bar { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .filters-bar input, .filters-bar select { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; flex: 1; min-width: 150px; font-family: 'Inter'; }
+    .filters-bar input:focus, .filters-bar select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px #eff6ff; }
+    
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .summary-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 5px solid #ef4444; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;}
+    .summary-card h3 { margin: 0 0 10px 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .summary-card .value { font-size: 32px; font-weight: 800; color: #ef4444; }
+
+    .table-container { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; border: 1px solid #e2e8f0; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: #f8fafc; padding: 14px 20px; font-size: 12px; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; }
+    td { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-size: 14px; vertical-align: top; }
+    tr:hover { background: #f8fafc; }
+    
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .badge-red { background: #fee2e2; color: #b91c1c; }
+    .badge-orange { background: #ffedd5; color: #c2410c; }
+    
+    .stage-detail { font-size: 13px; color: #333; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; }
+    .stage-detail:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .view-btn { background: #3b82f6; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-block; }
+    .view-btn:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    <div class="page-header">
+      <a href="javascript:history.back()" class="btn-back">← Back</a>
+      <div class="page-title">
+        <h1>🚨 Application SLA Tracking</h1>
+        <p>Identify exact bottlenecks and responsible users</p>
+      </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="summary-cards" id="summaryCards">
+      <div class="summary-card">
+        <h3>Total Breached Apps</h3>
+        <div class="value" id="totalBreaches">0</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <input type="text" id="searchInput" placeholder="🔍 Search App No, Applicant Name..." oninput="renderTable()">
+      <select id="zoneFilter" onchange="renderTable()"><option value="">All Zones</option></select>
+      <select id="divisionFilter" onchange="renderTable()"><option value="">All Divisions</option></select>
+      <select id="typeFilter" onchange="renderTable()"><option value="">All Connection Types</option></select>
+      <select id="voltageFilter" onchange="renderTable()"><option value="">All Voltages</option></select>
+    </div>
+
+    <!-- Main Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 20%;">App No & Applicant</th>
+            <th style="width: 20%;">Location & Type</th>
+            <th style="width: 10%;">Total Delay</th>
+            <th style="width: 40%;">Breached Stages & Responsible</th>
+            <th style="width: 10%;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="reportTableBody">
+          <tr><td colspan="5" style="text-align:center; padding: 40px;">Loading SLA Report...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/core/utils.js"></script>
+  <script>
+    let reportData = [];
+
+    async function loadReport() {
+      try {
+        const data = await apiFetch("/api/blocks/bulk_connection/sla-report");
+        reportData = data.details || [];
+        
+        // Update Summary
+        document.getElementById("totalBreaches").innerText = reportData.length;
+
+        // Populate Filters dynamically
+        populateFilters(reportData);
+        
+        // Render table
+        renderTable();
+      } catch (err) {
+        document.getElementById("reportTableBody").innerHTML = `<tr><td colspan="5" style="text-align:center; color:red; padding: 20px;">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function populateFilters(data) {
+      const zones = new Set(), divisions = new Set(), types = new Set(), voltages = new Set();
+      data.forEach(app => {
+        if(app.zone && app.zone !== "Unknown") zones.add(app.zone);
+        if(app.division && app.division !== "Unknown") divisions.add(app.division);
+        if(app.connection_type && app.connection_type !== "Unknown") types.add(app.connection_type);
+        if(app.voltage_class && app.voltage_class !== "Unknown") voltages.add(app.voltage_class);
+      });
+
+      const fill = (id, set) => {
+        const el = document.getElementById(id);
+        Array.from(set).sort().forEach(val => el.innerHTML += `<option value="${val}">${val}</option>`);
+      };
+      fill("zoneFilter", zones);
+      fill("divisionFilter", divisions);
+      fill("typeFilter", types);
+      fill("voltageFilter", voltages);
+    }
+
+    function renderTable() {
+      const term = document.getElementById("searchInput").value.toLowerCase();
+      const zone = document.getElementById("zoneFilter").value;
+      const div = document.getElementById("divisionFilter").value;
+      const type = document.getElementById("typeFilter").value;
+      const volt = document.getElementById("voltageFilter").value;
+
+      const filtered = reportData.filter(app => {
+        const matchesSearch = app.application_no.toLowerCase().includes(term) || 
+                              app.applicant_name.toLowerCase().includes(term);
+        const matchesZone = !zone || app.zone === zone;
+        const matchesDiv = !div || app.division === div;
+        const matchesType = !type || app.connection_type === type;
+        const matchesVolt = !volt || app.voltage_class === volt;
+        return matchesSearch && matchesZone && matchesDiv && matchesType && matchesVolt;
+      });
+
+      const tbody = document.getElementById("reportTableBody");
+      
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; font-weight: bold;">✅ No breached applications found matching your filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(app => {
+        const stagesHtml = app.breaches.map(b => {
+          const badgeClass = b.status === "in_progress" ? "badge-orange" : "badge-red";
+          return `<div class="stage-detail">
+            <span class="badge ${badgeClass}">Stage ${b.stage_no}</span> 
+            <strong>${b.stage_name}</strong><br>
+            <span style="color:#475569; font-size:12px; margin-top:4px; display:inline-block;">
+              ⏱️ Delayed by <b>${b.delay_days} days</b> | 👤 User: <b>${b.user}</b>
+            </span>
+          </div>`;
+        }).join("");
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:800; color:#2563eb; font-size:15px;">${app.application_no}</div>
+              <div style="font-weight:600; margin-top:4px;">${app.applicant_name}</div>
+            </td>
+            <td>
+              <div style="font-size:13px;">Zone: <b>${app.zone}</b></div>
+              <div style="font-size:13px;">Div: <b>${app.division}</b></div>
+              <div style="font-size:12px; color:#64748b; margin-top:6px; padding-top:6px; border-top:1px solid #e2e8f0;">
+                Type: ${app.connection_type}<br>
+                Voltage: ${app.voltage_class}
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <strong style="font-size: 18px; color:${app.total_delay > 5 ? '#dc2626' : '#ea580c'}">${app.total_delay}</strong>
+              <div style="font-size:11px; color:#64748b;">Days</div>
+            </td>
+            <td>${stagesHtml}</td>
+            <td style="text-align:center;">
+              <a href="/application-detail.html?block=bulk_connection&id=${app.app_id}" class="view-btn">View App</a>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // Load on start
+    loadReport();
+  </script>
+</body>
+</html>

@@ -82,11 +82,15 @@
           return;
         }
 
-         grid.innerHTML = blocks.map(b => {
-          // Route PUJA Load Demand to its custom page, others to generic block-detail
-          const url = b.id === "puja_load_demand" 
-            ? "/puja-load.html" 
-            : `/block-detail.html?block=${encodeURIComponent(b.id)}`;
+        // UPDATED ROUTING LOGIC HERE
+        grid.innerHTML = blocks.map(b => {
+          let url = `/block-detail.html?block=${encodeURIComponent(b.id)}`;
+          
+          if (b.id === "puja_load_demand") {
+              url = "/puja-load.html";
+          } else if (b.id === "electrical_works") {
+              url = "/electrical-dashboard.html"; // Route to the new SI Works dashboard
+          }
             
           return `
             <a href="${url}" class="block-card ${b.color || "blue"}">
