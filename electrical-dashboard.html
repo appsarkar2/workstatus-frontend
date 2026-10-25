@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SI Works — Electrical Works</title>
+  <title>Electrical Works — Overview</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
@@ -17,78 +17,67 @@
         margin: 0; padding: 0; min-height: 100vh; width: 100%; display: block;
     }
 
-    /* Main Layout - Fixed width */
+    /* Main Layout */
     .layout-wrapper { 
         display: flex; 
         width: 100%;
-        max-width: 1300px; 
+        max-width: 1400px; 
         margin: 0 auto; 
         padding: 30px 20px; 
-        gap: 30px; 
+        gap: 25px; 
     }
     
     /* Sidebar Filter */
-    .sidebar { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
-    .filter-section { background: white; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 20px; }
-    .filter-header { font-size: 13px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; cursor: pointer; }
+    .sidebar { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
+    .filter-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); padding: 15px; }
+    .filter-header { font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     
-    .checkbox-item { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer; }
-    .checkbox-item input { margin: 2px 10px 0 0; width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
-    .checkbox-label { flex: 1; line-height: 1.3; }
-    .count-badge { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; margin-left: 8px; }
+    .checkbox-item { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; }
+    .checkbox-item input { margin: 2px 8px 0 0; width: 14px; height: 14px; accent-color: #2563eb; cursor: pointer; flex-shrink: 0; }
+    .checkbox-label { flex: 1; line-height: 1.3; padding-right: 8px; }
+    .count-badge { background: #f1f5f9; color: #64748b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
     
     /* Main Content */
     .main-content { flex: 1; min-width: 0; }
     
     /* Header */
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .page-header h1 { font-size: 28px; font-weight: 800; margin: 0; color: #0f172a; }
-    .btn-back { background: white; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; text-decoration: none; color: #333; font-weight: 700; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; }
-    .btn-back:hover { background: #f1f5f9; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-header h1 { font-size: 24px; font-weight: 800; margin: 0; color: #0f172a; }
+    .btn-back { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #333; font-weight: 700; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; }
 
-    /* Top Filters (Zone/Region/Division) */
-    .top-filters { background: white; border-radius: 16px; padding: 15px 20px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; gap: 15px; margin-bottom: 20px; }
-    .top-filters select { flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: #f8fafc; color: #0f172a; }
+    /* Top Filters */
+    .top-filters { background: white; border-radius: 12px; padding: 12px; border: 1px solid #cbd5e1; display: flex; gap: 12px; margin-bottom: 15px; }
+    .top-filters select { flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: #f8fafc; color: #0f172a; }
     
-    /* Phase Tabs */
-    .tabs-container { overflow-x: auto; white-space: nowrap; margin-bottom: 20px; padding-bottom: 5px; -ms-overflow-style: none; scrollbar-width: none; }
+    /* Tabs */
+    .tabs-container { overflow-x: auto; white-space: nowrap; margin-bottom: 12px; padding-bottom: 5px; -ms-overflow-style: none; scrollbar-width: none; }
     .tabs-container::-webkit-scrollbar { display: none; }
-    .tab-pill { display: inline-block; padding: 10px 20px; background: white; border: 1px solid #e2e8f0; color: #475569; border-radius: 30px; font-weight: 700; font-size: 14px; margin-right: 10px; cursor: pointer; transition: 0.2s; }
-    .tab-pill.active { background: #ef4444; color: white; border-color: #ef4444; box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
+    .tab-pill { display: inline-block; padding: 8px 16px; background: white; border: 1px solid #e2e8f0; color: #475569; border-radius: 30px; font-weight: 700; font-size: 13px; margin-right: 8px; cursor: pointer; transition: 0.2s; }
+    .tab-pill.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 10px rgba(37,99,235,0.3); }
 
-    /* Stats Grid */
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    /* Stats Overview */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; margin-top: 25px; }
     .stat-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); text-align: center; }
     .stat-card h2 { font-size: 32px; margin: 0 0 5px 0; color: #2563eb; font-weight: 800; }
     .stat-card.green h2 { color: #10b981; }
     .stat-card p { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
 
-    /* Scheme Cards */
-    .scheme-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: 0.2s; }
-    .scheme-card:hover { border-color: #cbd5e1; box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
-    .scheme-card-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px; }
-    .scheme-card-header h3 { font-size: 18px; font-weight: 800; margin: 0 0 6px 0; color: #0f172a; }
-    .scheme-head-label { font-size: 13px; color: #64748b; font-weight: 600; display: block; }
-    .badge-phase { background: #eff6ff; color: #1d4ed8; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    /* Table Layout */
+    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; }
+    td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; }
+    tr:hover { background: #f8fafc; }
     
-    .stats-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-    .stats-row .label { color: #64748b; font-weight: 600; }
-    .stats-row .value { font-weight: 800; color: #0f172a; }
-    .val-completed { color: #10b981 !important; }
-    .val-progress { color: #8b5cf6 !important; }
-    .val-pending { color: #d97706 !important; }
+    .progress-container { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+    .progress-bar-bg { flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: #f59e0b; border-radius: 3px; }
+    .progress-text { font-size: 11px; font-weight: 800; color: #d97706; }
     
-    /* Progress Bar */
-    .progress-container { display: flex; align-items: center; gap: 12px; margin-top: 20px; margin-bottom: 24px; }
-    .progress-bar-bg { flex: 1; height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: #f59e0b; border-radius: 5px; transition: width 0.3s ease; }
-    .progress-text { font-size: 14px; font-weight: 800; color: #d97706; min-width: 40px; text-align: right; }
+    .btn-view { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 12px; }
+    
+    .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; }
 
-    /* Action Buttons */
-    .card-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 20px; }
-    .updated-text { font-size: 13px; color: #64748b; font-weight: 500; }
-    .btn-view { background: #2563eb; color: white; padding: 10px 24px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
-    
     /* FAB */
     .fab { position: fixed; bottom: 40px; right: 40px; background: #2563eb; color: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 32px; text-decoration: none; box-shadow: 0 10px 25px rgba(37,99,235,0.4); z-index: 100; transition: 0.2s; }
     .fab:hover { background: #1d4ed8; transform: scale(1.05); }
@@ -96,7 +85,7 @@
     @media (max-width: 900px) {
         .layout-wrapper { flex-direction: column; }
         .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
-        .filter-section { min-width: 250px; }
+        .filter-section { min-width: 280px; }
     }
   </style>
 </head>
@@ -118,15 +107,25 @@
 
     <!-- RIGHT MAIN CONTENT -->
     <main class="main-content">
+        
         <div class="page-header">
-            <h1>⚡ SI Works</h1>
+            <h1>⚡ Electrical Works</h1>
             <a href="/dashboard.html" class="btn-back">← Back to App</a>
         </div>
 
+        <!-- Top Location Filters -->
         <div class="top-filters">
             <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
             <select id="filterRegion" onchange="updateFilterDivisions()" disabled><option value="">All Regions</option></select>
-            <select id="filterDivision" onchange="renderSchemes()" disabled><option value="">All Divisions</option></select>
+            <select id="filterDivision" onchange="fetchOverviewTable()" disabled><option value="">All Divisions</option></select>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container" id="voltageTabs">
+            <button class="tab-pill active" onclick="filterVoltage('All', this)">All Voltages</button>
+            <button class="tab-pill" onclick="filterVoltage('11 KV', this)">11 KV</button>
+            <button class="tab-pill" onclick="filterVoltage('33 KV', this)">33 KV</button>
+            <button class="tab-pill" onclick="filterVoltage('Misc', this)">Misc</button>
         </div>
 
         <div class="tabs-container" id="phaseTabs">
@@ -135,14 +134,42 @@
             <button class="tab-pill" onclick="filterPhase('Phase-II', this)">Phase-II</button>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card"><h2 id="totalSchemes">0</h2><p>Total Schemes</p></div>
-            <div class="stat-card green"><h2 id="completedSchemes">0</h2><p>Completed</p></div>
+        <!-- Overview Table -->
+        <div class="overview-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 style="font-size: 20px; font-weight: 800; margin: 0;">Schemes Overview</h2>
+            <div class="stat-boxes" style="display:flex; gap:10px;">
+                <div class="stat-card" style="padding:10px 20px; border-radius:8px;">
+                    <h2 id="totalSchemes" style="font-size:20px; margin:0;">0</h2>
+                    <p style="font-size:10px; margin:0;">Total</p>
+                </div>
+                <div class="stat-card green" style="padding:10px 20px; border-radius:8px;">
+                    <h2 id="completedSchemes" style="font-size:20px; margin:0;">0</h2>
+                    <p style="font-size:10px; margin:0;">Completed</p>
+                </div>
+            </div>
         </div>
 
-        <div id="schemesList">
-            <div style="text-align: center; padding: 40px; color: #64748b; font-weight: 600;">Loading schemes...</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Scheme Category</th>
+                        <th>Total</th>
+                        <th>Completed</th>
+                        <th>In Progress</th>
+                        <th>Pending</th>
+                        <th>Progress</th>
+                        <th>Last Updated</th>
+                        <th>View</th>
+                    </tr>
+                </thead>
+                <tbody id="overviewTableBody">
+                    <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
+
     </main>
   </div>
 
@@ -156,6 +183,7 @@
     let allSchemes = [];
     let orgData = {};
     
+    let currentVoltage = "All";
     let currentPhase = "All";
     let selectedSchemeHeads = []; 
     let selectedStatuses = [];    
@@ -163,121 +191,89 @@
     let filterRegionLoc = "";
     let filterDivision = "";
 
-    async function loadData() {
-      try {
-        const promises = [
-            BlockAPI("electrical_works").list(),
-            apiFetch("/api/org-structure").catch(() => ({ zones: {} }))
-        ];
-        
-        const results = await Promise.all(promises);
-        allSchemes = results[0].items || [];
-        orgData = results[1] || { zones: {} };
-        
-        populateZoneFilter();
-        buildSidebarFilters(); 
-        calculateStats();
-        renderSchemes();
-      } catch (e) {
-        document.getElementById("schemesList").innerHTML = `<div style="color: red; text-align: center; font-weight: bold;">Error: ${e.message}</div>`;
-      }
-    }
+    const MASTER_SCHEME_HEADS = [
+        "New SS", "Control Room Extension / Modification", "PTR Augmentation / New PTR",
+        "33KV Second Source / Tapping Source Elemination", "Augmentation of conductor size of 33kV Feeders",
+        "Augmentation of conductor size of 33kV Switchyard", "Bifurcation of 11kV Feeders",
+        "Augmentation of conductor size of 11kV Feeders", "HT AB Cable Conversion"
+    ];
 
-    function buildSidebarFilters() {
-        // --- A. Scheme Heads ---
-        // If database is empty, we use these defaults so the UI still looks good.
-        let heads = {};
-        if (allSchemes.length === 0) {
-            heads = {
-                "New SS": 0, "Control Room Extension / Modification": 0, "PTR Augmentation / New PTR": 0,
-                "33KV Second Source / Tapping Source": 0, "Augmentation of Conductor Size": 0, "Bifurcation of Feeders": 0
-            };
-        } else {
-            allSchemes.forEach(s => {
-                const h = s.scheme_head || "Uncategorized";
-                heads[h] = (heads[h] || 0) + 1;
+    async function init() {
+        try {
+            orgData = await apiFetch("/api/org-structure");
+            const zoneSelect = document.getElementById("filterZone");
+            if (orgData.zones) {
+                Object.keys(orgData.zones).forEach(z => {
+                    zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+                });
+            }
+        } catch (e) { console.error("Failed org load", e); }
+
+        buildSidebar();
+        
+        // Fetch raw schemes for the sidebar counts
+        try {
+            const res = await BlockAPI("electrical_works").list();
+            allSchemes = res.items || [];
+            
+            let headsCount = {};
+            MASTER_SCHEME_HEADS.forEach(h => headsCount[h] = 0);
+            allSchemes.forEach(s => { if(headsCount[s.scheme_head] !== undefined) headsCount[s.scheme_head]++; });
+            document.querySelectorAll(".head-filter").forEach(cb => {
+                const badge = cb.parentElement.querySelector(".count-badge");
+                if(badge) badge.innerText = headsCount[cb.value] || 0;
             });
-        }
+        } catch(e) { console.error(e); }
 
-        const headContainer = document.getElementById("schemeHeadFilters");
-        headContainer.innerHTML = `
-            <label class="checkbox-item" style="font-weight:800; color:#2563eb; margin-bottom:15px;">
-                <input type="checkbox" id="selectAllHeads" checked onchange="toggleAllHeads(this.checked)">
-                <span class="checkbox-label">Select / Deselect all</span>
-            </label>
-        `;
-        
-        Object.keys(heads).sort().forEach(h => {
-            headContainer.innerHTML += `
-                <label class="checkbox-item">
-                    <input type="checkbox" class="head-filter" value="${h}" checked onchange="updateHeadFilters()">
-                    <span class="checkbox-label">${h}</span>
-                    <span class="count-badge">${heads[h]}</span>
-                </label>
-            `;
-        });
-        updateHeadFilters(); 
-
-        // --- B. Status Counts ---
-        const statuses = {
-            "Proposal not initiated": 0, "Approval pending": 0, "TAA issued, work yet to start": 0,
-            "Work in progress": 0, "Completed": 0, "Not updated": 0
-        };
-        
-        allSchemes.forEach(s => {
-            if (s.status === "completed") statuses["Completed"]++;
-            else if (s.current_stage === 1) statuses["Proposal not initiated"]++;
-            else if (s.current_stage === 2) statuses["Approval pending"]++;
-            else if (s.current_stage === 3) statuses["TAA issued, work yet to start"]++;
-            else if (s.current_stage === 4) statuses["Work in progress"]++;
-            else statuses["Not updated"]++;
-        });
-
-        const statusContainer = document.getElementById("statusFilters");
-        statusContainer.innerHTML = `
-            <label class="checkbox-item" style="font-weight:800; color:#2563eb; margin-bottom:15px;">
-                <input type="checkbox" id="selectAllStatuses" checked onchange="toggleAllStatuses(this.checked)">
-                <span class="checkbox-label">Select / Deselect all</span>
-            </label>
-        `;
-        
-        Object.keys(statuses).forEach(st => {
-            statusContainer.innerHTML += `
-                <label class="checkbox-item">
-                    <input type="checkbox" class="status-filter" value="${st}" checked onchange="updateStatusFilters()">
-                    <span class="checkbox-label">${st}</span>
-                    <span class="count-badge">${statuses[st]}</span>
-                </label>
-            `;
-        });
-        updateStatusFilters(); 
+        fetchOverviewTable();
     }
 
-    function toggleAllHeads(isChecked) {
-        document.querySelectorAll(".head-filter").forEach(cb => cb.checked = isChecked);
+    function buildSidebar() {
+        const headHtml = `
+            <label class="checkbox-item" style="font-weight:800; color:#2563eb; margin-bottom:12px;">
+                <input type="checkbox" checked onchange="toggleAll(this, 'head')">
+                <span class="checkbox-label">Select / Deselect all</span>
+            </label>
+        ` + MASTER_SCHEME_HEADS.map(h => `
+            <label class="checkbox-item">
+                <input type="checkbox" class="head-filter" value="${h}" checked onchange="updateHeadFilters()">
+                <span class="checkbox-label">${h}</span>
+                <span class="count-badge">0</span>
+            </label>
+        `).join("");
+        document.getElementById("schemeHeadFilters").innerHTML = headHtml;
+
+        const statuses = ["Proposal not initiated", "Approval pending", "TAA issued, work yet to start", "Work in progress", "Completed", "Not updated"];
+        const statusHtml = `
+            <label class="checkbox-item" style="font-weight:800; color:#2563eb; margin-bottom:12px;">
+                <input type="checkbox" checked onchange="toggleAll(this, 'status')">
+                <span class="checkbox-label">Select / Deselect all</span>
+            </label>
+        ` + statuses.map(s => `
+            <label class="checkbox-item">
+                <input type="checkbox" class="status-filter" value="${s}" checked onchange="updateStatusFilters()">
+                <span class="checkbox-label">${s}</span>
+                <span class="count-badge">0</span>
+            </label>
+        `).join("");
+        document.getElementById("statusFilters").innerHTML = statusHtml;
+        
         updateHeadFilters();
+        updateStatusFilters();
     }
+
+    function toggleAll(master, type) {
+        document.querySelectorAll(`.${type}-filter`).forEach(cb => cb.checked = master.checked);
+        if(type === "head") updateHeadFilters(); else updateStatusFilters();
+    }
+    
     function updateHeadFilters() {
         selectedSchemeHeads = Array.from(document.querySelectorAll(".head-filter:checked")).map(cb => cb.value);
-        renderSchemes();
-    }
-
-    function toggleAllStatuses(isChecked) {
-        document.querySelectorAll(".status-filter").forEach(cb => cb.checked = isChecked);
-        updateStatusFilters();
+        fetchOverviewTable();
     }
     function updateStatusFilters() {
         selectedStatuses = Array.from(document.querySelectorAll(".status-filter:checked")).map(cb => cb.value);
-        renderSchemes();
-    }
-
-    function populateZoneFilter() {
-        const zoneSelect = document.getElementById("filterZone");
-        if (orgData.zones) {
-            Object.keys(orgData.zones).forEach(z => {
-                zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
-            });
-        }
+        fetchOverviewTable();
     }
 
     function updateFilterRegions() {
@@ -294,7 +290,7 @@
             });
             regSelect.disabled = false;
         } else { regSelect.disabled = true; }
-        filterRegionLoc = ""; filterDivision = ""; renderSchemes();
+        filterRegionLoc = ""; filterDivision = ""; fetchOverviewTable();
     }
 
     function updateFilterDivisions() {
@@ -308,91 +304,104 @@
             });
             divSelect.disabled = false;
         } else { divSelect.disabled = true; }
-        filterDivision = ""; renderSchemes();
+        filterDivision = ""; fetchOverviewTable();
     }
 
-    function calculateStats() {
-      document.getElementById("totalSchemes").innerText = allSchemes.length;
-      document.getElementById("completedSchemes").innerText = allSchemes.filter(s => s.status === "completed").length;
+    function filterVoltage(voltage, btn) {
+      currentVoltage = voltage;
+      document.querySelectorAll("#voltageTabs .tab-pill").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      fetchOverviewTable();
     }
 
     function filterPhase(phase, btn) {
       currentPhase = phase;
       document.querySelectorAll("#phaseTabs .tab-pill").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      renderSchemes();
+      fetchOverviewTable();
     }
 
-    function renderSchemes() {
-      filterDivision = document.getElementById("filterDivision").value;
+    async function fetchOverviewTable() {
+        try {
+            // We pass current filters to the backend
+            const params = new URLSearchParams();
+            if (currentVoltage !== "All") params.append("voltage", currentVoltage);
+            if (currentPhase !== "All") params.append("phase", currentPhase);
+            
+            // We let the backend do the grouping
+            const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
+            
+            // Filter frontend-side by selected checkboxes and location dropdowns
+            let filteredData = groupedData.filter(row => {
+                if (!selectedSchemeHeads.includes(row.scheme_head)) return false;
+                if (filterZone && row.zone !== filterZone) return false;
+                if (filterRegionLoc && row.region !== filterRegionLoc) return false;
+                if (filterDivision && row.division !== filterDivision) return false;
+                return true;
+            });
 
-      let filtered = allSchemes.filter(s => {
-        let match = true;
-        if (currentPhase !== "All" && s.phase !== currentPhase) match = false;
-        
-        const sHead = s.scheme_head || "Uncategorized";
-        if (!selectedSchemeHeads.includes(sHead)) match = false;
-        
-        let statusLabel = "Not updated";
-        if (s.status === "completed") statusLabel = "Completed";
-        else if (s.current_stage === 1) statusLabel = "Proposal not initiated";
-        else if (s.current_stage === 2) statusLabel = "Approval pending";
-        else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
-        else if (s.current_stage === 4) statusLabel = "Work in progress";
-        
-        if (!selectedStatuses.includes(statusLabel)) match = false;
-        
-        if (filterZone && s.zone !== filterZone) match = false;
-        if (filterRegionLoc && s.region !== filterRegionLoc) match = false;
-        if (filterDivision && s.division !== filterDivision) match = false;
-        
-        return match;
-      });
+            // Update Top Stats
+            const total = filteredData.reduce((sum, item) => sum + item.total, 0);
+            const completed = filteredData.reduce((sum, item) => sum + item.completed, 0);
+            document.getElementById("totalSchemes").innerText = total;
+            document.getElementById("completedSchemes").innerText = completed;
 
-      if (filtered.length === 0) {
-        document.getElementById("schemesList").innerHTML = `<div style="text-align: center; padding: 40px; color: #64748b; font-weight: 600;">No schemes found for this filter combination.</div>`;
-        return;
-      }
+            // Render Table
+            let html = "";
+            let idx = 1;
+            filteredData.forEach(row => {
+                html += `
+                    <tr>
+                        <td>${idx++}</td>
+                        <td style="font-weight:700;">${escapeHtml(row.scheme_head)}</td>
+                        <td>${row.total}</td>
+                        <td style="color:#10b981;">${row.completed}</td>
+                        <td style="color:#8b5cf6;">${row.in_progress}</td>
+                        <td style="color:#d97706;">${row.pending}</td>
+                        <td>
+                            <div class="progress-container">
+                                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${row.progress_pct}%;"></div></div>
+                                <span class="progress-text">${row.progress_pct}%</span>
+                            </div>
+                        </td>
+                        <td style="font-size:12px; color:#64748b;">${row.last_updated}</td>
+                        <td>
+                            <a href="/electrical-list.html?head=${encodeURIComponent(row.scheme_head)}" class="btn-view">→ View</a>
+                        </td>
+                    </tr>
+                `;
+            });
 
-      document.getElementById("schemesList").innerHTML = filtered.map(s => {
-        const total = s.stages ? s.stages.length : 5;
-        const completed = s.stages ? s.stages.filter(st => st.status === "completed").length : 0;
-        const inProgress = s.stages ? s.stages.filter(st => st.status === "in_progress").length : 0;
-        const pending = total - completed - inProgress;
-        const progressPct = Math.round((completed / total) * 100) || 0;
+            if (filteredData.length === 0) {
+                html = `<tr><td colspan="9" style="text-align:center; padding: 30px; color:#64748b;">No schemes match your current filters.</td></tr>`;
+            } else {
+                const totalPct = Math.round((completed / total) * 100) || 0;
+                html += `
+                    <tr class="grand-total-row">
+                        <td colspan="2">GRAND TOTAL</td>
+                        <td>${total}</td>
+                        <td style="color:#10b981;">${completed}</td>
+                        <td style="color:#8b5cf6;">${filteredData.reduce((sum, item) => sum + item.in_progress, 0)}</td>
+                        <td style="color:#d97706;">${filteredData.reduce((sum, item) => sum + item.pending, 0)}</td>
+                        <td>
+                            <div class="progress-container">
+                                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${totalPct}%;"></div></div>
+                                <span class="progress-text">${totalPct}%</span>
+                            </div>
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
+                `;
+            }
 
-        return `
-          <div class="scheme-card">
-            <div class="scheme-card-header">
-              <div>
-                <h3>${escapeHtml(s.scheme_name || s.application_no)}</h3>
-                <span class="scheme-head-label">${escapeHtml(s.scheme_head || "General")} • ${escapeHtml(s.division || "Unassigned")}</span>
-              </div>
-              <span class="badge-phase">${escapeHtml(s.phase || "Phase-I")}</span>
-            </div>
+            document.getElementById("overviewTableBody").innerHTML = html;
 
-            <div class="stats-row"><span class="label">Total Stages:</span> <span class="value">${total}</span></div>
-            <div class="stats-row"><span class="label">Completed:</span> <span class="value val-completed">${completed}</span></div>
-            <div class="stats-row"><span class="label">In Progress:</span> <span class="value val-progress">${inProgress}</span></div>
-            <div class="stats-row"><span class="label">Pending:</span> <span class="value val-pending">${pending}</span></div>
-
-            <div class="progress-container">
-              <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width: ${progressPct}%;"></div>
-              </div>
-              <span class="progress-text">${progressPct}%</span>
-            </div>
-
-            <div class="card-actions">
-              <span class="updated-text">Updated: ${formatDate(s.updated_at)}</span>
-              <a href="/application-detail.html?block=electrical_works&id=${s._id}" class="btn-view">View Scheme</a>
-            </div>
-          </div>
-        `;
-      }).join("");
+        } catch (e) {
+            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">Error loading table: ${e.message}</td></tr>`;
+        }
     }
 
-    loadData();
+    init();
   </script>
 </body>
 </html>

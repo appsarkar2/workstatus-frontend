@@ -59,20 +59,37 @@
         <!-- GENERAL INFORMATION -->
         <div class="form-card">
           <h2 class="section-title">ℹ️ General Information</h2>
+          
           <div class="row">
             <div class="form-group col">
-              <label>Region *</label>
-              <select id="region" class="form-control" onchange="updateDivisions()" required>
-                <option value="">Loading Regions...</option>
+              <label>Zone *</label>
+              <select id="zone" class="form-control" onchange="updateRegions()" required>
+                <option value="">Loading Zones...</option>
               </select>
             </div>
             <div class="form-group col">
-              <label>Division *</label>
-              <select id="division" class="form-control" disabled required>
-                <option value="">Select Region first...</option>
+              <label>Region *</label>
+              <select id="region" class="form-control" onchange="updateDivisions()" disabled required>
+                <option value="">Select Zone first...</option>
               </select>
             </div>
           </div>
+
+          <div class="row">
+            <div class="form-group col">
+              <label>Division *</label>
+              <select id="division" class="form-control" onchange="updateSubStations()" disabled required>
+                <option value="">Select Region first...</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label>Related SS</label>
+              <select id="relatedSs" class="form-control" disabled>
+                <option value="">Select Division first...</option>
+              </select>
+            </div>
+          </div>
+
           <div class="row">
             <div class="form-group col">
               <label>Scheme Head *</label>
@@ -84,11 +101,16 @@
                 <option value="33KV Second Source / Tapping Source">33KV Second Source / Tapping Source</option>
                 <option value="Augmentation of Conductor Size">Augmentation of Conductor Size</option>
                 <option value="Bifurcation of Feeders">Bifurcation of Feeders</option>
+                <option value="HT AB Cable Conversion">HT AB Cable Conversion</option>
               </select>
             </div>
             <div class="form-group col">
-              <label>Related SS</label>
-              <input type="text" id="relatedSs" class="form-control" placeholder="Related SS..." />
+              <label>Voltage Level *</label>
+              <select id="voltageLevel" class="form-control" required>
+                <option value="11 KV">11 KV</option>
+                <option value="33 KV">33 KV</option>
+                <option value="Misc">Misc</option>
+              </select>
             </div>
           </div>
         </div>
@@ -122,7 +144,7 @@
 
         <!-- TIMELINE & STATUS -->
         <div class="form-card">
-          <h2 class="section-title">⏱️ Timeline & Status</h2>
+          <h2 class="section-title">⏱️ Timeline & Cost</h2>
           <div class="row">
             <div class="form-group col">
               <label>Priority</label>
@@ -145,6 +167,20 @@
               <label>eOffice Ref.</label>
               <input type="text" id="eofficeRef" class="form-control" placeholder="eOffice Ref." />
             </div>
+          </div>
+          <div class="row">
+            <div class="form-group col">
+              <label>TAA Value (₹)</label>
+              <input type="text" id="taaValue" class="form-control" placeholder="e.g. 7.85 Cr" />
+            </div>
+            <div class="form-group col">
+              <label>Billed Value (₹)</label>
+              <input type="text" id="billedValue" class="form-control" placeholder="e.g. 2.10 Cr" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Presently With</label>
+            <input type="text" id="presentlyWith" class="form-control" placeholder="e.g. P&E" />
           </div>
           <div class="form-group">
             <label>Detail Work Status</label>
@@ -170,37 +206,85 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       try {
-        // Fetch your dynamic org structure from MongoDB
         orgData = await apiFetch("/api/org-structure");
-        const regionSelect = document.getElementById("region");
+        const zoneSelect = document.getElementById("zone");
         
         if (orgData.zones) {
-          regionSelect.innerHTML = `<option value="">Select Region...</option>`;
+          zoneSelect.innerHTML = `<option value="">Select Zone...</option>`;
           Object.keys(orgData.zones).forEach(zoneName => {
-            // We map zones to "Region" since the UI calls it Region
-            regionSelect.innerHTML += `<option value="${zoneName}">${zoneName}</option>`;
+            zoneSelect.innerHTML += `<option value="${zoneName}">${zoneName}</option>`;
           });
         }
       } catch (e) {
-        showToast("Failed to load regions from database", "error");
-        document.getElementById("region").innerHTML = `<option value="">Error loading regions</option>`;
+        showToast("Failed to load zones from database", "error");
+        document.getElementById("zone").innerHTML = `<option value="">Error loading zones</option>`;
       }
     });
 
+    function updateRegions() {
+      const zone = document.getElementById("zone").value;
+      const regSelect = document.getElementById("region");
+      const divSelect = document.getElementById("division");
+      const ssSelect = document.getElementById("relatedSs");
+      
+      regSelect.innerHTML = `<option value="">Select Region...</option>`;
+      divSelect.innerHTML = `<option value="">Select Region first...</option>`;
+      ssSelect.innerHTML = `<option value="">Select Division first...</option>`;
+      divSelect.disabled = true;
+      ssSelect.disabled = true;
+      
+      if (zone && orgData.zones[zone]) {
+        Object.keys(orgData.zones[zone].regions).forEach(r => {
+          regSelect.innerHTML += `<option value="${r}">${r}</option>`;
+        });
+        regSelect.disabled = false;
+      } else {
+        regSelect.disabled = true;
+      }
+    }
+
     function updateDivisions() {
+      const zone = document.getElementById("zone").value;
       const region = document.getElementById("region").value;
       const divSelect = document.getElementById("division");
+      const ssSelect = document.getElementById("relatedSs");
       
       divSelect.innerHTML = `<option value="">Select Division...</option>`;
+      ssSelect.innerHTML = `<option value="">Select Division first...</option>`;
+      ssSelect.disabled = true;
       
-      if (region && orgData.zones && orgData.zones[region]) {
-        // Loop through the regions mapped under the selected zone
-        Object.keys(orgData.zones[region].regions).forEach(regionName => {
-          divSelect.innerHTML += `<option value="${regionName}">${regionName}</option>`;
+      if (zone && region && orgData.zones[zone].regions[region]) {
+        Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
+          divSelect.innerHTML += `<option value="${d}">${d}</option>`;
         });
         divSelect.disabled = false;
       } else {
         divSelect.disabled = true;
+      }
+    }
+
+    function updateSubStations() {
+      const zone = document.getElementById("zone").value;
+      const region = document.getElementById("region").value;
+      const division = document.getElementById("division").value;
+      const ssSelect = document.getElementById("relatedSs");
+      
+      ssSelect.innerHTML = `<option value="">Select Related SS...</option>`;
+      
+      if (zone && region && division && orgData.zones[zone].regions[region][division]) {
+        const divData = orgData.zones[zone].regions[region][division];
+        
+        if (divData["Sub-stations"]) {
+          Object.values(divData["Sub-stations"]).forEach(sub => {
+            ssSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+          });
+          ssSelect.disabled = false;
+        } else {
+          ssSelect.innerHTML = `<option value="">No Sub-stations found</option>`;
+          ssSelect.disabled = true;
+        }
+      } else {
+        ssSelect.disabled = true;
       }
     }
 
@@ -212,9 +296,11 @@
 
       const payload = {
         applicant: { name: "Electrical Scheme", contact: "", address: "" },
+        zone: document.getElementById("zone").value,
         region: document.getElementById("region").value,
         division: document.getElementById("division").value,
         scheme_head: document.getElementById("schemeHead").value,
+        voltage_level: document.getElementById("voltageLevel").value,
         related_ss: document.getElementById("relatedSs").value,
         scheme_name: document.getElementById("schemeName").value,
         existing_parameter: document.getElementById("existingParam").value,
@@ -224,6 +310,9 @@
         priority: document.getElementById("priority").value,
         target_date: document.getElementById("targetDate").value,
         taa_no: document.getElementById("taaNo").value,
+        taa_value: document.getElementById("taaValue").value,       // <-- ADDED
+        billed_value: document.getElementById("billedValue").value, // <-- ADDED
+        presently_with: document.getElementById("presentlyWith").value, // <-- ADDED
         eoffice_ref: document.getElementById("eofficeRef").value,
         detailed_status: document.getElementById("detailedStatus").value
       };
@@ -232,7 +321,7 @@
         const res = await BlockAPI("electrical_works").create(payload);
         showToast("Scheme created successfully!", "success");
         setTimeout(() => {
-          window.location.href = `/electrical-dashboard.html`; // Go back to SI Works Dashboard
+          window.location.href = `/electrical-dashboard.html`;
         }, 1000);
       } catch (error) {
         showToast(error.message, "error");

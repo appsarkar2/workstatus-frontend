@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheme List — Electrical Works</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Libraries for PDF and Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { background-color: #f8fafc !important; color: #0f172a !important; font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh; width: 100%; display: block; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .page-header h1 { font-size: 24px; font-weight: 800; margin: 0; }
+    
+    .header-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+    .btn-action { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #333; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+    .btn-action:hover { background: #f1f5f9; }
+    .btn-add { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 14px; }
+
+    .search-bar { background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .search-bar input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; width: 300px; }
+
+    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+    table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; }
+    td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; }
+    tr:hover { background: #f8fafc; }
+
+    .badge-phase { background: #334155; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; }
+    .status-completed { background: #dcfce7; color: #166534; }
+    .status-progress { background: #f3e8ff; color: #6b21a8; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    
+    .btn-view { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; margin-right: 5px; }
+    .btn-delete { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; }
+
+    /* Modal Styles */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; z-index: 9999; opacity: 0; transition: opacity 0.3s; }
+    .modal-overlay.show { display: flex; align-items: center; justify-content: center; opacity: 1; }
+    .modal-box { background: white; border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; }
+    
+    .modal-header { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .modal-title h2 { font-size: 20px; font-weight: 800; margin: 0 0 5px 0; }
+    .modal-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .meta-badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+    .meta-red { background: #fee2e2; color: #991b1b; }
+    .meta-orange { background: #ffedd5; color: #c2410c; }
+    .meta-gray { background: #f1f5f9; color: #475569; }
+    .meta-green { background: #dcfce7; color: #166534; }
+    .modal-body { padding: 25px; }
+    
+    .section-block { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .section-block-header { font-size: 13px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+    .data-lbl { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
+    .data-val { font-size: 14px; font-weight: 700; color: #0f172a; }
+    .data-val.gray { color: #94a3b8; font-weight: 600; }
+    
+    .work-status-box { background: #f8fafc; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; color: #334155; white-space: pre-wrap; }
+    
+    .modal-close { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; color: #64748b; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="page-header">
+      <div>
+          <a href="/electrical-dashboard.html" class="btn-back" style="margin-bottom:10px; display:inline-block; text-decoration:none; color:#64748b; font-weight:600; font-size:13px;">← Back to Overview</a>
+          <h1 id="pageTitle">Schemes</h1>
+          <div class="header-actions">
+              <button class="btn-action" onclick="exportPDF()">📄 Download PDF</button>
+              <button class="btn-action" onclick="exportExcel()">📊 Download Excel</button>
+          </div>
+      </div>
+      <a href="/electrical-new.html" class="btn-add">+ Add Scheme</a>
+    </div>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search schemes..." oninput="renderList()">
+        <span id="countBadge" style="font-size:13px; font-weight:700; color:#64748b;"></span>
+    </div>
+
+    <div class="table-container">
+      <table id="schemeTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Priority</th>
+            <th>Division</th>
+            <th>Scheme Head</th>
+            <th>Scheme Name</th>
+            <th>TAA No.</th>
+            <th>Overall Status</th>
+            <th>Target</th>
+            <th>Last Updated</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="listTableBody">
+            <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="detailModal" class="modal-overlay" onclick="closeModal()">
+      <div class="modal-box" onclick="event.stopPropagation()">
+          <div class="modal-header">
+              <div class="modal-title">
+                  <h2 id="modalSchemeName">Scheme Name</h2>
+                  <div style="font-size:12px; color:#64748b;">Last updated: <span id="modalLastUpdated"></span></div>
+                  <div class="modal-meta" id="modalMetaBadges"></div>
+              </div>
+              <button class="modal-close" onclick="closeModal()">✕</button>
+          </div>
+          
+          <div class="modal-body">
+              <!-- Identity & Planning -->
+              <div class="section-block">
+                  <div class="section-block-header">🆔 Identity & Planning</div>
+                  <div class="grid-3">
+                      <div><div class="data-lbl">Scheme Head</div><div class="data-val" id="modalHead"></div></div>
+                      <div><div class="data-lbl">TAA Date</div><div class="data-val gray" id="modalTaaDate">--</div></div>
+                      <div><div class="data-lbl">Target Date</div><div class="data-val gray" id="modalTargetDate">--</div></div>
+                  </div>
+                  <div style="margin-top:15px;"><div class="data-lbl">Presently With</div><div class="data-val" id="modalPresentlyWith"></div></div>
+              </div>
+
+              <!-- Cost -->
+              <div class="section-block">
+                  <div class="section-block-header">💰 Cost (Values in ₹ Lakh / Cr)</div>
+                  <div class="grid-3">
+                      <div><div class="data-lbl">TAA Value</div><div class="data-val" id="modalTaaValue"></div></div>
+                      <div><div class="data-lbl">Billed Value Till Date</div><div class="data-val" id="modalBilledValue"></div></div>
+                  </div>
+              </div>
+
+              <!-- Technical Parameters -->
+              <div class="section-block">
+                  <div class="section-block-header">⚙️ Technical Parameters</div>
+                  <div style="margin-bottom:15px;"><div class="data-lbl">Related SS</div><div class="data-val" id="modalRelatedSS"></div></div>
+                  <div><div class="data-lbl">Major Material Requirement</div><div class="data-val" id="modalMaterial"></div></div>
+              </div>
+
+              <!-- Work Status -->
+              <div class="section-block">
+                  <div class="section-block-header">📈 Work Status</div>
+                  <div class="work-status-box" id="modalWorkStatus"></div>
+              </div>
+          </div>
+          
+          <div style="padding: 15px 25px; border-top: 1px solid #e2e8f0; text-align: right;">
+              <button onclick="closeModal()" style="background:white; border:1px solid #cbd5e1; padding:10px 20px; border-radius:8px; font-weight:700; cursor:pointer;">Close</button>
+          </div>
+      </div>
+  </div>
+
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/auth-guard.js"></script>
+  <script src="/js/core/api.js"></script>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const targetHead = params.get("head");
+    let allSchemes = [];
+    let currentFiltered = [];
+
+    const user = getCurrentUser();
+    const isAdmin = ["super_admin", "admin"].includes(user.role);
+
+    document.getElementById("pageTitle").innerText = targetHead || "All Schemes";
+
+    async function init() {
+        try {
+            const res = await BlockAPI("electrical_works").list();
+            allSchemes = res.items || [];
+            
+            if (targetHead) {
+                allSchemes = allSchemes.filter(s => (s.scheme_head || "Uncategorized") === targetHead);
+            }
+            
+            renderList();
+        } catch (e) {
+            document.getElementById("listTableBody").innerHTML = `<tr><td colspan="10" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
+        }
+    }
+
+    function getStatusClass(status) {
+        if (status === "completed") return "status-completed";
+        if (status === "in_progress") return "status-progress";
+        return "status-pending";
+    }
+
+    function renderList() {
+        const term = document.getElementById("searchInput").value.toLowerCase();
+        
+        currentFiltered = allSchemes.filter(s => {
+            const name = (s.scheme_name || "").toLowerCase();
+            const div = (s.division || "").toLowerCase();
+            return name.includes(term) || div.includes(term);
+        });
+
+        document.getElementById("countBadge").innerText = `${currentFiltered.length} schemes found`;
+
+        if (currentFiltered.length === 0) {
+            document.getElementById("listTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 30px;">No schemes found.</td></tr>`;
+            return;
+        }
+
+        document.getElementById("listTableBody").innerHTML = currentFiltered.map(s => {
+            let statusLabel = "Proposal not initiated";
+            if (s.status === "completed") statusLabel = "Completed";
+            else if (s.current_stage === 2) statusLabel = "Approval pending";
+            else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
+            else if (s.current_stage === 4) statusLabel = "Work in progress";
+            
+            const deleteBtn = isAdmin 
+                ? `<button class="btn-delete" onclick="deleteScheme('${s._id}', '${s.application_no}')">🗑️</button>` 
+                : '';
+
+            return `
+              <tr>
+                <td>${escapeHtml(s.application_no ? s.application_no.split('-').pop() : s._id.substring(0,4))}</td>
+                <td><span class="badge-phase">${escapeHtml(s.priority || "Phase-I")}</span></td>
+                <td>${escapeHtml(s.division || "Unassigned")}</td>
+                <td>${escapeHtml(s.scheme_head || "General")}</td>
+                <td style="white-space: normal; max-width: 250px; font-weight: 700;">${escapeHtml(s.scheme_name || "N/A")}</td>
+                <td>${escapeHtml(s.taa_no || "—")}</td>
+                <td><span class="status-badge ${getStatusClass(s.status)}">${statusLabel}</span></td>
+                <td>${escapeHtml(s.target_date || "—")}</td>
+                <td style="color:#64748b; font-size:12px;">${formatDate(s.updated_at)}</td>
+                <td>
+                    <button class="btn-view" onclick='openModal(${JSON.stringify(s).replace(/'/g, "&#39;")})'>View</button>
+                    ${deleteBtn}
+                </td>
+              </tr>
+            `;
+        }).join("");
+    }
+
+    // Modal Logic
+    function openModal(scheme) {
+        document.getElementById("modalSchemeName").innerText = scheme.scheme_name || scheme.application_no;
+        document.getElementById("modalLastUpdated").innerText = formatDate(scheme.updated_at);
+        
+        let statusLabel = "Proposal not initiated";
+        let statusClass = "meta-orange";
+        if (scheme.status === "completed") { statusLabel = "Completed"; statusClass = "meta-green"; }
+        else if (scheme.current_stage === 3) statusLabel = "TAA issued, work yet to start";
+        
+        document.getElementById("modalMetaBadges").innerHTML = `
+            <span class="meta-badge meta-red">${scheme.phase || "Phase-I"}</span>
+            <span class="meta-badge ${statusClass}">${statusLabel}</span>
+            <span class="meta-badge meta-gray">${scheme.region || ""}</span>
+            <span class="meta-badge meta-gray">${scheme.division || ""}</span>
+        `;
+
+        document.getElementById("modalHead").innerText = scheme.scheme_head || "General";
+        document.getElementById("modalTaaDate").innerText = "--"; 
+        document.getElementById("modalTargetDate").innerText = scheme.target_date || "--";
+        document.getElementById("modalPresentlyWith").innerText = scheme.presently_with || "Not assigned";
+
+        document.getElementById("modalTaaValue").innerText = scheme.taa_value || "Not entered";
+        document.getElementById("modalBilledValue").innerText = scheme.billed_value || "Not entered";
+
+        document.getElementById("modalRelatedSS").innerText = scheme.related_ss || "--";
+        document.getElementById("modalMaterial").innerText = scheme.major_material || "Not entered";
+
+        document.getElementById("modalWorkStatus").innerText = scheme.detailed_status || "No status update provided.";
+
+        document.getElementById("detailModal").classList.add("show");
+    }
+
+    function closeModal() {
+        document.getElementById("detailModal").classList.remove("show");
+    }
+
+    async function deleteScheme(id, appNo) {
+        if (!confirm(`Are you sure you want to delete scheme ${appNo}?`)) return;
+        try {
+            await apiFetch(`/api/blocks/electrical_works/${id}`, { method: 'DELETE' });
+            showToast("Scheme deleted successfully", "success");
+            allSchemes = allSchemes.filter(s => s._id !== id);
+            renderList();
+        } catch (err) { showToast(err.message || "Failed to delete", "error"); }
+    }
+
+    // Export functions
+    function exportExcel() {
+        if (currentFiltered.length === 0) return showToast("No data to export", "error");
+        const exportData = currentFiltered.map(s => ({
+            "ID": s.application_no, "Priority": s.priority, "Division": s.division,
+            "Scheme Head": s.scheme_head, "Scheme Name": s.scheme_name,
+            "TAA No": s.taa_no, "TAA Value": s.taa_value, "Billed Value": s.billed_value,
+            "Status": s.status, "Target Date": s.target_date
+        }));
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Schemes");
+        XLSX.writeFile(wb, `Electrical_Schemes_${targetHead || 'All'}.xlsx`);
+    }
+
+    function exportPDF() {
+        if (currentFiltered.length === 0) return showToast("No data to export", "error");
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        doc.text(`Electrical Schemes - ${targetHead || 'All'}`, 14, 15);
+        
+        const tableBody = currentFiltered.map(s => [
+            s.application_no || "—", s.division || "—", s.scheme_head || "—",
+            s.scheme_name || "—", s.taa_no || "—", s.taa_value || "—",
+            s.status || "—", s.target_date || "—"
+        ]);
+
+        doc.autoTable({
+            startY: 25,
+            head: [['App No', 'Division', 'Scheme Head', 'Scheme Name', 'TAA No', 'TAA Value', 'Status', 'Target']],
+            body: tableBody,
+            styles: { fontSize: 8, cellPadding: 3 },
+            headStyles: { fillColor: [37, 99, 235] }
+        });
+
+        doc.save(`Electrical_Schemes_${targetHead || 'All'}.pdf`);
+    }
+
+    init();
+  </script>
+</body>
+</html>
