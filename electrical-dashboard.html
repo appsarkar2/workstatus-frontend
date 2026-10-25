@@ -15,7 +15,7 @@
         color: #0f172a !important;
         font-family: 'Inter', sans-serif;
         margin: 0; padding: 0; min-height: 100vh; width: 100%; display: block;
-        overflow-x: hidden; /* Prevent horizontal scrolling on mobile */
+        overflow-x: hidden;
     }
 
     /* Main Layout */
@@ -65,7 +65,7 @@
 
     /* Table Layout */
     .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; /* Forces scroll on small screens */ }
+    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; }
     th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; white-space: nowrap; }
     td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; white-space: nowrap; }
     tr:hover { background: #f8fafc; }
@@ -84,20 +84,27 @@
     .fab:hover { background: #1d4ed8; transform: scale(1.05); }
 
     /* --- MOBILE RESPONSIVENESS --- */
+    .mobile-filter-btn { display: none; background: white; border: 1px solid #cbd5e1; padding: 10px 15px; border-radius: 8px; font-weight: 700; color: #0f172a; width: 100%; text-align: left; cursor: pointer; margin-bottom: 10px; }
+
     @media (max-width: 900px) {
-        .layout-wrapper { flex-direction: column; padding: 15px; gap: 15px; }
+        .layout-wrapper { flex-direction: column; padding: 15px; gap: 0; }
         
-        /* Change sidebar from vertical column to horizontal scrolling row */
+        /* Show the mobile filter toggle button */
+        .mobile-filter-btn { display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Hide sidebar by default on mobile */
         .sidebar { 
+            display: none; 
             width: 100%; 
-            flex-direction: row; 
-            overflow-x: auto; 
-            padding-bottom: 10px; 
-            gap: 15px;
-            -webkit-overflow-scrolling: touch;
+            flex-direction: column; 
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        .filter-section { min-width: 280px; flex-shrink: 0; }
-        
+        .sidebar.show-mobile {
+            display: flex;
+        }
+        .filter-section { padding: 15px; }
+
         .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
         .top-filters { flex-direction: column; }
         .stats-grid { grid-template-columns: 1fr; }
@@ -108,10 +115,16 @@
 </head>
 <body>
 
+  <!-- Mobile Filter Toggle (Only visible on phones) -->
+  <button class="mobile-filter-btn" onclick="toggleMobileFilters()" style="margin: 15px 15px 0 15px;">
+    <span>⚙️ Filters & Categories</span>
+    <span id="filterArrow">▼</span>
+  </button>
+
   <div class="layout-wrapper">
     
     <!-- LEFT SIDEBAR FILTERS -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebarFilters">
         <div class="filter-section">
             <div class="filter-header">Scheme Heads <span>⌄</span></div>
             <div id="schemeHeadFilters"></div>
@@ -208,6 +221,14 @@
     let filterZone = "";
     let filterRegionLoc = "";
     let filterDivision = "";
+
+    // Toggle sidebar on mobile
+    function toggleMobileFilters() {
+        const sidebar = document.getElementById("sidebarFilters");
+        const arrow = document.getElementById("filterArrow");
+        sidebar.classList.toggle("show-mobile");
+        arrow.innerText = sidebar.classList.contains("show-mobile") ? "▲" : "▼";
+    }
 
     const MASTER_SCHEME_HEADS = [
         "New SS", "Control Room Extension / Modification", "PTR Augmentation / New PTR",
@@ -346,7 +367,6 @@
             
             const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
             
-            // Filter frontend-side by selected checkboxes and location dropdowns
             let filteredData = groupedData.filter(row => {
                 if (!selectedSchemeHeads.includes(row.scheme_head)) return false;
                 if (filterZone && row.zone !== filterZone) return false;
@@ -355,13 +375,11 @@
                 return true;
             });
 
-            // Update Top Stats
             const total = filteredData.reduce((sum, item) => sum + item.total, 0);
             const completed = filteredData.reduce((sum, item) => sum + item.completed, 0);
             document.getElementById("totalSchemes").innerText = total;
             document.getElementById("completedSchemes").innerText = completed;
 
-            // Render Table
             let html = "";
             let idx = 1;
             filteredData.forEach(row => {
