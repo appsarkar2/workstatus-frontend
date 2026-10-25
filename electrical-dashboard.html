@@ -15,6 +15,7 @@
         color: #0f172a !important;
         font-family: 'Inter', sans-serif;
         margin: 0; padding: 0; min-height: 100vh; width: 100%; display: block;
+        overflow-x: hidden; /* Prevent horizontal scrolling on mobile */
     }
 
     /* Main Layout */
@@ -63,10 +64,10 @@
     .stat-card p { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
 
     /* Table Layout */
-    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; }
-    td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; }
+    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; /* Forces scroll on small screens */ }
+    th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; white-space: nowrap; }
+    td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; white-space: nowrap; }
     tr:hover { background: #f8fafc; }
     
     .progress-container { display: flex; align-items: center; gap: 8px; min-width: 120px; }
@@ -74,7 +75,7 @@
     .progress-bar-fill { height: 100%; background: #f59e0b; border-radius: 3px; }
     .progress-text { font-size: 11px; font-weight: 800; color: #d97706; }
     
-    .btn-view { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 12px; }
+    .btn-view { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 12px; white-space: nowrap; }
     
     .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; }
 
@@ -82,10 +83,26 @@
     .fab { position: fixed; bottom: 40px; right: 40px; background: #2563eb; color: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 32px; text-decoration: none; box-shadow: 0 10px 25px rgba(37,99,235,0.4); z-index: 100; transition: 0.2s; }
     .fab:hover { background: #1d4ed8; transform: scale(1.05); }
 
+    /* --- MOBILE RESPONSIVENESS --- */
     @media (max-width: 900px) {
-        .layout-wrapper { flex-direction: column; }
-        .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
-        .filter-section { min-width: 280px; }
+        .layout-wrapper { flex-direction: column; padding: 15px; gap: 15px; }
+        
+        /* Change sidebar from vertical column to horizontal scrolling row */
+        .sidebar { 
+            width: 100%; 
+            flex-direction: row; 
+            overflow-x: auto; 
+            padding-bottom: 10px; 
+            gap: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .filter-section { min-width: 280px; flex-shrink: 0; }
+        
+        .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .top-filters { flex-direction: column; }
+        .stats-grid { grid-template-columns: 1fr; }
+        
+        .fab { width: 56px; height: 56px; bottom: 20px; right: 20px; font-size: 28px; }
     }
   </style>
 </head>
@@ -135,7 +152,7 @@
         </div>
 
         <!-- Overview Table -->
-        <div class="overview-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <div class="overview-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
             <h2 style="font-size: 20px; font-weight: 800; margin: 0;">Schemes Overview</h2>
             <div class="stat-boxes" style="display:flex; gap:10px;">
                 <div class="stat-card" style="padding:10px 20px; border-radius:8px;">
@@ -155,6 +172,7 @@
                     <tr>
                         <th>#</th>
                         <th>Scheme Category</th>
+                        <th>Division</th>
                         <th>Total</th>
                         <th>Completed</th>
                         <th>In Progress</th>
@@ -165,7 +183,7 @@
                     </tr>
                 </thead>
                 <tbody id="overviewTableBody">
-                    <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
+                    <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -211,7 +229,6 @@
 
         buildSidebar();
         
-        // Fetch raw schemes for the sidebar counts
         try {
             const res = await BlockAPI("electrical_works").list();
             allSchemes = res.items || [];
@@ -323,12 +340,10 @@
 
     async function fetchOverviewTable() {
         try {
-            // We pass current filters to the backend
             const params = new URLSearchParams();
             if (currentVoltage !== "All") params.append("voltage", currentVoltage);
             if (currentPhase !== "All") params.append("phase", currentPhase);
             
-            // We let the backend do the grouping
             const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
             
             // Filter frontend-side by selected checkboxes and location dropdowns
@@ -354,6 +369,7 @@
                     <tr>
                         <td>${idx++}</td>
                         <td style="font-weight:700;">${escapeHtml(row.scheme_head)}</td>
+                        <td style="font-weight:600; color:#475569;">${escapeHtml(row.division)}</td>
                         <td>${row.total}</td>
                         <td style="color:#10b981;">${row.completed}</td>
                         <td style="color:#8b5cf6;">${row.in_progress}</td>
@@ -366,19 +382,19 @@
                         </td>
                         <td style="font-size:12px; color:#64748b;">${row.last_updated}</td>
                         <td>
-                            <a href="/electrical-list.html?head=${encodeURIComponent(row.scheme_head)}" class="btn-view">→ View</a>
+                            <a href="/electrical-list.html?head=${encodeURIComponent(row.scheme_head)}&division=${encodeURIComponent(row.division)}" class="btn-view">→ View</a>
                         </td>
                     </tr>
                 `;
             });
 
             if (filteredData.length === 0) {
-                html = `<tr><td colspan="9" style="text-align:center; padding: 30px; color:#64748b;">No schemes match your current filters.</td></tr>`;
+                html = `<tr><td colspan="10" style="text-align:center; padding: 30px; color:#64748b;">No schemes match your current filters.</td></tr>`;
             } else {
                 const totalPct = Math.round((completed / total) * 100) || 0;
                 html += `
                     <tr class="grand-total-row">
-                        <td colspan="2">GRAND TOTAL</td>
+                        <td colspan="3">GRAND TOTAL</td>
                         <td>${total}</td>
                         <td style="color:#10b981;">${completed}</td>
                         <td style="color:#8b5cf6;">${filteredData.reduce((sum, item) => sum + item.in_progress, 0)}</td>
@@ -397,7 +413,7 @@
             document.getElementById("overviewTableBody").innerHTML = html;
 
         } catch (e) {
-            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">Error loading table: ${e.message}</td></tr>`;
+            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="10" style="color:red; text-align:center;">Error loading table: ${e.message}</td></tr>`;
         }
     }
 
