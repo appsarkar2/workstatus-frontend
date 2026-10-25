@@ -10,45 +10,40 @@
   <style>
     /* GLOBAL RESET & LIGHT THEME */
     * { box-sizing: border-box; }
-    html, body {
-        background-color: #f8fafc !important;
-        color: #0f172a !important;
-        font-family: 'Inter', sans-serif;
-        margin: 0; padding: 0; min-height: 100vh; width: 100%; display: block;
-        overflow-x: hidden;
-    }
+    html, body { background-color: #f8fafc !important; color: #0f172a !important; font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh; width: 100%; overflow-x: hidden; }
 
-    /* Main Layout */
-    .layout-wrapper { 
-        display: flex; 
-        width: 100%;
-        max-width: 1400px; 
-        margin: 0 auto; 
-        padding: 30px 20px; 
-        gap: 25px; 
-    }
+    .layout-wrapper { display: flex; width: 100%; max-width: 1400px; margin: 0 auto; padding: 30px 20px; gap: 25px; }
     
     /* Sidebar Filter */
-    .sidebar { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
+    .sidebar { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
     .filter-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); padding: 15px; }
-    .filter-header { font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .filter-header { font-size: 13px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     
-    .checkbox-item { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; }
-    .checkbox-item input { margin: 2px 8px 0 0; width: 14px; height: 14px; accent-color: #2563eb; cursor: pointer; flex-shrink: 0; }
-    .checkbox-label { flex: 1; line-height: 1.3; padding-right: 8px; }
-    .count-badge { background: #f1f5f9; color: #64748b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+    /* Tree Structure */
+    .tree-main { margin-bottom: 6px; }
+    .tree-main-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 800; color: #1e293b; }
+    .tree-main-header:hover { background: #eff6ff; border-color: #bfdbfe; }
     
+    .tree-sub { margin-left: 10px; margin-top: 6px; display: none; border-left: 2px solid #e2e8f0; padding-left: 10px; }
+    .tree-sub.active { display: block; }
+    .tree-sub-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; cursor: pointer; font-size: 12px; font-weight: 700; color: #475569; }
+    .tree-sub-header:hover { color: #2563eb; }
+    
+    .tree-items { display: none; margin-bottom: 8px; }
+    .tree-items.active { display: block; }
+    .checkbox-item { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; padding: 4px 0; }
+    .checkbox-item input { margin: 2px 8px 0 0; accent-color: #2563eb; cursor: pointer; }
+    .count-badge { background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+
     /* Main Content */
     .main-content { flex: 1; min-width: 0; }
-    
-    /* Header */
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .page-header h1 { font-size: 24px; font-weight: 800; margin: 0; color: #0f172a; }
-    .btn-back { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #333; font-weight: 700; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; }
+    .page-header h1 { font-size: 24px; font-weight: 800; margin: 0; }
+    .btn-back { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #333; font-weight: 700; font-size: 13px; }
 
     /* Top Filters */
     .top-filters { background: white; border-radius: 12px; padding: 12px; border: 1px solid #cbd5e1; display: flex; gap: 12px; margin-bottom: 15px; }
-    .top-filters select { flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: #f8fafc; color: #0f172a; }
+    .top-filters select { flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: #f8fafc; }
     
     /* Tabs */
     .tabs-container { overflow-x: auto; white-space: nowrap; margin-bottom: 12px; padding-bottom: 5px; -ms-overflow-style: none; scrollbar-width: none; }
@@ -66,7 +61,7 @@
     /* Table Layout */
     .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; }
-    th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.5px; white-space: nowrap; }
+    th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
     td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; white-space: nowrap; }
     tr:hover { background: #f8fafc; }
     
@@ -75,47 +70,27 @@
     .progress-bar-fill { height: 100%; background: #f59e0b; border-radius: 3px; }
     .progress-text { font-size: 11px; font-weight: 800; color: #d97706; }
     
-    .btn-view { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 12px; white-space: nowrap; }
-    
+    .btn-view { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 12px; }
     .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; }
 
-    /* FAB */
-    .fab { position: fixed; bottom: 40px; right: 40px; background: #2563eb; color: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 32px; text-decoration: none; box-shadow: 0 10px 25px rgba(37,99,235,0.4); z-index: 100; transition: 0.2s; }
-    .fab:hover { background: #1d4ed8; transform: scale(1.05); }
-
-    /* --- MOBILE RESPONSIVENESS --- */
-    .mobile-filter-btn { display: none; background: white; border: 1px solid #cbd5e1; padding: 10px 15px; border-radius: 8px; font-weight: 700; color: #0f172a; width: 100%; text-align: left; cursor: pointer; margin-bottom: 10px; }
+    /* FAB & Mobile */
+    .fab { position: fixed; bottom: 40px; right: 40px; background: #2563eb; color: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 32px; text-decoration: none; box-shadow: 0 10px 25px rgba(37,99,235,0.4); z-index: 100; }
+    .mobile-filter-btn { display: none; background: white; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-weight: 700; width: 100%; text-align: left; cursor: pointer; margin-bottom: 10px; }
 
     @media (max-width: 900px) {
         .layout-wrapper { flex-direction: column; padding: 15px; gap: 0; }
-        
-        /* Show the mobile filter toggle button */
         .mobile-filter-btn { display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Hide sidebar by default on mobile */
-        .sidebar { 
-            display: none; 
-            width: 100%; 
-            flex-direction: column; 
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .sidebar.show-mobile {
-            display: flex;
-        }
-        .filter-section { padding: 15px; }
-
+        .sidebar { display: none; width: 100%; flex-direction: column; margin-bottom: 15px; }
+        .sidebar.show-mobile { display: flex; }
         .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
         .top-filters { flex-direction: column; }
         .stats-grid { grid-template-columns: 1fr; }
-        
-        .fab { width: 56px; height: 56px; bottom: 20px; right: 20px; font-size: 28px; }
+        .fab { width: 56px; height: 56px; bottom: 20px; right: 20px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Mobile Filter Toggle (Only visible on phones) -->
   <button class="mobile-filter-btn" onclick="toggleMobileFilters()" style="margin: 15px 15px 0 15px;">
     <span>⚙️ Filters & Categories</span>
     <span id="filterArrow">▼</span>
@@ -125,12 +100,88 @@
     
     <!-- LEFT SIDEBAR FILTERS -->
     <aside class="sidebar" id="sidebarFilters">
+        
         <div class="filter-section">
-            <div class="filter-header">Scheme Heads <span>⌄</span></div>
-            <div id="schemeHeadFilters"></div>
+            <div class="filter-header">Categories</div>
+            
+            <!-- 1. Sub-station and PTR -->
+            <div class="tree-main">
+                <div class="tree-main-header" onclick="toggleTreeSub('sub-ss-ptr')">
+                    <span>🏢 Sub-station and PTR</span>
+                    <span>▼</span>
+                </div>
+                <div class="tree-sub" id="sub-ss-ptr">
+                    <div class="tree-sub-header" onclick="toggleTreeItems('items-ss-trans')">
+                        <span>Type: Substations & Transformers</span>
+                        <span>▾</span>
+                    </div>
+                    <div class="tree-items" id="items-ss-trans">
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="New SS" checked onchange="updateFilters()"> New SS <span class="count-badge">0</span></label>
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="PTR Augmentation / New PTR" checked onchange="updateFilters()"> PTR Augmentation <span class="count-badge">0</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 33 KV Category -->
+            <div class="tree-main">
+                <div class="tree-main-header" onclick="toggleTreeSub('sub-33kv')">
+                    <span>⚡ 33 KV Category</span>
+                    <span>▼</span>
+                </div>
+                <div class="tree-sub" id="sub-33kv">
+                    <div class="tree-sub-header" onclick="toggleTreeItems('items-33kv-lines')">
+                        <span>Type: 33KV Lines</span>
+                        <span>▾</span>
+                    </div>
+                    <div class="tree-items" id="items-33kv-lines">
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="33KV Second Source / Tapping Source Elemination" checked onchange="updateFilters()"> 33KV Second Source <span class="count-badge">0</span></label>
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Augmentation of conductor size of 33kV Feeders" checked onchange="updateFilters()"> Aug 33kV Feeders <span class="count-badge">0</span></label>
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Augmentation of conductor size of 33kV Switchyard" checked onchange="updateFilters()"> Aug 33kV Switchyard <span class="count-badge">0</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 11 KV Category -->
+            <div class="tree-main">
+                <div class="tree-main-header" onclick="toggleTreeSub('sub-11kv')">
+                    <span>🔌 11 KV Category</span>
+                    <span>▼</span>
+                </div>
+                <div class="tree-sub" id="sub-11kv">
+                    <div class="tree-sub-header" onclick="toggleTreeItems('items-11kv-lines')">
+                        <span>Type: 11KV Lines & Cables</span>
+                        <span>▾</span>
+                    </div>
+                    <div class="tree-items" id="items-11kv-lines">
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Bifurcation of 11kV Feeders" checked onchange="updateFilters()"> Bifurcation 11kV <span class="count-badge">0</span></label>
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Augmentation of conductor size of 11kV Feeders" checked onchange="updateFilters()"> Aug 11kV Feeders <span class="count-badge">0</span></label>
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="HT AB Cable Conversion" checked onchange="updateFilters()"> HT AB Cable <span class="count-badge">0</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Misc Category -->
+            <div class="tree-main">
+                <div class="tree-main-header" onclick="toggleTreeSub('sub-misc')">
+                    <span>🏗️ Misc Category</span>
+                    <span>▼</span>
+                </div>
+                <div class="tree-sub" id="sub-misc">
+                    <div class="tree-sub-header" onclick="toggleTreeItems('items-misc-civil')">
+                        <span>Type: Civil Works</span>
+                        <span>▾</span>
+                    </div>
+                    <div class="tree-items" id="items-misc-civil">
+                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Control Room Extension / Modification" checked onchange="updateFilters()"> Control Room Ext <span class="count-badge">0</span></label>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
+        <!-- Dynamic Status Counts -->
         <div class="filter-section">
-            <div class="filter-header">Status Counts <span>⌄</span></div>
+            <div class="filter-header">Status Counts</div>
             <div id="statusFilters"></div>
         </div>
     </aside>
@@ -148,20 +199,6 @@
             <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
             <select id="filterRegion" onchange="updateFilterDivisions()" disabled><option value="">All Regions</option></select>
             <select id="filterDivision" onchange="fetchOverviewTable()" disabled><option value="">All Divisions</option></select>
-        </div>
-
-        <!-- Tabs -->
-        <div class="tabs-container" id="voltageTabs">
-            <button class="tab-pill active" onclick="filterVoltage('All', this)">All Voltages</button>
-            <button class="tab-pill" onclick="filterVoltage('11 KV', this)">11 KV</button>
-            <button class="tab-pill" onclick="filterVoltage('33 KV', this)">33 KV</button>
-            <button class="tab-pill" onclick="filterVoltage('Misc', this)">Misc</button>
-        </div>
-
-        <div class="tabs-container" id="phaseTabs">
-            <button class="tab-pill active" onclick="filterPhase('All', this)">All</button>
-            <button class="tab-pill" onclick="filterPhase('Phase-I', this)">Phase-I</button>
-            <button class="tab-pill" onclick="filterPhase('Phase-II', this)">Phase-II</button>
         </div>
 
         <!-- Overview Table -->
@@ -214,7 +251,6 @@
     let allSchemes = [];
     let orgData = {};
     
-    let currentVoltage = "All";
     let currentPhase = "All";
     let selectedSchemeHeads = []; 
     let selectedStatuses = [];    
@@ -222,7 +258,6 @@
     let filterRegionLoc = "";
     let filterDivision = "";
 
-    // Toggle sidebar on mobile
     function toggleMobileFilters() {
         const sidebar = document.getElementById("sidebarFilters");
         const arrow = document.getElementById("filterArrow");
@@ -230,12 +265,15 @@
         arrow.innerText = sidebar.classList.contains("show-mobile") ? "▲" : "▼";
     }
 
-    const MASTER_SCHEME_HEADS = [
-        "New SS", "Control Room Extension / Modification", "PTR Augmentation / New PTR",
-        "33KV Second Source / Tapping Source Elemination", "Augmentation of conductor size of 33kV Feeders",
-        "Augmentation of conductor size of 33kV Switchyard", "Bifurcation of 11kV Feeders",
-        "Augmentation of conductor size of 11kV Feeders", "HT AB Cable Conversion"
-    ];
+    function toggleTreeSub(id) {
+        const el = document.getElementById(id);
+        el.classList.toggle("active");
+    }
+
+    function toggleTreeItems(id) {
+        const el = document.getElementById(id);
+        el.classList.toggle("active");
+    }
 
     async function init() {
         try {
@@ -248,68 +286,58 @@
             }
         } catch (e) { console.error("Failed org load", e); }
 
-        buildSidebar();
-        
         try {
             const res = await BlockAPI("electrical_works").list();
             allSchemes = res.items || [];
-            
-            let headsCount = {};
-            MASTER_SCHEME_HEADS.forEach(h => headsCount[h] = 0);
-            allSchemes.forEach(s => { if(headsCount[s.scheme_head] !== undefined) headsCount[s.scheme_head]++; });
-            document.querySelectorAll(".head-filter").forEach(cb => {
-                const badge = cb.parentElement.querySelector(".count-badge");
-                if(badge) badge.innerText = headsCount[cb.value] || 0;
-            });
         } catch(e) { console.error(e); }
 
+        updateFilters();
         fetchOverviewTable();
     }
 
-    function buildSidebar() {
-        const headHtml = `
-            <label class="checkbox-item" style="font-weight:800; color:#2563eb; margin-bottom:12px;">
-                <input type="checkbox" checked onchange="toggleAll(this, 'head')">
-                <span class="checkbox-label">Select / Deselect all</span>
-            </label>
-        ` + MASTER_SCHEME_HEADS.map(h => `
-            <label class="checkbox-item">
-                <input type="checkbox" class="head-filter" value="${h}" checked onchange="updateHeadFilters()">
-                <span class="checkbox-label">${h}</span>
-                <span class="count-badge">0</span>
-            </label>
-        `).join("");
-        document.getElementById("schemeHeadFilters").innerHTML = headHtml;
-
-        const statuses = ["Proposal not initiated", "Approval pending", "TAA issued, work yet to start", "Work in progress", "Completed", "Not updated"];
-        const statusHtml = `
-            <label class="checkbox-item" style="font-weight:800; color:#2563eb; margin-bottom:12px;">
-                <input type="checkbox" checked onchange="toggleAll(this, 'status')">
-                <span class="checkbox-label">Select / Deselect all</span>
-            </label>
-        ` + statuses.map(s => `
-            <label class="checkbox-item">
-                <input type="checkbox" class="status-filter" value="${s}" checked onchange="updateStatusFilters()">
-                <span class="checkbox-label">${s}</span>
-                <span class="count-badge">0</span>
-            </label>
-        `).join("");
-        document.getElementById("statusFilters").innerHTML = statusHtml;
-        
-        updateHeadFilters();
-        updateStatusFilters();
-    }
-
-    function toggleAll(master, type) {
-        document.querySelectorAll(`.${type}-filter`).forEach(cb => cb.checked = master.checked);
-        if(type === "head") updateHeadFilters(); else updateStatusFilters();
-    }
-    
-    function updateHeadFilters() {
+    function updateFilters() {
         selectedSchemeHeads = Array.from(document.querySelectorAll(".head-filter:checked")).map(cb => cb.value);
+        
+        // Dynamic Status Counts
+        const statuses = {
+            "Proposal not initiated": 0, "Approval pending": 0, "TAA issued, work yet to start": 0,
+            "Work in progress": 0, "Completed": 0, "Not updated": 0
+        };
+        
+        let filteredByHead = allSchemes.filter(s => selectedSchemeHeads.includes(s.scheme_head || "Uncategorized"));
+        
+        filteredByHead.forEach(s => {
+            if (s.status === "completed") statuses["Completed"]++;
+            else if (s.current_stage === 1) statuses["Proposal not initiated"]++;
+            else if (s.current_stage === 2) statuses["Approval pending"]++;
+            else if (s.current_stage === 3) statuses["TAA issued, work yet to start"]++;
+            else if (s.current_stage === 4) statuses["Work in progress"]++;
+            else statuses["Not updated"]++;
+        });
+
+        let statusHtml = "";
+        Object.keys(statuses).forEach(st => {
+            const isChecked = selectedStatuses.length === 0 || selectedStatuses.includes(st) ? "checked" : "";
+            statusHtml += `
+                <label class="checkbox-item">
+                    <input type="checkbox" class="status-filter" value="${st}" ${isChecked} onchange="updateStatusOnly()">
+                    <span class="checkbox-label">${st}</span>
+                    <span class="count-badge">${statuses[st]}</span>
+                </label>
+            `;
+        });
+        document.getElementById("statusFilters").innerHTML = statusHtml;
+
+        // Update Badges
+        document.querySelectorAll(".head-filter").forEach(cb => {
+            const count = allSchemes.filter(s => s.scheme_head === cb.value).length;
+            cb.parentElement.querySelector(".count-badge").innerText = count;
+        });
+
         fetchOverviewTable();
     }
-    function updateStatusFilters() {
+
+    function updateStatusOnly() {
         selectedStatuses = Array.from(document.querySelectorAll(".status-filter:checked")).map(cb => cb.value);
         fetchOverviewTable();
     }
@@ -345,13 +373,6 @@
         filterDivision = ""; fetchOverviewTable();
     }
 
-    function filterVoltage(voltage, btn) {
-      currentVoltage = voltage;
-      document.querySelectorAll("#voltageTabs .tab-pill").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      fetchOverviewTable();
-    }
-
     function filterPhase(phase, btn) {
       currentPhase = phase;
       document.querySelectorAll("#phaseTabs .tab-pill").forEach(b => b.classList.remove("active"));
@@ -362,13 +383,12 @@
     async function fetchOverviewTable() {
         try {
             const params = new URLSearchParams();
-            if (currentVoltage !== "All") params.append("voltage", currentVoltage);
             if (currentPhase !== "All") params.append("phase", currentPhase);
             
             const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
             
             let filteredData = groupedData.filter(row => {
-                if (!selectedSchemeHeads.includes(row.scheme_head)) return false;
+                if (selectedSchemeHeads.length > 0 && !selectedSchemeHeads.includes(row.scheme_head)) return false;
                 if (filterZone && row.zone !== filterZone) return false;
                 if (filterRegionLoc && row.region !== filterRegionLoc) return false;
                 if (filterDivision && row.division !== filterDivision) return false;
@@ -431,7 +451,7 @@
             document.getElementById("overviewTableBody").innerHTML = html;
 
         } catch (e) {
-            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="10" style="color:red; text-align:center;">Error loading table: ${e.message}</td></tr>`;
+            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="10" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
         }
     }
 
