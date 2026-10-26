@@ -15,22 +15,10 @@
     .layout-wrapper { display: flex; width: 100%; max-width: 1400px; margin: 0 auto; padding: 30px 20px; gap: 25px; }
     
     /* Sidebar Filter */
-    .sidebar { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
+    .sidebar { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
     .filter-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); padding: 15px; }
     .filter-header { font-size: 13px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     
-    /* Tree Structure */
-    .tree-main { margin-bottom: 6px; }
-    .tree-main-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 800; color: #1e293b; }
-    .tree-main-header:hover { background: #eff6ff; border-color: #bfdbfe; }
-    
-    .tree-sub { margin-left: 10px; margin-top: 6px; display: none; border-left: 2px solid #e2e8f0; padding-left: 10px; }
-    .tree-sub.active { display: block; }
-    .tree-sub-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; cursor: pointer; font-size: 12px; font-weight: 700; color: #475569; }
-    .tree-sub-header:hover { color: #2563eb; }
-    
-    .tree-items { display: none; margin-bottom: 8px; }
-    .tree-items.active { display: block; }
     .checkbox-item { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; padding: 4px 0; }
     .checkbox-item input { margin: 2px 8px 0 0; accent-color: #2563eb; cursor: pointer; }
     .count-badge { background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
@@ -41,24 +29,27 @@
     .page-header h1 { font-size: 24px; font-weight: 800; margin: 0; }
     .btn-back { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #333; font-weight: 700; font-size: 13px; }
 
-    /* Top Filters */
-    .top-filters { background: white; border-radius: 12px; padding: 12px; border: 1px solid #cbd5e1; display: flex; gap: 12px; margin-bottom: 15px; }
-    .top-filters select { flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: #f8fafc; }
+    /* Table Card */
+    .table-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden; }
+    .table-toolbar { padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 15px; background: #f8fafc; }
+    .toolbar-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .table-title { font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; }
     
-    /* Stats Overview */
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; margin-top: 25px; }
-    .stat-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); text-align: center; }
-    .stat-card h2 { font-size: 32px; margin: 0 0 5px 0; color: #2563eb; font-weight: 800; }
+    .stat-boxes { display: flex; gap: 10px; }
+    .stat-card { background: white; padding: 8px 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; min-width: 70px; }
+    .stat-card h2 { font-size: 18px; margin: 0; color: #2563eb; font-weight: 800; }
     .stat-card.green h2 { color: #10b981; }
-    .stat-card p { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+    .stat-card p { margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
 
-    /* Table Layout */
-    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); -webkit-overflow-scrolling: touch; }
+    .toolbar-filters { display: flex; gap: 10px; flex-wrap: wrap; }
+    .toolbar-filters select { flex: 1; min-width: 150px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: white; }
+
+    /* Table */
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; }
-    th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
-    td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; white-space: nowrap; }
+    th { background: white; padding: 14px 20px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+    td { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; white-space: nowrap; }
     
-    /* Clickable Row Style */
     .clickable-row { cursor: pointer; transition: background-color 0.2s; }
     .clickable-row:hover { background-color: #f0f9ff; }
 
@@ -67,7 +58,35 @@
     .progress-bar-fill { height: 100%; background: #f59e0b; border-radius: 3px; }
     .progress-text { font-size: 11px; font-weight: 800; color: #d97706; }
     
-    .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; }
+    .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; border-top: 2px solid #cbd5e1; }
+
+    /* MODAL STYLES */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+    .modal-overlay.show { display: flex; opacity: 1; }
+    .modal-box { background: white; border-radius: 16px; width: 90%; max-width: 450px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; transform: scale(0.95); transition: transform 0.2s; }
+    .modal-overlay.show .modal-box { transform: scale(1); }
+    
+    .modal-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; background: #f8fafc; }
+    .modal-header h3 { margin: 0 0 4px 0; font-size: 18px; font-weight: 800; color: #0f172a; }
+    .modal-header p { margin: 0; font-size: 13px; color: #64748b; font-weight: 600; }
+    .modal-close { background: white; border: 1px solid #cbd5e1; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; }
+    
+    .modal-body { padding: 20px; }
+    
+    /* Modal 1: Summary Grid */
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .status-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center; }
+    .status-box .num { font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 5px; }
+    .status-box .lbl { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    
+    .btn-open-list { display: block; width: 100%; text-align: center; background: #2563eb; color: white; padding: 12px; border-radius: 8px; font-weight: 700; text-decoration: none; transition: 0.2s; border: none; cursor: pointer; font-size: 15px; }
+    .btn-open-list:hover { background: #1d4ed8; }
+
+    /* Modal 2: Status List */
+    .status-list { display: flex; flex-direction: column; gap: 8px; }
+    .status-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #0f172a; font-weight: 700; font-size: 14px; transition: 0.2s; cursor: pointer; }
+    .status-list-item:hover { background: #eff6ff; border-color: #bfdbfe; }
+    .status-list-item .count { background: white; border: 1px solid #cbd5e1; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; }
 
     /* FAB & Mobile */
     .fab { position: fixed; bottom: 40px; right: 40px; background: #2563eb; color: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 32px; text-decoration: none; box-shadow: 0 10px 25px rgba(37,99,235,0.4); z-index: 100; }
@@ -79,8 +98,7 @@
         .sidebar { display: none; width: 100%; flex-direction: column; margin-bottom: 15px; }
         .sidebar.show-mobile { display: flex; }
         .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-        .top-filters { flex-direction: column; }
-        .stats-grid { grid-template-columns: 1fr; }
+        .toolbar-filters { flex-direction: column; width: 100%; }
         .fab { width: 56px; height: 56px; bottom: 20px; right: 20px; }
     }
   </style>
@@ -88,7 +106,7 @@
 <body>
 
   <button class="mobile-filter-btn" onclick="toggleMobileFilters()" style="margin: 15px 15px 0 15px;">
-    <span>⚙️ Filters & Categories</span>
+    <span>⚙️ Status Filters</span>
     <span id="filterArrow">▼</span>
   </button>
 
@@ -96,88 +114,8 @@
     
     <!-- LEFT SIDEBAR FILTERS -->
     <aside class="sidebar" id="sidebarFilters">
-        
         <div class="filter-section">
-            <div class="filter-header">Categories</div>
-            
-            <!-- 1. Sub-station and PTR -->
-            <div class="tree-main">
-                <div class="tree-main-header" onclick="toggleTreeSub('sub-ss-ptr')">
-                    <span>🏢 Sub-station and PTR</span>
-                    <span>▼</span>
-                </div>
-                <div class="tree-sub" id="sub-ss-ptr">
-                    <div class="tree-sub-header" onclick="toggleTreeItems('items-ss-trans')">
-                        <span>Type: Substations & Transformers</span>
-                        <span>▾</span>
-                    </div>
-                    <div class="tree-items" id="items-ss-trans">
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="New SS" checked onchange="updateFilters()"> New SS <span class="count-badge">0</span></label>
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="PTR Augmentation / New PTR" checked onchange="updateFilters()"> PTR Augmentation <span class="count-badge">0</span></label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. 33 KV Category -->
-            <div class="tree-main">
-                <div class="tree-main-header" onclick="toggleTreeSub('sub-33kv')">
-                    <span>⚡ 33 KV Category</span>
-                    <span>▼</span>
-                </div>
-                <div class="tree-sub" id="sub-33kv">
-                    <div class="tree-sub-header" onclick="toggleTreeItems('items-33kv-lines')">
-                        <span>Type: 33KV Lines</span>
-                        <span>▾</span>
-                    </div>
-                    <div class="tree-items" id="items-33kv-lines">
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="33KV Second Source / Tapping Source Elemination" checked onchange="updateFilters()"> 33KV Second Source <span class="count-badge">0</span></label>
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Augmentation of conductor size of 33kV Feeders" checked onchange="updateFilters()"> Aug 33kV Feeders <span class="count-badge">0</span></label>
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Augmentation of conductor size of 33kV Switchyard" checked onchange="updateFilters()"> Aug 33kV Switchyard <span class="count-badge">0</span></label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. 11 KV Category -->
-            <div class="tree-main">
-                <div class="tree-main-header" onclick="toggleTreeSub('sub-11kv')">
-                    <span>🔌 11 KV Category</span>
-                    <span>▼</span>
-                </div>
-                <div class="tree-sub" id="sub-11kv">
-                    <div class="tree-sub-header" onclick="toggleTreeItems('items-11kv-lines')">
-                        <span>Type: 11KV Lines & Cables</span>
-                        <span>▾</span>
-                    </div>
-                    <div class="tree-items" id="items-11kv-lines">
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Bifurcation of 11kV Feeders" checked onchange="updateFilters()"> Bifurcation 11kV <span class="count-badge">0</span></label>
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Augmentation of conductor size of 11kV Feeders" checked onchange="updateFilters()"> Aug 11kV Feeders <span class="count-badge">0</span></label>
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="HT AB Cable Conversion" checked onchange="updateFilters()"> HT AB Cable <span class="count-badge">0</span></label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Misc Category -->
-            <div class="tree-main">
-                <div class="tree-main-header" onclick="toggleTreeSub('sub-misc')">
-                    <span>🏗️ Misc Category</span>
-                    <span>▼</span>
-                </div>
-                <div class="tree-sub" id="sub-misc">
-                    <div class="tree-sub-header" onclick="toggleTreeItems('items-misc-civil')">
-                        <span>Type: Civil Works</span>
-                        <span>▾</span>
-                    </div>
-                    <div class="tree-items" id="items-misc-civil">
-                        <label class="checkbox-item"><input type="checkbox" class="head-filter" value="Control Room Extension / Modification" checked onchange="updateFilters()"> Control Room Ext <span class="count-badge">0</span></label>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Dynamic Status Counts -->
-        <div class="filter-section">
-            <div class="filter-header">Status Counts</div>
+            <div class="filter-header">Global Status Counts</div>
             <div id="statusFilters"></div>
         </div>
     </aside>
@@ -190,50 +128,116 @@
             <a href="/dashboard.html" class="btn-back">← Back to App</a>
         </div>
 
-        <!-- Top Location Filters -->
-        <div class="top-filters">
-            <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
-            <select id="filterRegion" onchange="updateFilterDivisions()" disabled><option value="">All Regions</option></select>
-            <select id="filterDivision" onchange="fetchOverviewTable()" disabled><option value="">All Divisions</option></select>
-        </div>
-
-        <!-- Overview Table -->
-        <div class="overview-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-            <h2 style="font-size: 20px; font-weight: 800; margin: 0;">Schemes Overview</h2>
-            <div class="stat-boxes" style="display:flex; gap:10px;">
-                <div class="stat-card" style="padding:10px 20px; border-radius:8px;">
-                    <h2 id="totalSchemes" style="font-size:20px; margin:0;">0</h2>
-                    <p style="font-size:10px; margin:0;">Total</p>
+        <!-- MAIN CARD -->
+        <div class="table-card">
+            <div class="table-toolbar">
+                <div class="toolbar-top">
+                    <h2 class="table-title">Schemes Overview</h2>
+                    <div class="stat-boxes">
+                        <div class="stat-card">
+                            <h2 id="totalSchemes">0</h2>
+                            <p>Total</p>
+                        </div>
+                        <div class="stat-card green">
+                            <h2 id="completedSchemes">0</h2>
+                            <p>Completed</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card green" style="padding:10px 20px; border-radius:8px;">
-                    <h2 id="completedSchemes" style="font-size:20px; margin:0;">0</h2>
-                    <p style="font-size:10px; margin:0;">Completed</p>
+
+                <div class="toolbar-filters">
+                    <select id="filterCategory" onchange="updateFilters()">
+                        <option value="All">All Categories</option>
+                        <option value="Sub-station and PTR">🏢 Sub-station and PTR</option>
+                        <option value="33 KV">⚡ 33 KV Category</option>
+                        <option value="11 KV">🔌 11 KV Category</option>
+                        <option value="Misc">🏗️ Misc Category</option>
+                    </select>
+
+                    <select id="filterSchemeHead" onchange="fetchOverviewTable()">
+                        <option value="All">All Scheme Heads</option>
+                    </select>
+                    
+                    <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
+                    <select id="filterRegion" onchange="updateFilterDivisions()" disabled><option value="">All Regions</option></select>
+                    <select id="filterDivision" onchange="fetchOverviewTable()" disabled><option value="">All Divisions</option></select>
                 </div>
             </div>
-        </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Scheme Category</th>
-                        <th>Division</th>
-                        <th>Total</th>
-                        <th>Completed</th>
-                        <th>In Progress</th>
-                        <th>Pending</th>
-                        <th>Progress</th>
-                        <th>Last Updated</th>
-                    </tr>
-                </thead>
-                <tbody id="overviewTableBody">
-                    <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
-                </tbody>
-            </table>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Scheme Category</th>
+                            <th>Division</th>
+                            <th>Total</th>
+                            <th>Completed</th>
+                            <th>In Progress</th>
+                            <th>Pending</th>
+                            <th>Progress</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overviewTableBody">
+                        <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-
     </main>
+  </div>
+
+  <!-- MODAL 1: SUMMARY -->
+  <div id="summaryModal" class="modal-overlay" onclick="closeSummaryModal()">
+      <div class="modal-box" onclick="event.stopPropagation()">
+          <div class="modal-header">
+              <div>
+                  <h3 id="modalTitle">Scheme Name</h3>
+                  <p id="modalSubTitle">Division Name</p>
+              </div>
+              <button class="modal-close" onclick="closeSummaryModal()">✕</button>
+          </div>
+          <div class="modal-body">
+              <div class="status-grid">
+                  <div class="status-box">
+                      <div class="num" id="modalTotal" style="color: #2563eb;">0</div>
+                      <div class="lbl">Total</div>
+                  </div>
+                  <div class="status-box">
+                      <div class="num" id="modalCompleted" style="color: #10b981;">0</div>
+                      <div class="lbl">Completed</div>
+                  </div>
+                  <div class="status-box">
+                      <div class="num" id="modalInProgress" style="color: #8b5cf6;">0</div>
+                      <div class="lbl">In Progress</div>
+                  </div>
+                  <div class="status-box">
+                      <div class="num" id="modalPending" style="color: #d97706;">0</div>
+                      <div class="lbl">Pending</div>
+                  </div>
+              </div>
+              <button onclick="openStatusListModal()" class="btn-open-list">View Scheme List →</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- MODAL 2: STATUS LIST -->
+  <div id="statusListModal" class="modal-overlay" onclick="closeStatusListModal()">
+      <div class="modal-box" onclick="event.stopPropagation()">
+          <div class="modal-header">
+              <div>
+                  <h3 id="statusListTitle">Scheme Name</h3>
+                  <p>Select a status to view schemes</p>
+              </div>
+              <button class="modal-close" onclick="closeStatusListModal()">✕</button>
+          </div>
+          <div class="modal-body">
+              <div class="status-list" id="statusListContainer">
+                  <!-- Populated dynamically -->
+              </div>
+          </div>
+      </div>
   </div>
 
   <a href="/electrical-new.html?block=electrical_works" class="fab" title="Add New Scheme">+</a>
@@ -247,8 +251,28 @@
     let orgData = {};
     
     let currentPhase = "All";
-    let selectedSchemeHeads = []; 
     let selectedStatuses = [];    
+    let currentCategory = "All";
+    let activeRow = null; // Track the currently clicked row data
+
+    const CATEGORY_MAPPING = {
+        "Sub-station and PTR": ["New SS", "PTR Augmentation / New PTR"],
+        "33 KV": ["33KV Second Source / Tapping Source Elemination", "Augmentation of conductor size of 33kV Feeders", "Augmentation of conductor size of 33kV Switchyard"],
+        "11 KV": ["Bifurcation of 11kV Feeders", "Augmentation of conductor size of 11kV Feeders", "HT AB Cable Conversion"],
+        "Misc": ["Control Room Extension / Modification"]
+    };
+
+    const MASTER_SCHEME_HEADS = [
+        { category: "Sub-station and PTR", head: "New SS" },
+        { category: "Sub-station and PTR", head: "PTR Augmentation / New PTR" },
+        { category: "33 KV", head: "33KV Second Source / Tapping Source Elemination" },
+        { category: "33 KV", head: "Augmentation of conductor size of 33kV Feeders" },
+        { category: "33 KV", head: "Augmentation of conductor size of 33kV Switchyard" },
+        { category: "11 KV", head: "Bifurcation of 11kV Feeders" },
+        { category: "11 KV", head: "Augmentation of conductor size of 11kV Feeders" },
+        { category: "11 KV", head: "HT AB Cable Conversion" },
+        { category: "Misc", head: "Control Room Extension / Modification" }
+    ];
 
     function toggleMobileFilters() {
         const sidebar = document.getElementById("sidebarFilters");
@@ -256,9 +280,6 @@
         sidebar.classList.toggle("show-mobile");
         arrow.innerText = sidebar.classList.contains("show-mobile") ? "▲" : "▼";
     }
-
-    function toggleTreeSub(id) { document.getElementById(id).classList.toggle("active"); }
-    function toggleTreeItems(id) { document.getElementById(id).classList.toggle("active"); }
 
     async function init() {
         try {
@@ -281,17 +302,22 @@
     }
 
     function updateFilters() {
-        selectedSchemeHeads = Array.from(document.querySelectorAll(".head-filter:checked")).map(cb => cb.value);
+        currentCategory = document.getElementById("filterCategory").value;
         
-        // Dynamic Status Counts based on selected Scheme Heads
+        const headSelect = document.getElementById("filterSchemeHead");
+        headSelect.innerHTML = `<option value="All">All Scheme Heads</option>`;
+        MASTER_SCHEME_HEADS.forEach(item => {
+            if (currentCategory === "All" || currentCategory === item.category) {
+                headSelect.innerHTML += `<option value="${escapeHtml(item.head)}">${escapeHtml(item.head)}</option>`;
+            }
+        });
+
         const statuses = {
             "Proposal to Initiate": 0, "Approval pending": 0, "TAA issued, work yet to start": 0,
             "Work in progress": 0, "Completed": 0, "Not updated": 0
         };
         
-        let filteredByHead = allSchemes.filter(s => selectedSchemeHeads.includes(s.scheme_head || "Uncategorized"));
-        
-        filteredByHead.forEach(s => {
+        allSchemes.forEach(s => {
             if (s.status === "completed") statuses["Completed"]++;
             else if (s.current_stage === 1) statuses["Proposal to Initiate"]++;
             else if (s.current_stage === 2) statuses["Approval pending"]++;
@@ -312,12 +338,6 @@
             `;
         });
         document.getElementById("statusFilters").innerHTML = statusHtml;
-
-        // Update Badges
-        document.querySelectorAll(".head-filter").forEach(cb => {
-            const count = allSchemes.filter(s => s.scheme_head === cb.value).length;
-            cb.parentElement.querySelector(".count-badge").innerText = count;
-        });
 
         fetchOverviewTable();
     }
@@ -366,6 +386,7 @@
             const zoneVal = document.getElementById("filterZone").value;
             const regionVal = document.getElementById("filterRegion").value;
             const divisionVal = document.getElementById("filterDivision").value;
+            const headVal = document.getElementById("filterSchemeHead").value;
 
             const params = new URLSearchParams();
             if (currentPhase !== "All") params.append("phase", currentPhase);
@@ -375,11 +396,31 @@
             
             const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
             
-            // Filter by selected Scheme Heads
             let filteredData = groupedData.filter(row => {
-                if (selectedSchemeHeads.length > 0 && !selectedSchemeHeads.includes(row.scheme_head)) return false;
+                if (currentCategory !== "All") {
+                    const allowedHeads = CATEGORY_MAPPING[currentCategory];
+                    if (!allowedHeads || !allowedHeads.includes(row.scheme_head)) return false;
+                }
+                if (headVal !== "All" && row.scheme_head !== headVal) return false;
                 return true;
             });
+
+            if (headVal === "All" && currentCategory === "All") {
+                let existingHeads = filteredData.map(r => r.scheme_head);
+                MASTER_SCHEME_HEADS.forEach(item => {
+                    if (!existingHeads.includes(item.head)) {
+                        filteredData.push({
+                            scheme_head: item.head,
+                            division: divisionVal || "All / N/A",
+                            total: 0, completed: 0, in_progress: 0, pending: 0,
+                            progress_pct: 0,
+                            last_updated: "N/A"
+                        });
+                    }
+                });
+            }
+
+            filteredData.sort((a, b) => a.scheme_head.localeCompare(b.scheme_head));
 
             const total = filteredData.reduce((sum, item) => sum + item.total, 0);
             const completed = filteredData.reduce((sum, item) => sum + item.completed, 0);
@@ -389,11 +430,10 @@
             let html = "";
             let idx = 1;
             filteredData.forEach(row => {
-                // URL Encode for safe navigation
-                const url = `/electrical-list.html?head=${encodeURIComponent(row.scheme_head)}&division=${encodeURIComponent(row.division)}`;
+                const rowDataStr = encodeURIComponent(JSON.stringify(row));
                 
                 html += `
-                    <tr class="clickable-row" onclick="window.location.href='${url}'">
+                    <tr class="clickable-row" onclick="openSummaryModal('${rowDataStr}')">
                         <td>${idx++}</td>
                         <td style="font-weight:700;">${escapeHtml(row.scheme_head)}</td>
                         <td style="font-weight:600; color:#475569;">${escapeHtml(row.division)}</td>
@@ -439,6 +479,77 @@
         } catch (e) {
             document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
         }
+    }
+
+    // --- STEP 1: OPEN SUMMARY MODAL ---
+    function openSummaryModal(encodedData) {
+        activeRow = JSON.parse(decodeURIComponent(encodedData));
+        
+        document.getElementById("modalTitle").innerText = activeRow.scheme_head;
+        document.getElementById("modalSubTitle").innerText = `Division: ${activeRow.division}`;
+        
+        document.getElementById("modalTotal").innerText = activeRow.total;
+        document.getElementById("modalCompleted").innerText = activeRow.completed;
+        document.getElementById("modalInProgress").innerText = activeRow.in_progress;
+        document.getElementById("modalPending").innerText = activeRow.pending;
+        
+        document.getElementById("summaryModal").classList.add("show");
+    }
+
+    function closeSummaryModal() {
+        document.getElementById("summaryModal").classList.remove("show");
+    }
+
+    // --- STEP 2: OPEN STATUS LIST MODAL ---
+    function openStatusListModal() {
+        closeSummaryModal();
+        
+        // Calculate status breakdown for this specific scheme head and division
+        const statuses = {
+            "Proposal to Initiate": 0, 
+            "Approval pending": 0, 
+            "TAA issued, work yet to start": 0,
+            "Work in progress": 0, 
+            "Completed": 0, 
+            "Not updated": 0
+        };
+
+        // Filter allSchemes based on the active row's scheme_head and division
+        const relevantSchemes = allSchemes.filter(s => 
+            s.scheme_head === activeRow.scheme_head && 
+            (activeRow.division === "All / N/A" || s.division === activeRow.division)
+        );
+
+        relevantSchemes.forEach(s => {
+            if (s.status === "completed") statuses["Completed"]++;
+            else if (s.current_stage === 1) statuses["Proposal to Initiate"]++;
+            else if (s.current_stage === 2) statuses["Approval pending"]++;
+            else if (s.current_stage === 3) statuses["TAA issued, work yet to start"]++;
+            else if (s.current_stage === 4) statuses["Work in progress"]++;
+            else statuses["Not updated"]++;
+        });
+
+        document.getElementById("statusListTitle").innerText = activeRow.scheme_head;
+
+        let listHtml = "";
+        Object.keys(statuses).forEach(st => {
+            const count = statuses[st];
+            const url = `/electrical-list.html?head=${encodeURIComponent(activeRow.scheme_head)}&division=${encodeURIComponent(activeRow.division)}&status=${encodeURIComponent(st)}`;
+            
+            listHtml += `
+                <a href="${url}" class="status-list-item">
+                    <span>${st}</span>
+                    <span class="count">${count}</span>
+                </a>
+            `;
+        });
+
+        document.getElementById("statusListContainer").innerHTML = listHtml;
+        document.getElementById("statusListModal").classList.add("show");
+    }
+
+    function closeStatusListModal() {
+        document.getElementById("statusListModal").classList.remove("show");
     }
 
     init();

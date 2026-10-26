@@ -176,6 +176,8 @@
     const params = new URLSearchParams(window.location.search);
     const targetHead = params.get("head");
     const targetDivision = params.get("division");
+    const targetStatus = params.get("status"); // <-- ADDED
+    
     let allSchemes = [];
     let currentFiltered = [];
 
@@ -183,6 +185,9 @@
     const isAdmin = ["super_admin", "admin"].includes(user.role);
 
     document.getElementById("pageTitle").innerText = targetHead || "All Schemes";
+    if (targetStatus) {
+        document.getElementById("pageTitle").innerText += ` - ${targetStatus}`;
+    }
 
     async function init() {
         try {
@@ -195,8 +200,21 @@
             }
             
             // Filter by Division
-            if (targetDivision) {
+            if (targetDivision && targetDivision !== "All / N/A") {
                 allSchemes = allSchemes.filter(s => (s.division || "Unassigned") === targetDivision);
+            }
+
+            // Filter by Status (NEW)
+            if (targetStatus) {
+                allSchemes = allSchemes.filter(s => {
+                    let sLabel = "Not updated";
+                    if (s.status === "completed") sLabel = "Completed";
+                    else if (s.current_stage === 1) sLabel = "Proposal to Initiate";
+                    else if (s.current_stage === 2) sLabel = "Approval pending";
+                    else if (s.current_stage === 3) sLabel = "TAA issued, work yet to start";
+                    else if (s.current_stage === 4) sLabel = "Work in progress";
+                    return sLabel === targetStatus;
+                });
             }
             
             renderList();
@@ -223,12 +241,12 @@
         document.getElementById("countBadge").innerText = `${currentFiltered.length} schemes found`;
 
         if (currentFiltered.length === 0) {
-            document.getElementById("listTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 30px;">No schemes found.</td></tr>`;
+            document.getElementById("listTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 30px;">No schemes found for this filter.</td></tr>`;
             return;
         }
 
         document.getElementById("listTableBody").innerHTML = currentFiltered.map(s => {
-            let statusLabel = "Proposal not initiated";
+            let statusLabel = "Proposal to Initiate";
             if (s.status === "completed") statusLabel = "Completed";
             else if (s.current_stage === 2) statusLabel = "Approval pending";
             else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
@@ -263,7 +281,7 @@
         document.getElementById("modalSchemeName").innerText = scheme.scheme_name || scheme.application_no;
         document.getElementById("modalLastUpdated").innerText = formatDate(scheme.updated_at);
         
-        let statusLabel = "Proposal not initiated";
+        let statusLabel = "Proposal to Initiate";
         let statusClass = "meta-orange";
         if (scheme.status === "completed") { statusLabel = "Completed"; statusClass = "meta-green"; }
         else if (scheme.current_stage === 3) statusLabel = "TAA issued, work yet to start";
