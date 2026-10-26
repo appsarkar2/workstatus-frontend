@@ -14,29 +14,24 @@
     html, body { background-color: #e2e8f0 !important; margin: 0; padding: 0; }
     #elec-new-page { font-family: 'Inter', sans-serif; color: #0f172a; min-height: 100vh; background-color: #e2e8f0; display: block; }
     
-    /* Top Header */
     #elec-new-page .app-header { background: #ffffff !important; padding: 16px 30px; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
     #elec-new-page .btn-back { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; transition: 0.2s; margin-right: 15px; }
     #elec-new-page .btn-back:hover { background: #f1f5f9; color: #0f172a; }
     #elec-new-page .page-title h1 { font-size: 22px; font-weight: 800; margin: 0; color: #2563eb; letter-spacing: -0.5px; }
     
-    /* Form Layout */
     #elec-new-page .form-container { max-width: 900px; margin: 30px auto; padding: 0 20px 60px 20px; }
     #elec-new-page .form-card { background: #ffffff; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: 0 4px 10px -2px rgba(0,0,0,0.06); padding: 30px; margin-bottom: 24px; }
     #elec-new-page .section-title { font-size: 15px; font-weight: 800; color: #2563eb; margin-top: 0; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* Form Fields */
     #elec-new-page .form-group { margin-bottom: 20px; }
     #elec-new-page .form-group label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; }
     #elec-new-page .form-control { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; color: #0f172a; transition: 0.2s; background: #f8fafc; box-sizing: border-box; }
     #elec-new-page .form-control:focus { outline: none; border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px #eff6ff; }
     #elec-new-page .form-control:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
     
-    /* Grid Layouts */
     #elec-new-page .row { display: flex; gap: 20px; }
     #elec-new-page .col { flex: 1; min-width: 0; }
     
-    /* Sticky Actions */
     #elec-new-page .form-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 30px; padding: 20px; background: white; border-top: 1px solid #cbd5e1; position: sticky; bottom: 0; z-index: 10; border-radius: 0 0 12px 12px; }
     #elec-new-page .btn { padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; border: none; }
     #elec-new-page .btn-cancel { background: #f1f5f9; color: #475569; }
@@ -120,7 +115,11 @@
           <h2 class="section-title">📋 Scheme Details</h2>
           <div class="form-group">
             <label>Name of Scheme *</label>
-            <input type="text" id="schemeName" class="form-control" placeholder="e.g. 2nd source for Laskarhat SS from Salas SS" required />
+            <!-- DataList for Autocomplete -->
+            <input type="text" id="schemeName" class="form-control" list="schemeNames" placeholder="e.g. 2nd source for Laskarhat SS from Salas SS" required />
+            <datalist id="schemeNames">
+              <!-- Populated dynamically -->
+            </datalist>
           </div>
           <div class="row">
             <div class="form-group col">
@@ -203,21 +202,26 @@
 
   <script>
     let orgData = {};
+    let allSchemes = [];
 
     document.addEventListener("DOMContentLoaded", async () => {
       try {
-        orgData = await apiFetch("/api/org-structure");
+        const results = await Promise.all([
+          apiFetch("/api/org-structure"),
+          BlockAPI("electrical_works").list()
+        ]);
+        orgData = results[0];
+        allSchemes = results[1].items || [];
+
         const zoneSelect = document.getElementById("zone");
-        
         if (orgData.zones) {
-          zoneSelect.innerHTML = `<option value="">Select Zone...</option>`;
-          Object.keys(orgData.zones).forEach(zoneName => {
-            zoneSelect.innerHTML += `<option value="${zoneName}">${zoneName}</option>`;
-          });
+            zoneSelect.innerHTML = `<option value="">Select Zone...</option>`;
+            Object.keys(orgData.zones).forEach(zoneName => {
+                zoneSelect.innerHTML += `<option value="${zoneName}">${zoneName}</option>`;
+            });
         }
       } catch (e) {
-        showToast("Failed to load zones from database", "error");
-        document.getElementById("zone").innerHTML = `<option value="">Error loading zones</option>`;
+        showToast("Failed to load initial data", "error");
       }
     });
 
@@ -241,6 +245,7 @@
       } else {
         regSelect.disabled = true;
       }
+      updateSchemeDatalist();
     }
 
     function updateDivisions() {
@@ -261,6 +266,7 @@
       } else {
         divSelect.disabled = true;
       }
+      updateSchemeDatalist();
     }
 
     function updateSubStations() {
@@ -286,6 +292,31 @@
       } else {
         ssSelect.disabled = true;
       }
+      updateSchemeDatalist();
+    }
+
+    // Populate Datalist based on Current Selection
+    function updateSchemeDatalist() {
+        const datalist = document.getElementById("schemeNames");
+        datalist.innerHTML = "";
+
+        const currentZone = document.getElementById("zone").value;
+        const currentRegion = document.getElementById("region").value;
+        const currentDivision = document.getElementById("division").value;
+
+        // Filter schemes based on current selections
+        let filtered = allSchemes;
+        if (currentZone) filtered = filtered.filter(s => s.zone === currentZone);
+        if (currentRegion) filtered = filtered.filter(s => s.region === currentRegion);
+        if (currentDivision) filtered = filtered.filter(s => s.division === currentDivision);
+
+        // Add unique scheme names to datalist
+        const uniqueNames = new Set();
+        filtered.forEach(s => { if(s.scheme_name) uniqueNames.add(s.scheme_name); });
+
+        uniqueNames.forEach(name => {
+            datalist.innerHTML += `<option value="${escapeHtml(name)}"></option>`;
+        });
     }
 
     async function submitForm(e) {
@@ -310,9 +341,9 @@
         priority: document.getElementById("priority").value,
         target_date: document.getElementById("targetDate").value,
         taa_no: document.getElementById("taaNo").value,
-        taa_value: document.getElementById("taaValue").value,       // <-- ADDED
-        billed_value: document.getElementById("billedValue").value, // <-- ADDED
-        presently_with: document.getElementById("presentlyWith").value, // <-- ADDED
+        taa_value: document.getElementById("taaValue").value,
+        billed_value: document.getElementById("billedValue").value,
+        presently_with: document.getElementById("presentlyWith").value,
         eoffice_ref: document.getElementById("eofficeRef").value,
         detailed_status: document.getElementById("detailedStatus").value
       };

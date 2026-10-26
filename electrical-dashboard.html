@@ -254,9 +254,6 @@
     let currentPhase = "All";
     let selectedSchemeHeads = []; 
     let selectedStatuses = [];    
-    let filterZone = "";
-    let filterRegionLoc = "";
-    let filterDivision = "";
 
     function toggleMobileFilters() {
         const sidebar = document.getElementById("sidebarFilters");
@@ -298,7 +295,7 @@
     function updateFilters() {
         selectedSchemeHeads = Array.from(document.querySelectorAll(".head-filter:checked")).map(cb => cb.value);
         
-        // Dynamic Status Counts
+        // Dynamic Status Counts based on selected Scheme Heads
         const statuses = {
             "Proposal not initiated": 0, "Approval pending": 0, "TAA issued, work yet to start": 0,
             "Work in progress": 0, "Completed": 0, "Not updated": 0
@@ -343,34 +340,37 @@
     }
 
     function updateFilterRegions() {
-        filterZone = document.getElementById("filterZone").value;
+        const zone = document.getElementById("filterZone").value;
         const regSelect = document.getElementById("filterRegion");
         const divSelect = document.getElementById("filterDivision");
         regSelect.innerHTML = `<option value="">All Regions</option>`;
         divSelect.innerHTML = `<option value="">All Divisions</option>`;
         divSelect.disabled = true;
         
-        if (filterZone && orgData.zones[filterZone]) {
-            Object.keys(orgData.zones[filterZone].regions).forEach(r => {
+        if (zone && orgData.zones[zone]) {
+            Object.keys(orgData.zones[zone].regions).forEach(r => {
                 regSelect.innerHTML += `<option value="${r}">${r}</option>`;
             });
             regSelect.disabled = false;
         } else { regSelect.disabled = true; }
-        filterRegionLoc = ""; filterDivision = ""; fetchOverviewTable();
+        
+        fetchOverviewTable();
     }
 
     function updateFilterDivisions() {
-        filterRegionLoc = document.getElementById("filterRegion").value;
+        const zone = document.getElementById("filterZone").value;
+        const region = document.getElementById("filterRegion").value;
         const divSelect = document.getElementById("filterDivision");
         divSelect.innerHTML = `<option value="">All Divisions</option>`;
         
-        if (filterZone && filterRegionLoc && orgData.zones[filterZone].regions[filterRegionLoc]) {
-            Object.keys(orgData.zones[filterZone].regions[filterRegionLoc]).forEach(d => {
+        if (zone && region && orgData.zones[zone].regions[region]) {
+            Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
                 divSelect.innerHTML += `<option value="${d}">${d}</option>`;
             });
             divSelect.disabled = false;
         } else { divSelect.disabled = true; }
-        filterDivision = ""; fetchOverviewTable();
+        
+        fetchOverviewTable();
     }
 
     function filterPhase(phase, btn) {
@@ -382,16 +382,24 @@
 
     async function fetchOverviewTable() {
         try {
+            // 1. Read the CURRENT values of the dropdowns at the moment of the call
+            const zoneVal = document.getElementById("filterZone").value;
+            const regionVal = document.getElementById("filterRegion").value;
+            const divisionVal = document.getElementById("filterDivision").value;
+
             const params = new URLSearchParams();
+            
+            // 2. Send them to the backend
             if (currentPhase !== "All") params.append("phase", currentPhase);
+            if (zoneVal) params.append("zone", zoneVal);
+            if (regionVal) params.append("region", regionVal);
+            if (divisionVal) params.append("division", divisionVal);
             
             const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
             
+            // 3. Filter by selected Scheme Heads on frontend
             let filteredData = groupedData.filter(row => {
                 if (selectedSchemeHeads.length > 0 && !selectedSchemeHeads.includes(row.scheme_head)) return false;
-                if (filterZone && row.zone !== filterZone) return false;
-                if (filterRegionLoc && row.region !== filterRegionLoc) return false;
-                if (filterDivision && row.division !== filterDivision) return false;
                 return true;
             });
 
