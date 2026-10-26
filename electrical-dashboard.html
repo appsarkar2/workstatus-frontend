@@ -57,14 +57,16 @@
     table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; }
     th { background: #f8fafc; padding: 14px 16px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
     td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; white-space: nowrap; }
-    tr:hover { background: #f8fafc; }
     
+    /* Clickable Row Style */
+    .clickable-row { cursor: pointer; transition: background-color 0.2s; }
+    .clickable-row:hover { background-color: #f0f9ff; }
+
     .progress-container { display: flex; align-items: center; gap: 8px; min-width: 120px; }
     .progress-bar-bg { flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
     .progress-bar-fill { height: 100%; background: #f59e0b; border-radius: 3px; }
     .progress-text { font-size: 11px; font-weight: 800; color: #d97706; }
     
-    .btn-view { background: #2563eb; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 12px; }
     .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; }
 
     /* FAB & Mobile */
@@ -223,11 +225,10 @@
                         <th>Pending</th>
                         <th>Progress</th>
                         <th>Last Updated</th>
-                        <th>View</th>
                     </tr>
                 </thead>
                 <tbody id="overviewTableBody">
-                    <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading...</td></tr>
+                    <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -256,15 +257,8 @@
         arrow.innerText = sidebar.classList.contains("show-mobile") ? "▲" : "▼";
     }
 
-    function toggleTreeSub(id) {
-        const el = document.getElementById(id);
-        el.classList.toggle("active");
-    }
-
-    function toggleTreeItems(id) {
-        const el = document.getElementById(id);
-        el.classList.toggle("active");
-    }
+    function toggleTreeSub(id) { document.getElementById(id).classList.toggle("active"); }
+    function toggleTreeItems(id) { document.getElementById(id).classList.toggle("active"); }
 
     async function init() {
         try {
@@ -367,23 +361,13 @@
         fetchOverviewTable();
     }
 
-    function filterPhase(phase, btn) {
-      currentPhase = phase;
-      document.querySelectorAll("#phaseTabs .tab-pill").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      fetchOverviewTable();
-    }
-
     async function fetchOverviewTable() {
         try {
-            // 1. Read the CURRENT values of the dropdowns at the moment of the call
             const zoneVal = document.getElementById("filterZone").value;
             const regionVal = document.getElementById("filterRegion").value;
             const divisionVal = document.getElementById("filterDivision").value;
 
             const params = new URLSearchParams();
-            
-            // 2. Send them to the backend
             if (currentPhase !== "All") params.append("phase", currentPhase);
             if (zoneVal) params.append("zone", zoneVal);
             if (regionVal) params.append("region", regionVal);
@@ -391,7 +375,7 @@
             
             const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
             
-            // 3. Filter by selected Scheme Heads on frontend
+            // Filter by selected Scheme Heads
             let filteredData = groupedData.filter(row => {
                 if (selectedSchemeHeads.length > 0 && !selectedSchemeHeads.includes(row.scheme_head)) return false;
                 return true;
@@ -405,8 +389,11 @@
             let html = "";
             let idx = 1;
             filteredData.forEach(row => {
+                // URL Encode for safe navigation
+                const url = `/electrical-list.html?head=${encodeURIComponent(row.scheme_head)}&division=${encodeURIComponent(row.division)}`;
+                
                 html += `
-                    <tr>
+                    <tr class="clickable-row" onclick="window.location.href='${url}'">
                         <td>${idx++}</td>
                         <td style="font-weight:700;">${escapeHtml(row.scheme_head)}</td>
                         <td style="font-weight:600; color:#475569;">${escapeHtml(row.division)}</td>
@@ -421,15 +408,12 @@
                             </div>
                         </td>
                         <td style="font-size:12px; color:#64748b;">${row.last_updated}</td>
-                        <td>
-                            <a href="/electrical-list.html?head=${encodeURIComponent(row.scheme_head)}&division=${encodeURIComponent(row.division)}" class="btn-view">→ View</a>
-                        </td>
                     </tr>
                 `;
             });
 
             if (filteredData.length === 0) {
-                html = `<tr><td colspan="10" style="text-align:center; padding: 30px; color:#64748b;">No schemes match your current filters.</td></tr>`;
+                html = `<tr><td colspan="9" style="text-align:center; padding: 30px; color:#64748b;">No schemes match your current filters.</td></tr>`;
             } else {
                 const totalPct = Math.round((completed / total) * 100) || 0;
                 html += `
@@ -445,7 +429,7 @@
                                 <span class="progress-text">${totalPct}%</span>
                             </div>
                         </td>
-                        <td colspan="2"></td>
+                        <td></td>
                     </tr>
                 `;
             }
@@ -453,7 +437,7 @@
             document.getElementById("overviewTableBody").innerHTML = html;
 
         } catch (e) {
-            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="10" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
+            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
         }
     }
 
