@@ -12,19 +12,9 @@
     * { box-sizing: border-box; }
     html, body { background-color: #f8fafc !important; color: #0f172a !important; font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh; width: 100%; overflow-x: hidden; }
 
-    .layout-wrapper { display: flex; width: 100%; max-width: 1400px; margin: 0 auto; padding: 30px 20px; gap: 25px; }
+    /* Main Layout (Full Width now) */
+    .app-container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
     
-    /* Sidebar Filter */
-    .sidebar { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
-    .filter-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); padding: 15px; }
-    .filter-header { font-size: 13px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    
-    .checkbox-item { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; padding: 4px 0; }
-    .checkbox-item input { margin: 2px 8px 0 0; accent-color: #2563eb; cursor: pointer; }
-    .count-badge { background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
-
-    /* Main Content */
-    .main-content { flex: 1; min-width: 0; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .page-header h1 { font-size: 24px; font-weight: 800; margin: 0; }
     .btn-back { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #333; font-weight: 700; font-size: 13px; }
@@ -60,183 +50,122 @@
     
     .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; border-top: 2px solid #cbd5e1; }
 
-    /* MODAL STYLES */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-    .modal-overlay.show { display: flex; opacity: 1; }
-    .modal-box { background: white; border-radius: 16px; width: 90%; max-width: 450px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; transform: scale(0.95); transition: transform 0.2s; }
-    .modal-overlay.show .modal-box { transform: scale(1); }
+    /* --- DRAWER STYLES --- */
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 9998; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+    .drawer-overlay.show { opacity: 1; visibility: visible; }
     
-    .modal-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; background: #f8fafc; }
-    .modal-header h3 { margin: 0 0 4px 0; font-size: 18px; font-weight: 800; color: #0f172a; }
-    .modal-header p { margin: 0; font-size: 13px; color: #64748b; font-weight: 600; }
-    .modal-close { background: white; border: 1px solid #cbd5e1; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; }
+    .drawer { position: fixed; top: 0; right: -400px; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 9999; box-shadow: -10px 0 30px rgba(0,0,0,0.1); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+    .drawer.show { right: 0; }
     
-    .modal-body { padding: 20px; }
+    .drawer-header { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: flex-start; }
+    .drawer-header h2 { font-size: 18px; font-weight: 800; margin: 0 0 5px 0; line-height: 1.3; }
+    .drawer-header p { margin: 0; font-size: 13px; color: #64748b; font-weight: 600; }
+    .drawer-close { background: white; border: 1px solid #cbd5e1; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; flex-shrink: 0; margin-left: 10px; }
     
-    /* Modal 1: Summary Grid */
-    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-    .status-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center; }
-    .status-box .num { font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 5px; }
-    .status-box .lbl { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    .drawer-body { padding: 20px 25px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
     
-    .btn-open-list { display: block; width: 100%; text-align: center; background: #2563eb; color: white; padding: 12px; border-radius: 8px; font-weight: 700; text-decoration: none; transition: 0.2s; border: none; cursor: pointer; font-size: 15px; }
-    .btn-open-list:hover { background: #1d4ed8; }
+    /* Status Menu Items */
+    .status-menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #0f172a; font-weight: 700; font-size: 14px; transition: 0.2s; cursor: pointer; }
+    .status-menu-item:hover { background: #eff6ff; border-color: #bfdbfe; transform: translateX(-5px); }
+    .status-menu-item .count { background: white; border: 1px solid #cbd5e1; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+    
+    .status-menu-item.all-item { background: #2563eb; color: white; border: none; margin-bottom: 10px; }
+    .status-menu-item.all-item:hover { background: #1d4ed8; transform: translateX(0); }
+    .status-menu-item.all-item .count { background: rgba(255,255,255,0.2); color: white; border: none; }
 
-    /* Modal 2: Status List */
-    .status-list { display: flex; flex-direction: column; gap: 8px; }
-    .status-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #0f172a; font-weight: 700; font-size: 14px; transition: 0.2s; cursor: pointer; }
-    .status-list-item:hover { background: #eff6ff; border-color: #bfdbfe; }
-    .status-list-item .count { background: white; border: 1px solid #cbd5e1; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; }
-
-    /* FAB & Mobile */
+    /* FAB */
     .fab { position: fixed; bottom: 40px; right: 40px; background: #2563eb; color: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 32px; text-decoration: none; box-shadow: 0 10px 25px rgba(37,99,235,0.4); z-index: 100; }
-    .mobile-filter-btn { display: none; background: white; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-weight: 700; width: 100%; text-align: left; cursor: pointer; margin-bottom: 10px; }
 
     @media (max-width: 900px) {
-        .layout-wrapper { flex-direction: column; padding: 15px; gap: 0; }
-        .mobile-filter-btn { display: flex; justify-content: space-between; align-items: center; }
-        .sidebar { display: none; width: 100%; flex-direction: column; margin-bottom: 15px; }
-        .sidebar.show-mobile { display: flex; }
+        .app-container { padding: 15px; }
         .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
         .toolbar-filters { flex-direction: column; width: 100%; }
         .fab { width: 56px; height: 56px; bottom: 20px; right: 20px; }
+        .drawer { width: 100%; max-width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <button class="mobile-filter-btn" onclick="toggleMobileFilters()" style="margin: 15px 15px 0 15px;">
-    <span>⚙️ Status Filters</span>
-    <span id="filterArrow">▼</span>
-  </button>
-
-  <div class="layout-wrapper">
+  <div class="app-container">
     
-    <!-- LEFT SIDEBAR FILTERS -->
-    <aside class="sidebar" id="sidebarFilters">
-        <div class="filter-section">
-            <div class="filter-header">Global Status Counts</div>
-            <div id="statusFilters"></div>
-        </div>
-    </aside>
+    <div class="page-header">
+        <h1>⚡ Electrical Works</h1>
+        <a href="/dashboard.html" class="btn-back">← Back to App</a>
+    </div>
 
-    <!-- RIGHT MAIN CONTENT -->
-    <main class="main-content">
-        
-        <div class="page-header">
-            <h1>⚡ Electrical Works</h1>
-            <a href="/dashboard.html" class="btn-back">← Back to App</a>
-        </div>
-
-        <!-- MAIN CARD -->
-        <div class="table-card">
-            <div class="table-toolbar">
-                <div class="toolbar-top">
-                    <h2 class="table-title">Schemes Overview</h2>
-                    <div class="stat-boxes">
-                        <div class="stat-card">
-                            <h2 id="totalSchemes">0</h2>
-                            <p>Total</p>
-                        </div>
-                        <div class="stat-card green">
-                            <h2 id="completedSchemes">0</h2>
-                            <p>Completed</p>
-                        </div>
+    <!-- MAIN CARD -->
+    <div class="table-card">
+        <div class="table-toolbar">
+            <div class="toolbar-top">
+                <h2 class="table-title">Schemes Overview</h2>
+                <div class="stat-boxes">
+                    <div class="stat-card">
+                        <h2 id="totalSchemes">0</h2>
+                        <p>Total</p>
+                    </div>
+                    <div class="stat-card green">
+                        <h2 id="completedSchemes">0</h2>
+                        <p>Completed</p>
                     </div>
                 </div>
-
-                <div class="toolbar-filters">
-                    <select id="filterCategory" onchange="updateFilters()">
-                        <option value="All">All Categories</option>
-                        <option value="Sub-station and PTR">🏢 Sub-station and PTR</option>
-                        <option value="33 KV">⚡ 33 KV Category</option>
-                        <option value="11 KV">🔌 11 KV Category</option>
-                        <option value="Misc">🏗️ Misc Category</option>
-                    </select>
-
-                    <select id="filterSchemeHead" onchange="fetchOverviewTable()">
-                        <option value="All">All Scheme Heads</option>
-                    </select>
-                    
-                    <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
-                    <select id="filterRegion" onchange="updateFilterDivisions()" disabled><option value="">All Regions</option></select>
-                    <select id="filterDivision" onchange="fetchOverviewTable()" disabled><option value="">All Divisions</option></select>
-                </div>
             </div>
 
-            <div class="table-scroll">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Scheme Category</th>
-                            <th>Division</th>
-                            <th>Total</th>
-                            <th>Completed</th>
-                            <th>In Progress</th>
-                            <th>Pending</th>
-                            <th>Progress</th>
-                            <th>Last Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody id="overviewTableBody">
-                        <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
-                    </tbody>
-                </table>
+            <div class="toolbar-filters">
+                <select id="filterCategory" onchange="updateFilters()">
+                    <option value="All">All Categories</option>
+                    <option value="Sub-station and PTR">🏢 Sub-station and PTR</option>
+                    <option value="33 KV">⚡ 33 KV Category</option>
+                    <option value="11 KV">🔌 11 KV Category</option>
+                    <option value="Misc">🏗️ Misc Category</option>
+                </select>
+
+                <select id="filterSchemeHead" onchange="fetchOverviewTable()">
+                    <option value="All">All Scheme Heads</option>
+                </select>
+                
+                <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
+                <select id="filterRegion" onchange="updateFilterDivisions()" disabled><option value="">All Regions</option></select>
+                <select id="filterDivision" onchange="fetchOverviewTable()" disabled><option value="">All Divisions</option></select>
             </div>
         </div>
-    </main>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Scheme Category</th>
+                        <th>Division</th>
+                        <th>Total</th>
+                        <th>Completed</th>
+                        <th>In Progress</th>
+                        <th>Pending</th>
+                        <th>Progress</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody id="overviewTableBody">
+                    <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
   </div>
 
-  <!-- MODAL 1: SUMMARY -->
-  <div id="summaryModal" class="modal-overlay" onclick="closeSummaryModal()">
-      <div class="modal-box" onclick="event.stopPropagation()">
-          <div class="modal-header">
-              <div>
-                  <h3 id="modalTitle">Scheme Name</h3>
-                  <p id="modalSubTitle">Division Name</p>
-              </div>
-              <button class="modal-close" onclick="closeSummaryModal()">✕</button>
+  <!-- DRAWER (SLIDE MENU) -->
+  <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+  
+  <div id="sideDrawer" class="drawer">
+      <div class="drawer-header">
+          <div>
+              <h2 id="drawerTitle">Scheme Name</h2>
+              <p id="drawerSubTitle">Division Name</p>
           </div>
-          <div class="modal-body">
-              <div class="status-grid">
-                  <div class="status-box">
-                      <div class="num" id="modalTotal" style="color: #2563eb;">0</div>
-                      <div class="lbl">Total</div>
-                  </div>
-                  <div class="status-box">
-                      <div class="num" id="modalCompleted" style="color: #10b981;">0</div>
-                      <div class="lbl">Completed</div>
-                  </div>
-                  <div class="status-box">
-                      <div class="num" id="modalInProgress" style="color: #8b5cf6;">0</div>
-                      <div class="lbl">In Progress</div>
-                  </div>
-                  <div class="status-box">
-                      <div class="num" id="modalPending" style="color: #d97706;">0</div>
-                      <div class="lbl">Pending</div>
-                  </div>
-              </div>
-              <button onclick="openStatusListModal()" class="btn-open-list">View Scheme List →</button>
-          </div>
+          <button class="drawer-close" onclick="closeDrawer()">✕</button>
       </div>
-  </div>
-
-  <!-- MODAL 2: STATUS LIST -->
-  <div id="statusListModal" class="modal-overlay" onclick="closeStatusListModal()">
-      <div class="modal-box" onclick="event.stopPropagation()">
-          <div class="modal-header">
-              <div>
-                  <h3 id="statusListTitle">Scheme Name</h3>
-                  <p>Select a status to view schemes</p>
-              </div>
-              <button class="modal-close" onclick="closeStatusListModal()">✕</button>
-          </div>
-          <div class="modal-body">
-              <div class="status-list" id="statusListContainer">
-                  <!-- Populated dynamically -->
-              </div>
-          </div>
+      <div class="drawer-body" id="drawerBody">
+          <!-- Populated dynamically -->
       </div>
   </div>
 
@@ -251,9 +180,8 @@
     let orgData = {};
     
     let currentPhase = "All";
-    let selectedStatuses = [];    
     let currentCategory = "All";
-    let activeRow = null; // Track the currently clicked row data
+    let activeRow = null; 
 
     const CATEGORY_MAPPING = {
         "Sub-station and PTR": ["New SS", "PTR Augmentation / New PTR"],
@@ -273,13 +201,6 @@
         { category: "11 KV", head: "HT AB Cable Conversion" },
         { category: "Misc", head: "Control Room Extension / Modification" }
     ];
-
-    function toggleMobileFilters() {
-        const sidebar = document.getElementById("sidebarFilters");
-        const arrow = document.getElementById("filterArrow");
-        sidebar.classList.toggle("show-mobile");
-        arrow.innerText = sidebar.classList.contains("show-mobile") ? "▲" : "▼";
-    }
 
     async function init() {
         try {
@@ -312,38 +233,6 @@
             }
         });
 
-        const statuses = {
-            "Proposal to Initiate": 0, "Approval pending": 0, "TAA issued, work yet to start": 0,
-            "Work in progress": 0, "Completed": 0, "Not updated": 0
-        };
-        
-        allSchemes.forEach(s => {
-            if (s.status === "completed") statuses["Completed"]++;
-            else if (s.current_stage === 1) statuses["Proposal to Initiate"]++;
-            else if (s.current_stage === 2) statuses["Approval pending"]++;
-            else if (s.current_stage === 3) statuses["TAA issued, work yet to start"]++;
-            else if (s.current_stage === 4) statuses["Work in progress"]++;
-            else statuses["Not updated"]++;
-        });
-
-        let statusHtml = "";
-        Object.keys(statuses).forEach(st => {
-            const isChecked = selectedStatuses.length === 0 || selectedStatuses.includes(st) ? "checked" : "";
-            statusHtml += `
-                <label class="checkbox-item">
-                    <input type="checkbox" class="status-filter" value="${st}" ${isChecked} onchange="updateStatusOnly()">
-                    <span class="checkbox-label">${st}</span>
-                    <span class="count-badge">${statuses[st]}</span>
-                </label>
-            `;
-        });
-        document.getElementById("statusFilters").innerHTML = statusHtml;
-
-        fetchOverviewTable();
-    }
-
-    function updateStatusOnly() {
-        selectedStatuses = Array.from(document.querySelectorAll(".status-filter:checked")).map(cb => cb.value);
         fetchOverviewTable();
     }
 
@@ -433,7 +322,7 @@
                 const rowDataStr = encodeURIComponent(JSON.stringify(row));
                 
                 html += `
-                    <tr class="clickable-row" onclick="openSummaryModal('${rowDataStr}')">
+                    <tr class="clickable-row" onclick="openDrawer('${rowDataStr}')">
                         <td>${idx++}</td>
                         <td style="font-weight:700;">${escapeHtml(row.scheme_head)}</td>
                         <td style="font-weight:600; color:#475569;">${escapeHtml(row.division)}</td>
@@ -481,28 +370,13 @@
         }
     }
 
-    // --- STEP 1: OPEN SUMMARY MODAL ---
-    function openSummaryModal(encodedData) {
+    // --- DRAWER LOGIC ---
+    function openDrawer(encodedData) {
         activeRow = JSON.parse(decodeURIComponent(encodedData));
         
-        document.getElementById("modalTitle").innerText = activeRow.scheme_head;
-        document.getElementById("modalSubTitle").innerText = `Division: ${activeRow.division}`;
-        
-        document.getElementById("modalTotal").innerText = activeRow.total;
-        document.getElementById("modalCompleted").innerText = activeRow.completed;
-        document.getElementById("modalInProgress").innerText = activeRow.in_progress;
-        document.getElementById("modalPending").innerText = activeRow.pending;
-        
-        document.getElementById("summaryModal").classList.add("show");
-    }
-
-    function closeSummaryModal() {
-        document.getElementById("summaryModal").classList.remove("show");
-    }
-
-    // --- STEP 2: OPEN STATUS LIST MODAL ---
-    function openStatusListModal() {
-        closeSummaryModal();
+        // Set Header
+        document.getElementById("drawerTitle").innerText = activeRow.scheme_head;
+        document.getElementById("drawerSubTitle").innerText = `Division: ${activeRow.division}`;
         
         // Calculate status breakdown for this specific scheme head and division
         const statuses = {
@@ -514,7 +388,6 @@
             "Not updated": 0
         };
 
-        // Filter allSchemes based on the active row's scheme_head and division
         const relevantSchemes = allSchemes.filter(s => 
             s.scheme_head === activeRow.scheme_head && 
             (activeRow.division === "All / N/A" || s.division === activeRow.division)
@@ -529,27 +402,36 @@
             else statuses["Not updated"]++;
         });
 
-        document.getElementById("statusListTitle").innerText = activeRow.scheme_head;
+        // Build Drawer Body
+        let bodyHtml = `
+            <a href="/electrical-list.html?head=${encodeURIComponent(activeRow.scheme_head)}&division=${encodeURIComponent(activeRow.division)}" class="status-menu-item all-item">
+                <span>View All Schemes</span>
+                <span class="count">${activeRow.total}</span>
+            </a>
+        `;
 
-        let listHtml = "";
         Object.keys(statuses).forEach(st => {
             const count = statuses[st];
             const url = `/electrical-list.html?head=${encodeURIComponent(activeRow.scheme_head)}&division=${encodeURIComponent(activeRow.division)}&status=${encodeURIComponent(st)}`;
             
-            listHtml += `
-                <a href="${url}" class="status-list-item">
+            bodyHtml += `
+                <a href="${url}" class="status-menu-item">
                     <span>${st}</span>
                     <span class="count">${count}</span>
                 </a>
             `;
         });
 
-        document.getElementById("statusListContainer").innerHTML = listHtml;
-        document.getElementById("statusListModal").classList.add("show");
+        document.getElementById("drawerBody").innerHTML = bodyHtml;
+        
+        // Show Drawer
+        document.getElementById("drawerOverlay").classList.add("show");
+        document.getElementById("sideDrawer").classList.add("show");
     }
 
-    function closeStatusListModal() {
-        document.getElementById("statusListModal").classList.remove("show");
+    function closeDrawer() {
+        document.getElementById("drawerOverlay").classList.remove("show");
+        document.getElementById("sideDrawer").classList.remove("show");
     }
 
     init();

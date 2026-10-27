@@ -29,6 +29,8 @@ function getCurrentUser() {
 function setSession(token, user) {
   localStorage.setItem("token", token);
   localStorage.setItem("user", JSON.stringify(user));
+  // Start the idle timer immediately upon successful login
+  if (typeof resetIdleTimer === "function") resetIdleTimer();
 }
 
 /**
@@ -61,5 +63,66 @@ function requireAuth() {
   return true;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 5-MINUTE IDLE TIMEOUT LOGIC
+// Saves Render server hours by logging out inactive sessions.
+// ═══════════════════════════════════════════════════════════════
+
+let idleTimer;
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 Minutes
+
+function resetIdleTimer() {
+  // Only run if user is logged in and not on login page
+  if (!getToken() || isOnLoginPage()) return;
+
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    if (getToken()) {
+      // Use your built-in toast if available, otherwise alert
+      if (typeof showToast === "function") {
+        showToast("Session expired: 5 minutes of inactivity.", "error");
+      } else {
+        alert("Session expired: 5 minutes of inactivity.");
+      }
+      
+      // Wait 2 seconds so they can read the message, then logout
+      setTimeout(() => { 
+        logout(); 
+      }, 2000); 
+    }
+  }, IDLE_TIMEOUT_MS);
+}
+
+// Listen for user activity on all pages
+if (typeof window !== "undefined") {
+  window.addEventListener("mousemove", resetIdleTimer);
+  window.addEventListener("keydown", resetIdleTimer);
+  window.addEventListener("click", resetIdleTimer);
+  window.addEventListener("scroll", resetIdleTimer);
+  window.addEventListener("touchstart", resetIdleTimer);
+}
+
+// Handle browser tab switching (prevents background tabs from sleeping inaccurately)
+let lastActivityTime = Date.now();
+window.addEventListener("mousemove", () => { lastActivityTime = Date.now(); });
+window.addEventListener("keydown", () => { lastActivityTime = Date.now(); });
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    const timeAway = Date.now() - lastActivityTime;
+    if (timeAway > IDLE_TIMEOUT_MS && getToken()) {
+      if (typeof showToast === "function") {
+        showToast("Session expired: 5 minutes of inactivity.", "error");
+      }
+      setTimeout(() => { logout(); }, 2000);
+    }
+  }
+});
+
 // Auto-run on load (every page that includes this file gets protected).
 requireAuth();
+
+// Initialize the timer on page load if the user is already logged in
+if (getToken() && !isOnLoginPage()) {
+  resetIdleTimer();
+}

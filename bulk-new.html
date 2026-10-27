@@ -192,8 +192,8 @@
 
           <div class="row">
             <div class="form-group col">
-              <label>Division *</label>
-              <select id="division" class="form-control" onchange="updateSubStations()" disabled required>
+              <label>Division (Optional)</label>
+              <select id="division" class="form-control" onchange="updateSubStations()" disabled>
                 <option value="">Select Region first...</option>
               </select>
             </div>
@@ -207,8 +207,9 @@
 
           <div class="row">
             <div class="form-group col">
-              <label>Connection Type *</label>
-              <select id="connectionType" class="form-control" required>
+              <label>Connection Type (Optional)</label>
+              <select id="connectionType" class="form-control">
+                <option value="">Select Connection Type...</option>
                 <option value="Procedure-A">Procedure-A</option>
                 <option value="Procedure-B">Procedure-B</option>
                 <option value="Procedure-C">Procedure-C</option>
@@ -216,8 +217,9 @@
               </select>
             </div>
             <div class="form-group col">
-              <label>Voltage Class *</label>
-              <select id="voltageClass" class="form-control" required>
+              <label>Voltage Class (Optional)</label>
+              <select id="voltageClass" class="form-control">
+                <option value="">Select Voltage Class...</option>
                 <option value="LT">LT</option>
                 <option value="11 KV HT">11 KV HT</option>
                 <option value="33 KV HT">33 KV HT</option>
@@ -386,6 +388,8 @@
           type: document.getElementById("voltageClass").value
         },
         application_date: document.getElementById("appDate").value,
+        zone: document.getElementById("zone").value,           // <-- ADDED
+        region: document.getElementById("region").value,       // <-- ADDED
         division: document.getElementById("division").value,
         substation: document.getElementById("substation").value,
         connection_type: document.getElementById("connectionType").value,
