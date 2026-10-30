@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Connection Reports — WorkStatus</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; color: #0f172a; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 800; color: #2563eb; }
+        
+        .filters { display: flex; gap: 10px; background: white; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .filters label { font-weight: 700; font-size: 14px; align-self: center; margin-right: 5px; }
+        .filters input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; font-weight: 600; outline: none; }
+        .filters input:focus { border-color: #2563eb; }
+        
+        /* KPI Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-left: 4px solid #cbd5e1; }
+        .kpi-card:nth-child(1) { border-left-color: #2563eb; }
+        .kpi-card:nth-child(2) { border-left-color: #10b981; }
+        .kpi-card:nth-child(3) { border-left-color: #ef4444; }
+        .kpi-card:nth-child(4) { border-left-color: #8b5cf6; }
+        
+        .kpi-title { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .kpi-value { font-size: 32px; font-weight: 800; color: #0f172a; }
+
+        /* Data Tables */
+        .table-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 25px; overflow: hidden; }
+        .table-header { padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 800; font-size: 16px; color: #1e293b; display: flex; justify-content: space-between; align-items: center; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px 20px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; background: white; }
+        td { padding: 14px 20px; border-bottom: 1px solid #e2e8f0; font-size: 14px; font-weight: 600; }
+        
+        .text-center { text-align: center; }
+        .text-blue { color: #2563eb; }
+        .text-green { color: #10b981; }
+        .text-red { color: #ef4444; }
+        .font-bold { font-weight: 800; }
+
+        /* Button */
+        .btn-back { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; text-decoration: none; color: #0f172a; display: inline-block; margin-bottom: 15px; }
+        .btn-back:hover { background: #f1f5f9; }
+
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: 1fr 1fr; }
+            .filters { flex-direction: column; width: 100%; }
+            .header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/block-detail.html?block=bulk_connection" class="btn-back">← Back to Dashboard</a>
+        
+        <div class="header">
+            <h1>📊 Bulk Connection Operational Reports</h1>
+            <div class="filters">
+                <label>Select Month:</label>
+                <input type="month" id="reportMonth" onchange="loadReport()">
+            </div>
+        </div>
+
+        <!-- KPI ROW -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Applications Received</div>
+                <div class="kpi-value text-blue" id="kpiReceipt">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Applications Disposed</div>
+                <div class="kpi-value text-green" id="kpiDisposal">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Total Pending</div>
+                <div class="kpi-value text-red" id="kpiPending">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Quotations Deposited</div>
+                <div class="kpi-value" style="color:#8b5cf6;" id="kpiQuotation">0</div>
+            </div>
+        </div>
+
+        <!-- DEMAND & WITH CD MATRIX -->
+        <div class="table-card">
+            <div class="table-header">⚡ Connection Effected & With CD Report</div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Voltage Class</th>
+                            <th>Consumer Category</th>
+                            <th class="text-center">Connections Effected</th>
+                            <th class="text-center">Total Demand Effected (KVA)</th>
+                            <th class="text-center">With CD (Billed)</th>
+                            <th class="text-center">CD Demand Billed (KVA)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="demandTableBody">
+                        <tr><td colspan="6" class="text-center" style="padding:30px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/core/api.js"></script>
+    <script src="js/core/auth-guard.js"></script>
+    <script src="js/ui/modals.js"></script>
+
+    <script>
+        // Set default month to current month
+        const now = new Date();
+        document.getElementById("reportMonth").value = now.toISOString().slice(0, 7);
+
+        async function loadReport() {
+            const month = document.getElementById("reportMonth").value;
+            if (!month) return;
+
+            try {
+                // Show loading state
+                document.getElementById("demandTableBody").innerHTML = `<tr><td colspan="6" class="text-center" style="padding:30px;">Fetching report data...</td></tr>`;
+
+                const data = await apiFetch(`/api/blocks/bulk_connection/reports?month=${month}`);
+                
+                // 1. Update KPIs
+                document.getElementById("kpiReceipt").textContent = data.receipt.count || 0;
+                document.getElementById("kpiDisposal").textContent = data.disposal.count || 0;
+                document.getElementById("kpiPending").textContent = data.pending.count || 0;
+                document.getElementById("kpiQuotation").textContent = data.quotation_deposited.count || 0;
+
+                // 2. Render Demand Matrix Table
+                renderDemandTable(data.demand_summary);
+
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || "Failed to load report data", "error");
+                document.getElementById("demandTableBody").innerHTML = `<tr><td colspan="6" class="text-center" style="color:#ef4444; padding:30px;">Error loading data. Check console.</td></tr>`;
+            }
+        }
+
+        function renderDemandTable(summary) {
+            const tbody = document.getElementById("demandTableBody");
+            if (!summary || summary.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding:30px; color:#64748b;">No connection data found for this month.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            let grandTotalEffected = 0;
+            let grandTotalEffectedKva = 0;
+            let grandTotalCd = 0;
+            let grandTotalCdKva = 0;
+
+            summary.forEach(row => {
+                grandTotalEffected += row.effected;
+                grandTotalEffectedKva += row.effected_kva;
+                grandTotalCd += row.with_cd;
+                grandTotalCdKva += row.with_cd_kva;
+
+                html += `
+                    <tr>
+                        <td style="font-weight:800; color:#2563eb;">${row.voltage}</td>
+                        <td>${row.category}</td>
+                        <td class="text-center">${row.effected}</td>
+                        <td class="text-center font-bold">${row.effected_kva.toLocaleString()}</td>
+                        <td class="text-center text-green font-bold">${row.with_cd}</td>
+                        <td class="text-center text-green font-bold">${row.with_cd_kva.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            // Add Grand Total Row
+            html += `
+                <tr style="background:#f8fafc; border-top: 2px solid #cbd5e1;">
+                    <td colspan="2" style="font-weight:800; text-transform:uppercase;">Grand Total</td>
+                    <td class="text-center" style="font-weight:800; color:#0f172a; font-size:15px;">${grandTotalEffected}</td>
+                    <td class="text-center" style="font-weight:800; color:#0f172a; font-size:15px;">${grandTotalEffectedKva.toLocaleString()}</td>
+                    <td class="text-center" style="font-weight:800; color:#10b981; font-size:15px;">${grandTotalCd}</td>
+                    <td class="text-center" style="font-weight:800; color:#10b981; font-size:15px;">${grandTotalCdKva.toLocaleString()}</td>
+                </tr>
+            `;
+
+            tbody.innerHTML = html;
+        }
+
+        // Initial Load
+        loadReport();
+    </script>
+</body>
+</html>

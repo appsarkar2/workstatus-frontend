@@ -220,7 +220,7 @@
     let rawApps = [];
     let orgData = {};
     let slaSummary = {}; 
-    let currentView = 'stage'; // 'stage' or 'application'
+    let currentView = 'stage';
     
     let filterZone = "";
     let filterRegion = "";
@@ -230,6 +230,13 @@
         document.getElementById("pageTitle").innerText = `${blockId === 'civil_work' ? 'Civil Work' : (blockId === 'electrical_works' ? 'Electrical Works' : 'Bulk Connection')} Dashboard`;
         
         let actionsHtml = `<a href="/dashboard.html" class="btn btn-back">← Back to App</a>`;
+        
+        // --- ADDED REPORT BUTTON HERE ---
+        if (blockId === 'bulk_connection') {
+            actionsHtml += `<a href="/bulk-reports.html" class="btn btn-back" style="color: #2563eb; border-color: #bfdbfe; background: #eff6ff;">📊 View Reports</a>`;
+        }
+        // --------------------------------
+
         if (isAdmin && blockId === 'bulk_connection') {
             actionsHtml += `<button class="btn btn-danger" onclick="window.location.href='/sla-report.html?block=${blockId}'">🚨 View Full SLA Report</button>`;
         }
@@ -249,7 +256,6 @@
         reloadData();
     }
 
-    // --- Toggle View Logic ---
     function switchView(view) {
         currentView = view;
         if (view === 'stage') {
@@ -259,7 +265,6 @@
             document.getElementById("appTable").style.display = "none";
             document.getElementById("tableTitle").innerText = "Pending Applications";
             document.getElementById("searchApp").style.display = "none";
-            // Hide category/voltage filters in stage view
             document.getElementById("filterCategory").style.display = "none";
             document.getElementById("filterVoltage").style.display = "none";
         } else {
@@ -319,7 +324,7 @@
         if (filterDivision) params.append("division", filterDivision);
 
         try {
-            const promises = [ blockApi.list() ];
+            const promises = [ blockApi.list(params) ];
             if (blockId === 'bulk_connection') {
                 promises.push(apiFetch(`/api/blocks/${blockId}/sla-summary?${params.toString()}`).catch(() => ({})));
             }
@@ -352,7 +357,6 @@
         }
     }
 
-    // --- RENDER STAGE TABLE ---
     function renderStageTable(filteredApps) {
         let stageGroups = {};
         for (let i = 1; i <= STAGES.length; i++) stageGroups[i] = [];
@@ -391,28 +395,23 @@
         document.getElementById("dashboardTableBody").innerHTML = html;
     }
 
-    // --- RENDER APPLICATION TABLE ---
     function renderAppTable(filteredApps) {
         const searchQ = document.getElementById("searchApp").value.toLowerCase();
         const catFilter = document.getElementById("filterCategory").value;
         const voltFilter = document.getElementById("filterVoltage").value;
         
         let displayApps = filteredApps.filter(a => {
-            // 1. Search Filter
             if (searchQ) {
                 const appNo = (a.application_no || a.project_no || "").toLowerCase();
                 const appName = (a.applicant?.name || "").toLowerCase();
                 if (!appNo.includes(searchQ) && !appName.includes(searchQ)) return false;
             }
-            // 2. Category Filter (Central vs De-Central)
             if (catFilter && a.load_category !== catFilter) return false;
-            // 3. Voltage Filter
             if (voltFilter && a.applicant?.type !== voltFilter) return false;
             
             return true;
         });
 
-        // Sort: In-Progress first, then by newest created
         displayApps.sort((a, b) => {
             if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
             if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
@@ -428,7 +427,6 @@
             const loadCat = app.load_category || "N/A";
             const voltage = app.applicant?.type || "N/A";
             
-            // Calculate Days in Stage
             let daysHtml = "—";
             if (app.status === 'in_progress' && app.stages) {
                 const currentStageData = app.stages.find(s => s.stage_no === app.current_stage);
@@ -447,7 +445,6 @@
                 }
             }
 
-            // Calculate Last Update
             let lastUpdate = "—";
             if (app.updated_at || app.created_at) {
                 const dateObj = new Date(app.updated_at || app.created_at);
@@ -485,7 +482,6 @@
         }
     }
 
-    // Drawer for Stage Summary
     function openDrawer(stageNo) {
         const stageName = STAGES[stageNo - 1];
         document.getElementById("drawerTitle").innerText = `Stage ${stageNo}: ${stageName}`;
