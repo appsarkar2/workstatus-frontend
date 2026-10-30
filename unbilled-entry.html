@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Unbilled Report — WorkStatus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; color: #0f172a; }
+        .form-container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow: hidden; }
+        
+        .form-header { padding: 20px 25px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .form-header h2 { margin: 0; font-size: 20px; font-weight: 800; }
+        .btn-back { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #0f172a; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .btn-back:hover { background: #f1f5f9; }
+
+        .form-body { padding: 25px; }
+        
+        /* Location Grid */
+        .location-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .input-group select, .input-group input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; font-weight: 500; outline: none; transition: border-color 0.2s; }
+        .input-group select:focus, .input-group input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+        .input-group select:disabled { background: #f1f5f9; cursor: not-allowed; }
+
+        /* Table Styles */
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        .data-table th { background: #f8fafc; padding: 12px 15px; text-align: left; font-size: 12px; font-weight: 800; color: #475569; border-bottom: 2px solid #e2e8f0; border-top: 1px solid #e2e8f0; }
+        .data-table td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+        .data-table td:first-child { font-weight: 700; font-size: 14px; width: 30%; }
+        .data-table input[type="number"] { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; font-weight: 600; }
+        .data-table input[type="text"] { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
+
+        /* Action Buttons */
+        .form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 15px; border-top: 1px solid #e2e8f0; }
+        .btn-submit { background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.3); transition: background 0.2s; }
+        .btn-submit:hover { background: #1d4ed8; }
+        .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+
+        @media (max-width: 768px) {
+            .location-grid { grid-template-columns: 1fr; }
+            .data-table th, .data-table td { padding: 10px; }
+            .data-table td:first-child { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <div class="form-header">
+            <h2>📝 Add Monthly Unbilled Report</h2>
+            <button class="btn-back" onclick="window.history.back()">← Cancel</button>
+        </div>
+
+        <div class="form-body">
+            <form id="reportForm">
+                
+                <!-- Location & Time -->
+                <div class="location-grid">
+                    <div class="input-group">
+                        <label>Zone</label>
+                        <select id="zone" onchange="updateRegions()" required>
+                            <option value="">Select Zone</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Region</label>
+                        <select id="region" onchange="updateDivisions()" disabled required>
+                            <option value="">Select Region</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Division</label>
+                        <select id="division" onchange="updateCCCs()" disabled required>
+                            <option value="">Select Division</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="location-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="input-group">
+                        <label>CCC (Customer Care Center)</label>
+                        <!-- CHANGED TO A DROPDOWN -->
+                        <select id="ccc" disabled required>
+                            <option value="">Select Division First</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Report Month</label>
+                        <input type="month" id="report_month" required>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>NOS. (Unbilled)</th>
+                            <th>REMARKS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Quarterly</td>
+                            <td><input type="number" id="q_nos" value="0" min="0"></td>
+                            <td><input type="text" id="q_rem" placeholder="Optional remarks..."></td>
+                        </tr>
+                        <tr>
+                            <td>Monthly</td>
+                            <td><input type="number" id="m_nos" value="0" min="0"></td>
+                            <td><input type="text" id="m_rem" placeholder="Optional remarks..."></td>
+                        </tr>
+                        <tr>
+                            <td>Smart Meter</td>
+                            <td><input type="number" id="sm_nos" value="0" min="0"></td>
+                            <td><input type="text" id="sm_rem" placeholder="Optional remarks..."></td>
+                        </tr>
+                        <tr>
+                            <td>Industrial</td>
+                            <td><input type="number" id="ind_nos" value="0" min="0"></td>
+                            <td><input type="text" id="ind_rem" placeholder="Optional remarks..."></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Submit -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit" id="submitBtn">Submit Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Core JS Imports -->
+    <script src="js/core/api.js"></script>
+    <script src="js/core/auth-guard.js"></script>
+    <script src="js/ui/modals.js"></script>
+
+    <script>
+        let orgData = { zones: {} };
+
+        // 1. Load Organization Structure on page load
+        async function init() {
+            // Set default month to current month
+            const now = new Date();
+            const currentMonth = now.toISOString().slice(0, 7);
+            document.getElementById("report_month").value = currentMonth;
+
+            try {
+                orgData = await apiFetch("/api/org-structure");
+                const zoneSelect = document.getElementById("zone");
+                if (orgData.zones) {
+                    Object.keys(orgData.zones).forEach(z => {
+                        zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error("Org load failed", e);
+                showToast("Failed to load locations. Please refresh.", "error");
+            }
+        }
+
+        // 2. Cascading Dropdowns
+        function updateRegions() {
+            const zone = document.getElementById("zone").value;
+            const regSelect = document.getElementById("region");
+            const divSelect = document.getElementById("division");
+            const cccSelect = document.getElementById("ccc");
+            
+            regSelect.innerHTML = `<option value="">Select Region</option>`;
+            divSelect.innerHTML = `<option value="">Select Division</option>`;
+            cccSelect.innerHTML = `<option value="">Select Division First</option>`;
+            
+            divSelect.disabled = true;
+            cccSelect.disabled = true;
+            
+            if (zone && orgData.zones[zone]) {
+                Object.keys(orgData.zones[zone].regions || {}).forEach(r => {
+                    regSelect.innerHTML += `<option value="${r}">${r}</option>`;
+                });
+                regSelect.disabled = false;
+            } else {
+                regSelect.disabled = true;
+            }
+        }
+
+        function updateDivisions() {
+            const zone = document.getElementById("zone").value;
+            const region = document.getElementById("region").value;
+            const divSelect = document.getElementById("division");
+            const cccSelect = document.getElementById("ccc");
+            
+            divSelect.innerHTML = `<option value="">Select Division</option>`;
+            cccSelect.innerHTML = `<option value="">Select Division First</option>`;
+            cccSelect.disabled = true;
+            
+            if (zone && region && orgData.zones[zone]?.regions[region]) {
+                Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
+                    divSelect.innerHTML += `<option value="${d}">${d}</option>`;
+                });
+                divSelect.disabled = false;
+            } else {
+                divSelect.disabled = true;
+            }
+        }
+
+        // 3. NEW: Populate CCCs based on Division
+        function updateCCCs() {
+            const zone = document.getElementById("zone").value;
+            const region = document.getElementById("region").value;
+            const division = document.getElementById("division").value;
+            const cccSelect = document.getElementById("ccc");
+            
+            cccSelect.innerHTML = `<option value="">Select CCC</option>`;
+            
+            // Look inside the orgData for this specific division's CCCs
+            if (zone && region && division && orgData.zones[zone]?.regions[region]?.[division]?.CCCs) {
+                const cccs = orgData.zones[zone].regions[region][division].CCCs;
+                cccs.forEach(ccc => {
+                    cccSelect.innerHTML += `<option value="${ccc}">${ccc}</option>`;
+                });
+                cccSelect.disabled = false;
+            } else {
+                cccSelect.disabled = true;
+                cccSelect.innerHTML = `<option value="">No CCCs found</option>`;
+            }
+        }
+
+        // 4. Handle Form Submit
+        document.getElementById("reportForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById("submitBtn");
+            btn.disabled = true;
+            btn.textContent = "Saving...";
+
+            const payload = {
+                zone: document.getElementById("zone").value,
+                region: document.getElementById("region").value,
+                division: document.getElementById("division").value,
+                ccc: document.getElementById("ccc").value,
+                report_month: document.getElementById("report_month").value,
+                topic: "Unbilled nos. of L&MV consumer and detailed analysis for the last billing month",
+                data: [
+                    { category: "Quarterly", nos: parseInt(document.getElementById("q_nos").value) || 0, remarks: document.getElementById("q_rem").value },
+                    { category: "Monthly", nos: parseInt(document.getElementById("m_nos").value) || 0, remarks: document.getElementById("m_rem").value },
+                    { category: "Smart Meter", nos: parseInt(document.getElementById("sm_nos").value) || 0, remarks: document.getElementById("sm_rem").value },
+                    { category: "Industrial", nos: parseInt(document.getElementById("ind_nos").value) || 0, remarks: document.getElementById("ind_rem").value }
+                ]
+            };
+
+            try {
+                await apiFetch("/api/blocks/unbilled_monitoring/report", {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                
+                showToast("Report saved successfully!", "success");
+                
+                setTimeout(() => {
+                    window.location.href = "/unbilled-dashboard.html";
+                }, 1500);
+
+            } catch (err) {
+                showToast(err.message || "Failed to save report", "error");
+                btn.disabled = false;
+                btn.textContent = "Submit Report";
+            }
+        });
+
+        // Initialize Page
+        init();
+    </script>
+</body>
+</html>

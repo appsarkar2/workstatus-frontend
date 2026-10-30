@@ -105,6 +105,18 @@
     #bulk-new-page .col { flex: 1; min-width: 0; }
     #bulk-new-page .demand-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
 
+    /* Tabs */
+    #bulk-new-page .tabs { display: flex; gap: 10px; margin-bottom: 25px; background: #f1f5f9; padding: 5px; border-radius: 8px; }
+    #bulk-new-page .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; font-weight: 700; font-size: 14px; color: #64748b; cursor: pointer; border-radius: 6px; transition: 0.2s; }
+    #bulk-new-page .tab-btn.active { background: white; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+    /* Auto-Calculate Badge */
+    #bulk-new-page .badge-container { text-align: right; }
+    #bulk-new-page .category-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    #bulk-new-page .badge-decentral { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    #bulk-new-page .badge-central { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    #bulk-new-page .badge-empty { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
     /* Form Actions */
     #bulk-new-page .form-actions { 
       display: flex; justify-content: flex-end; gap: 16px; margin-top: 30px; 
@@ -128,6 +140,8 @@
       #bulk-new-page .demand-grid { grid-template-columns: 1fr 1fr; }
       #bulk-new-page .form-actions { flex-direction: column; }
       #bulk-new-page .btn { width: 100%; }
+      #bulk-new-page .section-title { flex-direction: column; align-items: flex-start; gap: 10px; }
+      #bulk-new-page .badge-container { width: 100%; text-align: left; }
     }
   </style>
 </head>
@@ -174,6 +188,13 @@
         <!-- Section 2: Location & Technical Details -->
         <div class="form-card">
           <h2 class="section-title">📍 Location & Technical Details</h2>
+
+          <!-- NEW: Connection Category Tabs -->
+          <div class="tabs">
+            <button type="button" class="tab-btn active" onclick="setConnectionCategory('New Connection', this)">New Connection</button>
+            <button type="button" class="tab-btn" onclick="setConnectionCategory('Load Enhancement', this)">Load Enhancement</button>
+            <button type="button" class="tab-btn" onclick="setConnectionCategory('Load Decrease', this)">Load Decrease</button>
+          </div>
 
           <div class="row">
             <div class="form-group col">
@@ -231,27 +252,35 @@
 
         <!-- Section 3: Proposed Demand -->
         <div class="form-card">
-          <h2 class="section-title">⚡ Proposed Contract Demand (KVA)</h2>
+          <h2 class="section-title">
+            <span>⚡ Proposed Contract Demand (KVA)</span>
+            <!-- NEW: Auto-Calculate Badge -->
+            <div class="badge-container">
+                <span id="categoryBadge" class="category-badge badge-empty">Awaiting 5th Year Data</span>
+            </div>
+          </h2>
+          
           <div class="demand-grid">
             <div class="form-group">
               <label>1st Year</label>
-              <input type="number" id="demand1" class="form-control" placeholder="0" />
+              <input type="number" id="demand1" class="form-control" placeholder="0" min="0" />
             </div>
             <div class="form-group">
               <label>2nd Year</label>
-              <input type="number" id="demand2" class="form-control" placeholder="0" />
+              <input type="number" id="demand2" class="form-control" placeholder="0" min="0" />
             </div>
             <div class="form-group">
               <label>3rd Year</label>
-              <input type="number" id="demand3" class="form-control" placeholder="0" />
+              <input type="number" id="demand3" class="form-control" placeholder="0" min="0" />
             </div>
             <div class="form-group">
               <label>4th Year</label>
-              <input type="number" id="demand4" class="form-control" placeholder="0" />
+              <input type="number" id="demand4" class="form-control" placeholder="0" min="0" />
             </div>
             <div class="form-group">
               <label>5th Year</label>
-              <input type="number" id="demand5" class="form-control" placeholder="0" />
+              <!-- NEW: oninput to trigger calculation -->
+              <input type="number" id="demand5" class="form-control" placeholder="0" min="0" oninput="calculateCategory()" />
             </div>
           </div>
         </div>
@@ -288,14 +317,13 @@
   <script src="/js/ui/modals.js"></script>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        document.body.style.backgroundColor = "#e2e8f0";
-        document.body.style.background = "#e2e8f0";
-    });
-
+    let currentCategory = "New Connection";
     let orgData = {};
 
     document.addEventListener("DOMContentLoaded", async () => {
+      document.body.style.backgroundColor = "#e2e8f0";
+      document.body.style.background = "#e2e8f0";
+      
       document.getElementById("appDate").value = new Date().toISOString().split("T")[0];
 
       try {
@@ -311,6 +339,31 @@
       }
     });
 
+    // 1. Tab Selection Logic
+    function setConnectionCategory(cat, btnElement) {
+        currentCategory = cat;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+    }
+
+    // 2. Auto-Calculation Logic for Central vs De-Central
+    function calculateCategory() {
+        const d5 = parseInt(document.getElementById("demand5").value) || 0;
+        const badge = document.getElementById("categoryBadge");
+
+        if (d5 === 0) {
+            badge.className = "category-badge badge-empty";
+            badge.textContent = "Awaiting 5th Year Data";
+        } else if (d5 <= 1499) {
+            badge.className = "category-badge badge-decentral";
+            badge.textContent = "De-Central Bulk (Up to 1499 kVA)";
+        } else {
+            badge.className = "category-badge badge-central";
+            badge.textContent = "Central Bulk (1500+ kVA)";
+        }
+    }
+
+    // 3. Cascading Dropdowns
     function updateRegions() {
       const zone = document.getElementById("zone").value;
       const regSelect = document.getElementById("region");
@@ -374,13 +427,20 @@
       }
     }
 
+    // 4. Submit Form
     async function submitForm(e) {
       e.preventDefault();
       const btn = document.getElementById("submitBtn");
       btn.innerText = "Creating...";
       btn.disabled = true;
 
+      // Determine Load Category for Backend
+      const demand5 = parseInt(document.getElementById("demand5").value) || 0;
+      const loadCategory = demand5 > 1499 ? "Central Bulk" : "De-Central Bulk";
+
       const payload = {
+        application_category: currentCategory, // Sending the selected Tab
+        load_category: loadCategory,           // Sending Central vs De-Central
         applicant: {
           name: document.getElementById("appName").value,
           contact: document.getElementById("appContact").value,
@@ -388,8 +448,8 @@
           type: document.getElementById("voltageClass").value
         },
         application_date: document.getElementById("appDate").value,
-        zone: document.getElementById("zone").value,           // <-- ADDED
-        region: document.getElementById("region").value,       // <-- ADDED
+        zone: document.getElementById("zone").value,           
+        region: document.getElementById("region").value,       
         division: document.getElementById("division").value,
         substation: document.getElementById("substation").value,
         connection_type: document.getElementById("connectionType").value,

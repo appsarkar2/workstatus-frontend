@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unbilled Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <style>
+        .dashboard-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        
+        /* Filters */
+        .filter-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-group select { padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-weight: 600; font-size: 13px; min-width: 140px; }
+        
+        /* Buttons */
+        .btn-add { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,99,235,0.3); transition: 0.2s; }
+        .btn-add:hover { background: #1d4ed8; }
+
+        /* Cards */
+        .chart-card, .table-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .kpi-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #ddd; }
+        .kpi-card.total { border-left-color: #ef4444; }
+        .kpi-card.quarterly { border-left-color: #3b82f6; }
+        .kpi-card.monthly { border-left-color: #10b981; }
+        .kpi-card.smart { border-left-color: #8b5cf6; }
+        .kpi-title { font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: 600; }
+        .kpi-value { font-size: 1.8rem; font-weight: bold; color: #1e293b; margin-top: 5px; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px; font-size: 12px; font-weight: 800; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; font-weight: 600; color: #1e293b; }
+        .text-red { color: #ef4444; font-weight: 800; }
+        
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .header-actions { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header-actions">
+            <div>
+                <button class="modal-btn modal-btn-cancel" style="margin-bottom: 10px;" onclick="window.location.href='/dashboard.html'">← Back to App</button>
+                <h1>📈 Unbilled Consumer Analysis</h1>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
+                <!-- NEW REPORT BUTTON -->
+                <button class="btn-add" onclick="window.location.href='/unbilled-entry.html'">
+                    + New Report
+                </button>
+
+                <!-- HIERARCHICAL FILTERS -->
+                <div class="filter-group">
+                    <select id="filterZone" onchange="updateRegions()"><option value="">All Zones</option></select>
+                    <select id="filterRegion" onchange="updateDivisions()" disabled><option value="">All Regions</option></select>
+                    <select id="filterDivision" onchange="loadDashboard()" disabled><option value="">All Divisions</option></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid" id="kpiGrid">
+            <div class="kpi-card total"><div class="kpi-title">Total Unbilled</div><div class="kpi-value" id="valTotal">0</div></div>
+            <div class="kpi-card quarterly"><div class="kpi-title">Quarterly</div><div class="kpi-value" id="valQuarterly">0</div></div>
+            <div class="kpi-card monthly"><div class="kpi-title">Monthly</div><div class="kpi-value" id="valMonthly">0</div></div>
+            <div class="kpi-card smart"><div class="kpi-title">Smart Meter</div><div class="kpi-value" id="valSmart">0</div></div>
+        </div>
+
+        <!-- Trend Chart -->
+        <div class="chart-card">
+            <h3 style="margin-top:0;">Month-over-Month Trend</h3>
+            <div style="position: relative; height: 300px; width: 100%;">
+                <canvas id="trendChart"></canvas>
+                <div id="emptyState" class="empty-state" style="display: none; text-align:center; padding-top:50px;">
+                    <h3>📭 No Data Available</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- CCC WISE ANALYSIS TABLE -->
+        <div class="table-card">
+            <h3 style="margin-top:0;">CCC Wise Analysis</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>CCC Name</th>
+                            <th>Quarterly</th>
+                            <th>Monthly</th>
+                            <th>Smart Meter</th>
+                            <th>Industrial</th>
+                            <th class="text-red">Total Unbilled</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cccTableBody">
+                        <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/core/api.js"></script>
+    <script src="js/core/auth-guard.js"></script>
+    <script src="js/ui/modals.js"></script>
+
+    <script>
+        let chartInstance = null;
+        let orgData = { zones: {} };
+
+        // 1. Initialize Page & Load Org Structure
+        async function init() {
+            try {
+                const res = await apiFetch("/api/org-structure");
+                if (res && res.zones) {
+                    orgData = res;
+                    const zoneSelect = document.getElementById("filterZone");
+                    zoneSelect.innerHTML = `<option value="">All Zones</option>`;
+                    Object.keys(orgData.zones).forEach(z => {
+                        zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+                    });
+                }
+            } catch (e) { 
+                console.warn("Org load failed, proceeding without filters.", e); 
+            }
+            
+            // Load data regardless of whether org structure succeeded
+            loadDashboard();
+        }
+
+        function updateRegions() {
+            const zone = document.getElementById("filterZone").value;
+            const regSelect = document.getElementById("filterRegion");
+            const divSelect = document.getElementById("filterDivision");
+            
+            regSelect.innerHTML = `<option value="">All Regions</option>`;
+            divSelect.innerHTML = `<option value="">All Divisions</option>`;
+            divSelect.disabled = true;
+            
+            if (zone && orgData.zones[zone] && orgData.zones[zone].regions) {
+                Object.keys(orgData.zones[zone].regions).forEach(r => {
+                    regSelect.innerHTML += `<option value="${r}">${r}</option>`;
+                });
+                regSelect.disabled = false;
+            } else {
+                regSelect.disabled = true;
+            }
+            loadDashboard();
+        }
+
+        function updateDivisions() {
+            const zone = document.getElementById("filterZone").value;
+            const region = document.getElementById("filterRegion").value;
+            const divSelect = document.getElementById("filterDivision");
+            
+            divSelect.innerHTML = `<option value="">All Divisions</option>`;
+            
+            if (zone && region && orgData.zones[zone]?.regions[region]) {
+                Object.keys(orgData.zones[zone].regions[region]).forEach(d => {
+                    divSelect.innerHTML += `<option value="${d}">${d}</option>`;
+                });
+                divSelect.disabled = false;
+            } else {
+                divSelect.disabled = true;
+            }
+            loadDashboard();
+        }
+
+        // 2. Load Data
+        async function loadDashboard() {
+            const zone = document.getElementById("filterZone").value;
+            const region = document.getElementById("filterRegion").value;
+            const div = document.getElementById("filterDivision").value;
+            
+            const query = new URLSearchParams();
+            if (zone) query.append("zone", zone);
+            if (region) query.append("region", region);
+            if (div) query.append("division", div);
+
+            document.getElementById("emptyState").style.display = "none";
+            document.getElementById("trendChart").style.display = "block";
+            document.getElementById("cccTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>`;
+
+            try {
+                const res = await apiFetch(`/api/blocks/unbilled_monitoring/dashboard-summary?${query.toString()}`);
+                
+                // Check if data is completely empty
+                if (!res || !res.chart_data || res.chart_data.length === 0) {
+                    showEmptyState();
+                    return;
+                }
+
+                updateKPIs(res.chart_data);
+                renderChart(res.chart_data);
+                renderCCCTable(res.ccc_data);
+                
+            } catch (err) {
+                console.error("API Error:", err);
+                showEmptyState();
+            }
+        }
+
+        function showEmptyState() {
+            document.getElementById("trendChart").style.display = "none";
+            document.getElementById("emptyState").style.display = "block";
+            document.getElementById("valTotal").textContent = "0";
+            document.getElementById("valQuarterly").textContent = "0";
+            document.getElementById("valMonthly").textContent = "0";
+            document.getElementById("valSmart").textContent = "0";
+            document.getElementById("cccTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:#64748b;">No data found for the selected filters.</td></tr>`;
+            if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+        }
+
+        function updateKPIs(data) {
+            // The latest month is always the last item in the sorted array
+            const latest = data[data.length - 1]; 
+            document.getElementById("valTotal").textContent = latest.total || 0;
+            document.getElementById("valQuarterly").textContent = latest.quarterly || 0;
+            document.getElementById("valMonthly").textContent = latest.monthly || 0;
+            document.getElementById("valSmart").textContent = latest.smart_meter || 0;
+        }
+
+        // 3. Render Chart
+        function renderChart(data) {
+            const labels = data.map(d => {
+                const [year, month] = d.month.split("-");
+                return new Date(year, month - 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+            });
+
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Quarterly', data: data.map(d => d.quarterly), borderColor: '#3b82f6', tension: 0.3 },
+                        { label: 'Monthly', data: data.map(d => d.monthly), borderColor: '#10b981', tension: 0.3 },
+                        { label: 'Smart Meter', data: data.map(d => d.smart_meter), borderColor: '#8b5cf6', tension: 0.3 },
+                        { label: 'Industrial', data: data.map(d => d.industrial), borderColor: '#f59e0b', tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // 4. Render CCC Table
+        function renderCCCTable(data) {
+            const tbody = document.getElementById("cccTableBody");
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No CCC data available</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            data.forEach(row => {
+                html += `
+                    <tr>
+                        <td>${row.ccc}</td>
+                        <td>${row.quarterly}</td>
+                        <td>${row.monthly}</td>
+                        <td>${row.smart_meter}</td>
+                        <td>${row.industrial}</td>
+                        <td class="text-red">${row.total}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Start Application
+        init();
+    </script>
+</body>
+</html>

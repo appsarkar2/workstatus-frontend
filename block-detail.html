@@ -7,11 +7,19 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
+  <script>
+    // REDIRECT LOGIC for unbilled_monitoring
+    const urlParamsCheck = new URLSearchParams(window.location.search);
+    if (urlParamsCheck.get("block") === "unbilled_monitoring") {
+        window.location.replace("/unbilled-dashboard.html");
+    }
+  </script>
+
   <style>
     * { box-sizing: border-box; }
     html, body { background-color: #f8fafc !important; color: #0f172a !important; font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh; width: 100%; overflow-x: hidden; }
     .app-container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
     .page-title h1 { font-size: 24px; font-weight: 800; margin: 0; }
     .page-title p { font-size: 14px; color: #64748b; margin: 4px 0 0 0; }
     .header-actions { display: flex; gap: 12px; }
@@ -23,6 +31,11 @@
     .btn-danger { background: #ef4444; color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
     .btn-danger:hover { background: #dc2626; }
 
+    /* View Toggles */
+    .view-toggles { display: flex; gap: 10px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 10px; width: fit-content; }
+    .toggle-btn { padding: 10px 20px; border: none; background: transparent; font-weight: 700; font-size: 14px; color: #64748b; cursor: pointer; border-radius: 8px; transition: 0.2s; }
+    .toggle-btn.active { background: white; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
     /* Table Card */
     .table-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden; }
     .table-toolbar { padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 15px; background: #f8fafc; }
@@ -30,18 +43,22 @@
     .table-title { font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; }
     
     .toolbar-filters { display: flex; gap: 10px; flex-wrap: wrap; }
-    .toolbar-filters select { flex: 1; min-width: 150px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: white; }
+    .toolbar-filters select, .toolbar-filters input { flex: 1; min-width: 150px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; background: white; }
 
     /* Table */
     .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 900px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 1000px; }
     th { background: white; padding: 14px 20px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
     td { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; vertical-align: middle; white-space: nowrap; }
     
     .clickable-row { cursor: pointer; transition: background-color 0.2s; }
     .clickable-row:hover { background-color: #f0f9ff; }
 
-    .grand-total-row { background: #f8fafc; font-weight: 800; font-size: 14px; border-top: 2px solid #cbd5e1; }
+    /* Status Pill */
+    .status-pill { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .status-pill.in-progress { background: #e0f2fe; color: #0369a1; }
+    .status-pill.completed { background: #dcfce7; color: #166534; }
+    .status-pill.rejected { background: #fee2e2; color: #991b1b; }
 
     /* --- DRAWER STYLES --- */
     .drawer-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 9998; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
@@ -61,17 +78,10 @@
     .status-menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #0f172a; font-weight: 700; font-size: 14px; transition: 0.2s; cursor: pointer; }
     .status-menu-item:hover { background: #eff6ff; border-color: #bfdbfe; transform: translateX(-5px); }
     
-    .delete-btn { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; transition: 0.2s; margin-left: 10px; }
-    .delete-btn:hover { background: #dc2626; color: white; }
-
-    /* FAB */
-    .fab { position: fixed; bottom: 40px; right: 40px; background: #2563eb; color: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 32px; text-decoration: none; box-shadow: 0 10px 25px rgba(37,99,235,0.4); z-index: 100; }
-
     @media (max-width: 900px) {
         .app-container { padding: 15px; }
         .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
         .toolbar-filters { flex-direction: column; width: 100%; }
-        .fab { width: 56px; height: 56px; bottom: 20px; right: 20px; }
         .drawer { width: 100%; max-width: 100%; }
     }
   </style>
@@ -83,16 +93,22 @@
     <div class="page-header">
         <div class="page-title">
             <h1 id="pageTitle">Bulk Connection Dashboard</h1>
-            <p id="pageSubtitle">Stage-wise pendency report</p>
+            <p id="pageSubtitle">Stage-wise and application-wise tracking</p>
         </div>
         <div class="header-actions" id="headerActions"></div>
+    </div>
+
+    <!-- VIEW TOGGLES -->
+    <div class="view-toggles">
+        <button class="toggle-btn active" id="btnViewStage" onclick="switchView('stage')">📊 Stage Summary</button>
+        <button class="toggle-btn" id="btnViewApp" onclick="switchView('application')">📋 Application Status</button>
     </div>
 
     <!-- MAIN CARD -->
     <div class="table-card">
         <div class="table-toolbar">
             <div class="toolbar-top">
-                <h2 class="table-title">Pending Applications</h2>
+                <h2 class="table-title" id="tableTitle">Pending Applications</h2>
                 <div style="display:flex; gap:10px;">
                     <div class="stat-box" style="background:white; border:1px solid #e2e8f0; padding:8px 15px; border-radius:8px; text-align:center;">
                         <h2 id="totalApps" style="font-size:18px; margin:0; color:#2563eb;">0</h2>
@@ -102,14 +118,32 @@
             </div>
 
             <div class="toolbar-filters">
+                <!-- HIERARCHICAL FILTERS -->
                 <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
                 <select id="filterRegion" onchange="updateFilterDivisions()" disabled><option value="">All Regions</option></select>
                 <select id="filterDivision" onchange="reloadData()" disabled><option value="">All Divisions</option></select>
+                
+                <!-- NEW FILTERS -->
+                <select id="filterCategory" onchange="renderDashboard()">
+                    <option value="">All Load Categories</option>
+                    <option value="De-Central Bulk">De-Central Bulk</option>
+                    <option value="Central Bulk">Central Bulk</option>
+                </select>
+
+                <select id="filterVoltage" onchange="renderDashboard()">
+                    <option value="">All Voltage Classes</option>
+                    <option value="LT">LT</option>
+                    <option value="11 KV HT">11 KV HT</option>
+                    <option value="33 KV HT">33 KV HT</option>
+                </select>
+
+                <input type="text" id="searchApp" placeholder="Search App No or Name..." oninput="renderDashboard()">
             </div>
         </div>
 
         <div class="table-scroll">
-            <table>
+            <!-- STAGE SUMMARY TABLE -->
+            <table id="stageTable">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -123,13 +157,32 @@
                     <tr><td colspan="5" style="text-align:center; padding: 30px;">Loading...</td></tr>
                 </tbody>
             </table>
+
+            <!-- APPLICATION STATUS TABLE -->
+            <table id="appTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>App No</th>
+                        <th>Applicant Name</th>
+                        <th>Load Category</th>
+                        <th>Voltage</th>
+                        <th>Current Stage</th>
+                        <th>Status</th>
+                        <th>Days in Stage</th>
+                        <th>Last Update</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="appTableBody">
+                    <tr><td colspan="9" style="text-align:center; padding: 30px;">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
   </div>
 
-  <!-- DRAWER (SLIDE MENU) -->
+  <!-- DRAWER -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
-  
   <div id="sideDrawer" class="drawer">
       <div class="drawer-header">
           <div>
@@ -150,13 +203,10 @@
     const params = new URLSearchParams(window.location.search);
     const blockId = params.get("block") || "bulk_connection";
     
-    let isCivilWork = blockId === "civil_work";
-    let isElectrical = blockId === "electrical_works";
     let STAGES = [];
-    
-    if (isCivilWork) {
+    if (blockId === "civil_work") {
         STAGES = ["Inception", "Proposal", "Estimation", "Funding", "Approval & T&AA", "Tendering", "PO Placement", "Site Handover", "Completion", "Financial Closure"];
-    } else if (isElectrical) {
+    } else if (blockId === "electrical_works") {
         STAGES = ["Proposal Initiation", "Technical Feasibility", "TAA & Budget", "Work in Progress", "Testing & Handover"];
     } else {
         STAGES = ["App. Received & Doc. Verification", "Physical Inspection & Tech. Feasibility", "Quotation Served", "Deposition of Quotation Amount", "Work Order & PO Generation", "Agreement Execution", "Work Completion Report", "Consumer Outgoing Ready", "EI Approval Submission", "Commercial Clearance", "Meter Installation", "Meter Report Submission", "Master Card Creation"];
@@ -170,19 +220,20 @@
     let rawApps = [];
     let orgData = {};
     let slaSummary = {}; 
+    let currentView = 'stage'; // 'stage' or 'application'
     
     let filterZone = "";
     let filterRegion = "";
     let filterDivision = "";
 
     async function init() {
-        document.getElementById("pageTitle").innerText = `${isCivilWork ? 'Civil Work' : (isElectrical ? 'Electrical Works' : 'Bulk Connection')} Dashboard`;
+        document.getElementById("pageTitle").innerText = `${blockId === 'civil_work' ? 'Civil Work' : (blockId === 'electrical_works' ? 'Electrical Works' : 'Bulk Connection')} Dashboard`;
         
         let actionsHtml = `<a href="/dashboard.html" class="btn btn-back">← Back to App</a>`;
-        if (isAdmin && !isCivilWork) {
+        if (isAdmin && blockId === 'bulk_connection') {
             actionsHtml += `<button class="btn btn-danger" onclick="window.location.href='/sla-report.html?block=${blockId}'">🚨 View Full SLA Report</button>`;
         }
-        actionsHtml += `<button class="btn btn-new" onclick="window.location.href='/${blockId === 'electrical_works' ? 'electrical' : 'bulk'}-new.html?block=${blockId}'">+ New ${isCivilWork ? 'Project' : (isElectrical ? 'Scheme' : 'Application')}</button>`;
+        actionsHtml += `<button class="btn btn-new" onclick="window.location.href='/${blockId === 'electrical_works' ? 'electrical' : 'bulk'}-new.html?block=${blockId}'">+ New ${blockId === 'civil_work' ? 'Project' : (blockId === 'electrical_works' ? 'Scheme' : 'Application')}</button>`;
         document.getElementById("headerActions").innerHTML = actionsHtml;
 
         try {
@@ -196,6 +247,32 @@
         } catch (e) { console.error("Org load failed", e); }
 
         reloadData();
+    }
+
+    // --- Toggle View Logic ---
+    function switchView(view) {
+        currentView = view;
+        if (view === 'stage') {
+            document.getElementById("btnViewStage").classList.add("active");
+            document.getElementById("btnViewApp").classList.remove("active");
+            document.getElementById("stageTable").style.display = "table";
+            document.getElementById("appTable").style.display = "none";
+            document.getElementById("tableTitle").innerText = "Pending Applications";
+            document.getElementById("searchApp").style.display = "none";
+            // Hide category/voltage filters in stage view
+            document.getElementById("filterCategory").style.display = "none";
+            document.getElementById("filterVoltage").style.display = "none";
+        } else {
+            document.getElementById("btnViewApp").classList.add("active");
+            document.getElementById("btnViewStage").classList.remove("active");
+            document.getElementById("stageTable").style.display = "none";
+            document.getElementById("appTable").style.display = "table";
+            document.getElementById("tableTitle").innerText = "Application Status Tracking";
+            document.getElementById("searchApp").style.display = "block";
+            document.getElementById("filterCategory").style.display = "block";
+            document.getElementById("filterVoltage").style.display = "block";
+        }
+        renderDashboard();
     }
 
     function updateFilterRegions() {
@@ -243,7 +320,7 @@
 
         try {
             const promises = [ blockApi.list() ];
-            if (!isCivilWork) {
+            if (blockId === 'bulk_connection') {
                 promises.push(apiFetch(`/api/blocks/${blockId}/sla-summary?${params.toString()}`).catch(() => ({})));
             }
             
@@ -266,6 +343,17 @@
             return match;
         });
 
+        document.getElementById("totalApps").innerText = filteredApps.filter(a => a.status === 'in_progress').length;
+
+        if (currentView === 'stage') {
+            renderStageTable(filteredApps);
+        } else {
+            renderAppTable(filteredApps);
+        }
+    }
+
+    // --- RENDER STAGE TABLE ---
+    function renderStageTable(filteredApps) {
         let stageGroups = {};
         for (let i = 1; i <= STAGES.length; i++) stageGroups[i] = [];
         
@@ -274,8 +362,6 @@
                 stageGroups[app.current_stage].push(app);
             }
         });
-
-        document.getElementById("totalApps").innerText = filteredApps.filter(a => a.status === 'in_progress').length;
 
         let html = "";
         let idx = 1;
@@ -302,10 +388,104 @@
                 </tr>
             `;
         }
-
         document.getElementById("dashboardTableBody").innerHTML = html;
     }
 
+    // --- RENDER APPLICATION TABLE ---
+    function renderAppTable(filteredApps) {
+        const searchQ = document.getElementById("searchApp").value.toLowerCase();
+        const catFilter = document.getElementById("filterCategory").value;
+        const voltFilter = document.getElementById("filterVoltage").value;
+        
+        let displayApps = filteredApps.filter(a => {
+            // 1. Search Filter
+            if (searchQ) {
+                const appNo = (a.application_no || a.project_no || "").toLowerCase();
+                const appName = (a.applicant?.name || "").toLowerCase();
+                if (!appNo.includes(searchQ) && !appName.includes(searchQ)) return false;
+            }
+            // 2. Category Filter (Central vs De-Central)
+            if (catFilter && a.load_category !== catFilter) return false;
+            // 3. Voltage Filter
+            if (voltFilter && a.applicant?.type !== voltFilter) return false;
+            
+            return true;
+        });
+
+        // Sort: In-Progress first, then by newest created
+        displayApps.sort((a, b) => {
+            if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
+            if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
+
+        let html = "";
+        displayApps.forEach(app => {
+            const appNo = app.application_no || app.project_no || "—";
+            const appName = app.applicant?.name || "Unknown";
+            const stageName = STAGES[app.current_stage - 1] || "—";
+            const statusClass = app.status === 'completed' ? 'completed' : (app.status === 'rejected' ? 'rejected' : 'in-progress');
+            const loadCat = app.load_category || "N/A";
+            const voltage = app.applicant?.type || "N/A";
+            
+            // Calculate Days in Stage
+            let daysHtml = "—";
+            if (app.status === 'in_progress' && app.stages) {
+                const currentStageData = app.stages.find(s => s.stage_no === app.current_stage);
+                if (currentStageData && currentStageData.started_at) {
+                    const startedAt = new Date(currentStageData.started_at);
+                    const now = new Date();
+                    const diffDays = Math.floor((now - startedAt) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays > 0) {
+                        const isBreached = currentStageData.target_date && (now > new Date(currentStageData.target_date + "T00:00:00"));
+                        const color = isBreached ? "#ef4444" : "#0f172a";
+                        daysHtml = `<span style="color:${color}; font-weight:800;">${diffDays} Days</span>`;
+                    } else {
+                        daysHtml = `<span style="color:#10b981;">Today</span>`;
+                    }
+                }
+            }
+
+            // Calculate Last Update
+            let lastUpdate = "—";
+            if (app.updated_at || app.created_at) {
+                const dateObj = new Date(app.updated_at || app.created_at);
+                const now = new Date();
+                const diffMs = now - dateObj;
+                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMins = Math.floor(diffMs / (1000 * 60));
+                
+                if (diffMins < 60) lastUpdate = `${diffMins} mins ago`;
+                else if (diffHrs < 24) lastUpdate = `${diffHrs} hrs ago`;
+                else lastUpdate = `${Math.floor(diffHrs / 24)} days ago`;
+            }
+
+            const url = `/application-detail.html?block=${blockId}&id=${app._id}`;
+            
+            html += `
+                <tr class="clickable-row" onclick="window.location.href='${url}'">
+                    <td style="color:#2563eb; font-weight:800;">${escapeHtml(appNo)}</td>
+                    <td>${escapeHtml(appName)}</td>
+                    <td>${escapeHtml(loadCat)}</td>
+                    <td>${escapeHtml(voltage)}</td>
+                    <td>${escapeHtml(stageName)}</td>
+                    <td><span class="status-pill ${statusClass}">${formatStatus(app.status)}</span></td>
+                    <td>${daysHtml}</td>
+                    <td style="color:#64748b; font-size:12px;">${lastUpdate}</td>
+                    <td><button class="btn btn-back" style="padding:4px 10px; font-size:12px;">View</button></td>
+                </tr>
+            `;
+        });
+
+        if (!displayApps.length) {
+            document.getElementById("appTableBody").innerHTML = `<tr><td colspan="9" style="text-align:center;">No applications found matching filters.</td></tr>`;
+        } else {
+            document.getElementById("appTableBody").innerHTML = html;
+        }
+    }
+
+    // Drawer for Stage Summary
     function openDrawer(stageNo) {
         const stageName = STAGES[stageNo - 1];
         document.getElementById("drawerTitle").innerText = `Stage ${stageNo}: ${stageName}`;
@@ -340,11 +520,6 @@
             
             const rowStyle = isBreached ? "background-color: #fef2f2;" : "";
             const badge = isBreached ? `<span style="color:#ef4444; font-weight:800; font-size:11px; margin-left:8px;">⚠️ Breached</span>` : "";
-            
-            // Show delete button only for admins
-            const deleteBtn = isAdmin 
-                ? `<button class="delete-btn" onclick="deleteApp(event, '${app._id}', '${app.application_no || app.project_no}')">🗑️</button>` 
-                : '';
 
             bodyHtml += `
                 <div class="status-menu-item" style="${rowStyle}" onclick="window.location.href='${url}'">
@@ -353,7 +528,6 @@
                         <span style="font-size:12px; color:#64748b;">${escapeHtml(app.applicant?.name || "Unknown")} • ${escapeHtml(app.division || "Unassigned")}</span>
                     </div>
                     <div style="display:flex; align-items:center;">
-                        ${deleteBtn}
                         <span style="font-size:16px; margin-left:10px;">→</span>
                     </div>
                 </div>
@@ -363,24 +537,6 @@
         document.getElementById("drawerBody").innerHTML = bodyHtml;
         document.getElementById("drawerOverlay").classList.add("show");
         document.getElementById("sideDrawer").classList.add("show");
-    }
-
-    async function deleteApp(event, appId, appNo) {
-        event.stopPropagation(); // Stop the row click from redirecting
-        
-        if (!confirm(`Are you sure you want to permanently delete application ${appNo}?\n\nThis action cannot be undone.`)) return;
-
-        try {
-            await apiFetch(`/api/blocks/${blockId}/${appId}`, { method: 'DELETE' });
-            showToast("Application deleted successfully", "success");
-            
-            // Remove from UI and re-render
-            rawApps = rawApps.filter(a => a._id !== appId);
-            reloadData();
-            closeDrawer();
-        } catch (err) {
-            showToast(err.message || "Failed to delete application", "error");
-        }
     }
 
     function closeDrawer() {

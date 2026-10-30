@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Upload — WorkStatus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; color: #0f172a; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 30px; text-align: center; }
+        .header h2 { margin: 0 0 10px 0; font-size: 24px; font-weight: 800; }
+        .header p { color: #64748b; margin: 0 0 30px 0; font-size: 14px; }
+        
+        .upload-box { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 40px 20px; background: #f8fafc; cursor: pointer; transition: 0.2s; margin-bottom: 20px; }
+        .upload-box:hover, .upload-box.dragover { border-color: #2563eb; background: #eff6ff; }
+        .upload-box svg { width: 48px; height: 48px; color: #94a3b8; margin-bottom: 10px; }
+        .upload-box p { margin: 0; font-weight: 600; color: #475569; }
+        
+        .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; font-size: 14px; transition: 0.2s; }
+        .btn-template { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; margin-bottom: 20px; }
+        .btn-template:hover { background: #e2e8f0; }
+        .btn-submit { background: #2563eb; color: white; width: 100%; box-shadow: 0 4px 12px rgba(37,99,235,0.3); padding: 14px; font-size: 16px;}
+        .btn-submit:hover { background: #1d4ed8; }
+        .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+        
+        #fileName { margin-top: 10px; font-size: 14px; font-weight: bold; color: #2563eb; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>📤 Bulk Upload Reports</h2>
+            <p>Download the template, fill in your data, and upload it here.</p>
+        </div>
+
+        <a href="#" onclick="downloadTemplate()" class="btn btn-template">⬇️ Download Excel/CSV Template</a>
+        
+        <form id="uploadForm">
+            <label for="fileInput" class="upload-box" id="dropZone">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p>Click to browse or drag file here</p>
+                <input type="file" id="fileInput" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+            </label>
+            <div id="fileName"></div>
+
+            <button type="submit" class="btn btn-submit" id="submitBtn" disabled>Upload Data</button>
+        </form>
+        
+        <div style="margin-top: 20px;">
+            <a href="/dashboard.html" style="color: #64748b; text-decoration: none; font-size: 13px; font-weight: 600;">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script src="js/core/api.js"></script>
+    <script src="js/core/auth-guard.js"></script>
+    <script src="js/ui/modals.js"></script>
+
+    <script>
+        // Generate and Download a CSV Template
+        function downloadTemplate() {
+            const headers = "zone,region,division,ccc,report_month,quarterly_nos,monthly_nos,smart_meter_nos,industrial_nos\n";
+            const sampleRow = "Siliguri Zone,Darjeeling Region,Siliguri,Pradhan Nagar,2026-10,10,5,2,0\n";
+            const csvContent = "data:text/csv;charset=utf-8," + headers + sampleRow;
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "unbilled_upload_template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById("fileName").style.display = "block";
+                document.getElementById("fileName").innerText = `Selected: ${file.name}`;
+                document.getElementById("submitBtn").disabled = false;
+            }
+        }
+
+        // Drag and Drop Visual Effects
+        const dropZone = document.getElementById("dropZone");
+        dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+        dropZone.addEventListener("dragleave", () => { dropZone.classList.remove("dragover"); });
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith(".csv")) {
+                document.getElementById("fileInput").files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: e.dataTransfer.files } });
+            } else {
+                showToast("Please drop a valid .csv file", "error");
+            }
+        });
+
+        document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById("fileInput");
+            const btn = document.getElementById("submitBtn");
+            
+            if (!fileInput.files.length) return;
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            btn.disabled = true;
+            btn.textContent = "Uploading & Processing...";
+
+            try {
+                // BYPASS apiFetch: It forces application/json which breaks file uploads.
+                const token = getToken();
+                const res = await fetch(`${API_BASE}/api/blocks/unbilled_monitoring/bulk-upload`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.detail || "Upload failed");
+                }
+                
+                showToast(`Successfully uploaded ${data.count} records!`, "success");
+                setTimeout(() => window.location.href = "/unbilled-dashboard.html", 1500);
+            } catch (err) {
+                showToast(err.message || "Failed to upload file", "error");
+                btn.disabled = false;
+                btn.textContent = "Upload Data";
+            }
+        });
+    </script>
+</body>
+</html>

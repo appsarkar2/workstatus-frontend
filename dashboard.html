@@ -61,7 +61,24 @@
         </div>
       </section>
 
-      ${bottomNav("home")}
+      <!-- Updated bottomNav to route Uploads to the new page -->
+      <nav class="bottom-nav">
+        <a class="nav-item" href="/dashboard.html">
+            <span class="nav-icon">📋</span><span class="nav-label">Blocks</span>
+        </a>
+        <a class="nav-item" href="#" onclick="showToast('Coming soon','info')">
+            <span class="nav-icon">📊</span><span class="nav-label">Reports</span>
+        </a>
+        <a class="nav-item active" href="/dashboard.html">
+            <span class="nav-icon active-circle">🏠</span><span class="nav-label">Home</span>
+        </a>
+        <a class="nav-item" href="/upload.html">
+            <span class="nav-icon">📤</span><span class="nav-label">Uploads</span>
+        </a>
+        <a class="nav-item" href="#" onclick="logout()">
+            <span class="nav-icon">👤</span><span class="nav-label">Logout</span>
+        </a>
+      </nav>
     `;
 
     // ── Load blocks from backend ──
@@ -89,7 +106,10 @@
           if (b.id === "puja_load_demand") {
               url = "/puja-load.html";
           } else if (b.id === "electrical_works") {
-              url = "/electrical-dashboard.html"; // Route to the new SI Works dashboard
+              url = "/electrical-dashboard.html"; 
+          } else if (b.id === "unbilled_monitoring") {
+              // Route the new block to your custom dashboard
+              url = "/unbilled-dashboard.html"; 
           }
             
           return `
