@@ -8,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <script>
-    // REDIRECT LOGIC for unbilled_monitoring
     const urlParamsCheck = new URLSearchParams(window.location.search);
     if (urlParamsCheck.get("block") === "unbilled_monitoring") {
         window.location.replace("/unbilled-dashboard.html");
@@ -77,6 +76,10 @@
     /* Status Menu Items */
     .status-menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #0f172a; font-weight: 700; font-size: 14px; transition: 0.2s; cursor: pointer; }
     .status-menu-item:hover { background: #eff6ff; border-color: #bfdbfe; transform: translateX(-5px); }
+
+    /* Delete Button */
+    .delete-btn { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; transition: 0.2s; margin-left: 10px; }
+    .delete-btn:hover { background: #dc2626; color: white; }
     
     @media (max-width: 900px) {
         .app-container { padding: 15px; }
@@ -124,20 +127,20 @@
                 <select id="filterDivision" onchange="reloadData()" disabled><option value="">All Divisions</option></select>
                 
                 <!-- NEW FILTERS -->
-                <select id="filterCategory" onchange="renderDashboard()">
+                <select id="filterCategory" onchange="renderDashboard()" style="display:none;">
                     <option value="">All Load Categories</option>
                     <option value="De-Central Bulk">De-Central Bulk</option>
                     <option value="Central Bulk">Central Bulk</option>
                 </select>
 
-                <select id="filterVoltage" onchange="renderDashboard()">
+                <select id="filterVoltage" onchange="renderDashboard()" style="display:none;">
                     <option value="">All Voltage Classes</option>
                     <option value="LT">LT</option>
                     <option value="11 KV HT">11 KV HT</option>
                     <option value="33 KV HT">33 KV HT</option>
                 </select>
 
-                <input type="text" id="searchApp" placeholder="Search App No or Name..." oninput="renderDashboard()">
+                <input type="text" id="searchApp" placeholder="Search App No or Name..." oninput="renderDashboard()" style="display:none;">
             </div>
         </div>
 
@@ -231,11 +234,9 @@
         
         let actionsHtml = `<a href="/dashboard.html" class="btn btn-back">← Back to App</a>`;
         
-        // --- ADDED REPORT BUTTON HERE ---
         if (blockId === 'bulk_connection') {
             actionsHtml += `<a href="/bulk-reports.html" class="btn btn-back" style="color: #2563eb; border-color: #bfdbfe; background: #eff6ff;">📊 View Reports</a>`;
         }
-        // --------------------------------
 
         if (isAdmin && blockId === 'bulk_connection') {
             actionsHtml += `<button class="btn btn-danger" onclick="window.location.href='/sla-report.html?block=${blockId}'">🚨 View Full SLA Report</button>`;
@@ -361,9 +362,11 @@
         let stageGroups = {};
         for (let i = 1; i <= STAGES.length; i++) stageGroups[i] = [];
         
+        // FIXED: Forced Number casting
         filteredApps.forEach(app => {
-            if (app.status === 'in_progress' && app.current_stage >= 1 && app.current_stage <= STAGES.length) {
-                stageGroups[app.current_stage].push(app);
+            const cStage = Number(app.current_stage);
+            if (app.status === 'in_progress' && cStage >= 1 && cStage <= STAGES.length) {
+                stageGroups[cStage].push(app);
             }
         });
 
@@ -422,14 +425,15 @@
         displayApps.forEach(app => {
             const appNo = app.application_no || app.project_no || "—";
             const appName = app.applicant?.name || "Unknown";
-            const stageName = STAGES[app.current_stage - 1] || "—";
+            const cStage = Number(app.current_stage);
+            const stageName = STAGES[cStage - 1] || "—";
             const statusClass = app.status === 'completed' ? 'completed' : (app.status === 'rejected' ? 'rejected' : 'in-progress');
             const loadCat = app.load_category || "N/A";
             const voltage = app.applicant?.type || "N/A";
             
             let daysHtml = "—";
             if (app.status === 'in_progress' && app.stages) {
-                const currentStageData = app.stages.find(s => s.stage_no === app.current_stage);
+                const currentStageData = app.stages.find(s => Number(s.stage_no) === cStage);
                 if (currentStageData && currentStageData.started_at) {
                     const startedAt = new Date(currentStageData.started_at);
                     const now = new Date();
@@ -486,12 +490,14 @@
         const stageName = STAGES[stageNo - 1];
         document.getElementById("drawerTitle").innerText = `Stage ${stageNo}: ${stageName}`;
         
+        // FIXED: Forced Number casting for both current_stage and stage_no
         const appsInStage = rawApps.filter(a => {
             let match = true;
             if (filterZone && a.zone !== filterZone) match = false;
             if (filterRegion && a.region !== filterRegion) match = false;
             if (filterDivision && a.division !== filterDivision) match = false;
-            return match && a.status === 'in_progress' && a.current_stage === stageNo;
+            
+            return match && a.status === 'in_progress' && Number(a.current_stage) === Number(stageNo);
         });
 
         document.getElementById("drawerSubTitle").innerText = `${appsInStage.length} Applications Pending`;
@@ -503,11 +509,13 @@
             return;
         }
 
+        const canDelete = (user.role === 'super_admin' || user.role === 'admin');
+
         let bodyHtml = "";
         appsInStage.forEach(app => {
             const url = `/application-detail.html?block=${blockId}&id=${app._id}`;
             
-            const currentStageData = app.stages?.find(s => s.stage_no === stageNo);
+            const currentStageData = app.stages?.find(s => Number(s.stage_no) === Number(stageNo));
             let isBreached = false;
             if (currentStageData && currentStageData.target_date) {
                 const target = new Date(currentStageData.target_date + "T00:00:00");
@@ -517,6 +525,10 @@
             const rowStyle = isBreached ? "background-color: #fef2f2;" : "";
             const badge = isBreached ? `<span style="color:#ef4444; font-weight:800; font-size:11px; margin-left:8px;">⚠️ Breached</span>` : "";
 
+            const deleteBtn = canDelete 
+                ? `<button class="delete-btn" onclick="deleteApp(event, '${app._id}', '${app.application_no || app.project_no}')">🗑️</button>` 
+                : '';
+
             bodyHtml += `
                 <div class="status-menu-item" style="${rowStyle}" onclick="window.location.href='${url}'">
                     <div style="display:flex; flex-direction:column; gap:4px;">
@@ -524,6 +536,7 @@
                         <span style="font-size:12px; color:#64748b;">${escapeHtml(app.applicant?.name || "Unknown")} • ${escapeHtml(app.division || "Unassigned")}</span>
                     </div>
                     <div style="display:flex; align-items:center;">
+                        ${deleteBtn}
                         <span style="font-size:16px; margin-left:10px;">→</span>
                     </div>
                 </div>
@@ -533,6 +546,23 @@
         document.getElementById("drawerBody").innerHTML = bodyHtml;
         document.getElementById("drawerOverlay").classList.add("show");
         document.getElementById("sideDrawer").classList.add("show");
+    }
+
+    async function deleteApp(event, appId, appNo) {
+        event.stopPropagation(); 
+        
+        if (!confirm(`Are you sure you want to permanently delete application ${appNo}?\n\nThis action cannot be undone.`)) return;
+
+        try {
+            await apiFetch(`/api/blocks/${blockId}/${appId}`, { method: 'DELETE' });
+            showToast("Application deleted successfully", "success");
+            
+            rawApps = rawApps.filter(a => a._id !== appId);
+            renderDashboard();
+            closeDrawer();
+        } catch (err) {
+            showToast(err.message || "Failed to delete application", "error");
+        }
     }
 
     function closeDrawer() {
