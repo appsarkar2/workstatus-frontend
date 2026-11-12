@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSC Monitoring — Menu</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b1329;
+            --bg-card: #111c38;
+            --bg-card-hover: #19274c;
+            --accent-gold: #d4af37;
+            --accent-gold-light: #f3e5ab;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+            --primary-blue: #3b82f6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 18px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-back:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .search-input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 16px 20px 16px 50px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        .search-input:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 4px 16px rgba(212,175,55,0.15);
+        }
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+
+        /* Menu List */
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 20px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+        .menu-item:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-gold);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        }
+        .menu-item-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .menu-icon-box {
+            width: 44px;
+            height: 44px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .menu-arrow {
+            color: var(--accent-gold);
+            font-size: 18px;
+            font-weight: 800;
+            transition: transform 0.2s;
+        }
+        .menu-item:hover .menu-arrow {
+            transform: translateX(4px);
+        }
+
+        /* Empty state for search */
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .header { padding: 14px 18px; }
+            .menu-item { padding: 16px 18px; font-size: 15px; }
+            .menu-icon-box { width: 38px; height: 38px; font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><span>📊</span> NSC Monitoring</h1>
+            <a href="/dashboard.html" class="btn-back">← Back to Dashboard</a>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="menuSearch" class="search-input" placeholder="Search reports & dashboards..." autocomplete="off">
+        </div>
+
+        <!-- Menu List -->
+        <div class="menu-list" id="menuList">
+            <a href="/nsc-dashboard.html#pending" class="menu-item" data-title="Pending NSC">
+                <div class="menu-item-left">
+                    <div class="menu-icon-box">⏳</div>
+                    <span>Pending NSC</span>
+                </div>
+                <span class="menu-arrow">→</span>
+            </a>
+
+            <a href="/nsc-dashboard.html#historical" class="menu-item" data-title="Historical Analysis">
+                <div class="menu-item-left">
+                    <div class="menu-icon-box">📈</div>
+                    <span>Historical Analysis</span>
+                </div>
+                <span class="menu-arrow">→</span>
+            </a>
+
+            <a href="/nsc-dashboard.html#kpis" class="menu-item" data-title="KPIs">
+                <div class="menu-item-left">
+                    <div class="menu-icon-box">🎯</div>
+                    <span>KPIs</span>
+                </div>
+                <span class="menu-arrow">→</span>
+            </a>
+
+            <a href="/nsc-dashboard.html#weekly" class="menu-item" data-title="Weekly Deposit vs Disposal">
+                <div class="menu-item-left">
+                    <div class="menu-icon-box">📅</div>
+                    <span>Weekly Deposit vs Disposal</span>
+                </div>
+                <span class="menu-arrow">→</span>
+            </a>
+
+            <a href="/nsc-dashboard.html#mastercard" class="menu-item" data-title="Pending Master Card">
+                <div class="menu-item-left">
+                    <div class="menu-icon-box">📇</div>
+                    <span>Pending Master Card</span>
+                </div>
+                <span class="menu-arrow">→</span>
+            </a>
+
+            <a href="/nsc-dashboard.html#withheld" class="menu-item" data-title="Withheld">
+                <div class="menu-item-left">
+                    <div class="menu-icon-box">🔒</div>
+                    <span>Withheld</span>
+                </div>
+                <span class="menu-arrow">→</span>
+            </a>
+        </div>
+
+        <div id="noResults" class="no-results">
+            No matching reports or dashboards found.
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('menuSearch');
+        const menuItems = document.querySelectorAll('.menu-item');
+        const noResults = document.getElementById('noResults');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            menuItems.forEach(item => {
+                const title = item.getAttribute('data-title').toLowerCase();
+                if (title.includes(query)) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        });
+    </script>
+    <script src="/js/core/utils.js"></script>
+    <script src="/js/core/auth-guard.js"></script>
+    <script src="/js/core/api.js"></script>
+    <script src="/js/pages/nsc-dashboard.js"></script>
+
+</body>
+</html>
