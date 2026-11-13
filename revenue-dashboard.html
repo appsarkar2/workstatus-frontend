@@ -28,7 +28,7 @@
       padding: 24px 20px;
     }
 
-    /* HEADER (Requirement 1: Desktop & Mobile Alignment) */
+    /* HEADER */
     .page-header {
       display: flex;
       justify-content: space-between;
@@ -98,10 +98,10 @@
       background: #059669;
     }
 
-    /* FILTERS ROW (Requirement 2: Mobile Responsiveness - stacking vertically on mobile) */
+    /* FILTERS ROW (Updated to 5 columns on desktop) */
     .filters-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(5, 1fr);
       gap: 12px;
       margin-bottom: 24px;
       background: white;
@@ -110,6 +110,17 @@
       border: 1px solid #e2e8f0;
       box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
+    @media (max-width: 1200px) {
+      .filters-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 768px) {
+      .filters-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .filter-group {
       display: flex;
       flex-direction: column;
@@ -126,7 +137,7 @@
       width: 100%;
     }
 
-    /* KPI GRID (Requirement 2: 7 columns on desktop, 2 columns on mobile) */
+    /* KPI GRID */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -224,7 +235,7 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
-    /* CHARTS SECTION (Requirement 2: full width on mobile) */
+    /* CHARTS SECTION */
     .charts-container {
       display: grid;
       grid-template-columns: 1fr 2fr;
@@ -261,7 +272,7 @@
 
   <div class="app-container">
     
-    <!-- Header (Requirement 1: Back button on far left, space-between layout) -->
+    <!-- Header -->
     <div class="page-header">
       <div class="header-left">
         <a href="/dashboard.html" class="btn-back">? Back</a>
@@ -275,7 +286,7 @@
       </div>
     </div>
 
-    <!-- Filters Row (Requirement 2: Stacking vertically on mobile via CSS Grid) -->
+    <!-- Filters Row (5 columns: Zone, Region, Division, CCC, Consumer Class) -->
     <div class="filters-row">
       <div class="filter-group">
         <label for="zoneFilter">Zone</label>
@@ -301,12 +312,23 @@
           <option value="">All CCCs</option>
         </select>
       </div>
+      <div class="filter-group">
+        <label for="classFilter">Consumer Class</label>
+        <select id="classFilter" class="filter-select">
+          <option value="">All Classes</option>
+          <option value="Industrial">Industrial</option>
+          <option value="Domestic">Domestic</option>
+          <option value="Commercial">Commercial</option>
+          <option value="Govt">Govt</option>
+          <option value="Others">Others</option>
+        </select>
+      </div>
     </div>
 
     <!-- Main Dashboard Content Container -->
     <div id="dashboard-content">
       
-      <!-- KPI Grid (Requirement 2: 7 columns on desktop, 2 columns on mobile) -->
+      <!-- KPI Grid (7 Cards) -->
       <div class="kpi-grid">
         <div class="kpi-card blue">
           <div class="kpi-title">Total Revenue</div>
@@ -352,7 +374,7 @@
         <button class="tab-btn" onclick="switchTab('followups')">Follow-ups</button>
       </div>
 
-      <!-- Charts Section (Requirement 2: full width on mobile) -->
+      <!-- Charts Section -->
       <div class="charts-container" id="chartsSection">
         <div class="chart-card">
           <h3>Status Distribution</h3>

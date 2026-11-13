@@ -21,12 +21,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const regionEl = document.getElementById("regionFilter");
     const divisionEl = document.getElementById("divisionFilter");
     const cccEl = document.getElementById("cccFilter");
+    const classEl = document.getElementById("classFilter");
 
     if (dateEl) dateEl.addEventListener("change", loadDashboardData);
     if (zoneEl) zoneEl.addEventListener("change", () => { onZoneChange(); loadDashboardData(); });
     if (regionEl) regionEl.addEventListener("change", () => { onRegionChange(); loadDashboardData(); });
     if (divisionEl) divisionEl.addEventListener("change", () => { onDivisionChange(); loadDashboardData(); });
     if (cccEl) cccEl.addEventListener("change", loadDashboardData);
+    // 3. Add event listener to id="classFilter" to refresh the dashboard
+    if (classEl) classEl.addEventListener("change", loadDashboardData);
 
     // 4. CSV Upload Handler
     const csvInput = document.getElementById("csvUpload");
@@ -108,7 +111,6 @@ function onZoneChange() {
 
     if (!zoneVal || !orgData.zones[zoneVal]) return;
 
-    // Regions can be under .regions or direct keys depending on org-structure format
     const zoneObj = orgData.zones[zoneVal];
     const regionsObj = zoneObj.regions || zoneObj;
     const regionKeys = Object.keys(regionsObj).filter(k => k !== 'divisions' && k !== 'cccs');
@@ -135,7 +137,6 @@ function onRegionChange() {
 
     if (!regionObj) return;
 
-    // Divisions can be under .divisions or direct keys
     const divisionsObj = regionObj.divisions || regionObj;
     const divisionKeys = Object.keys(divisionsObj).filter(k => k !== 'cccs' && k !== 'Sub-stations');
 
@@ -162,7 +163,6 @@ function onDivisionChange() {
 
     if (!divisionObj) return;
 
-    // CCCs can be under .cccs, .CCCs, .sub_stations, or direct array/object
     let cccsList = divisionObj.cccs || divisionObj.CCCs || divisionObj.sub_stations || divisionObj["Sub-stations"] || [];
     if (!Array.isArray(cccsList) && typeof divisionObj === 'object') {
         cccsList = Object.keys(divisionObj).filter(k => k !== 'divisions' && k !== 'cccs');
@@ -173,13 +173,14 @@ function onDivisionChange() {
     }
 }
 
-// 2. Data Fetching & KPI Update
+// 2. Data Fetching & KPI Update (Including consumer_class)
 async function loadDashboardData() {
     const month = document.getElementById("dateFilter")?.value || "";
     const zone = document.getElementById("zoneFilter")?.value || "";
     const region = document.getElementById("regionFilter")?.value || "";
     const division = document.getElementById("divisionFilter")?.value || "";
     const ccc = document.getElementById("cccFilter")?.value || "";
+    const consumerClass = document.getElementById("classFilter")?.value || "";
 
     const params = new URLSearchParams();
     if (month) params.append("month", month);
@@ -187,6 +188,7 @@ async function loadDashboardData() {
     if (region) params.append("region", region);
     if (division) params.append("division", division);
     if (ccc) params.append("ccc", ccc);
+    if (consumerClass) params.append("consumer_class", consumerClass);
 
     try {
         const data = await apiFetch(`/api/blocks/revenue_work/dashboard-summary?${params.toString()}`);
@@ -215,7 +217,7 @@ async function loadDashboardData() {
         document.getElementById("kpi-osd-5k-count").textContent = (totals.osd_gt_5k_count || 0).toLocaleString();
         document.getElementById("kpi-osd-5k-amount").textContent = `?${(totals.osd_gt_5k_amount_cr || 0).toFixed(2)} Cr`;
 
-        // Render Charts
+        // Render Charts with Updated Colors
         renderCharts(totals, regionsBreakdown);
 
     } catch (e) {
@@ -223,6 +225,7 @@ async function loadDashboardData() {
     }
 }
 
+// 1. Chart Colors Configuration
 function renderCharts(totals, regionsBreakdown) {
     const donutCtx = document.getElementById("donutChart").getContext("2d");
     if (donutChartInstance) donutChartInstance.destroy();
@@ -238,7 +241,8 @@ function renderCharts(totals, regionsBreakdown) {
                     totals.disconnected_count || 0,
                     totals.no_action_count || 0
                 ],
-                backgroundColor: ['#10b981', '#8b5cf6', '#f59e0b', '#ef4444'],
+                // Exact Colors: Fully Paid (Green #10b981), Part Paid (Blue #3b82f6), Disconnected (Red #ef4444), No Action (Orange #f59e0b)
+                backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#f59e0b'],
                 borderWidth: 2,
                 borderColor: '#ffffff'
             }]
@@ -266,7 +270,8 @@ function renderCharts(totals, regionsBreakdown) {
             datasets: [{
                 label: 'Revenue (? Cr)',
                 data: amounts.length ? amounts : [0],
-                backgroundColor: '#2563eb',
+                // Solid Orange (#f59e0b) with rounded corners
+                backgroundColor: '#f59e0b',
                 borderRadius: 6,
                 barThickness: 32
             }]
@@ -311,7 +316,7 @@ function renderTableRows(entries) {
             <td style="padding: 12px; font-weight: 600;">${escapeHtml(item.division || "—")}</td>
             <td style="padding: 12px; font-weight: 600;">${(item.total_count || 0).toLocaleString()}</td>
             <td style="padding: 12px; color:#10b981; font-weight:700;">${(item.fully_paid_count || 0).toLocaleString()}</td>
-            <td style="padding: 12px; color:#8b5cf6; font-weight:700;">${(item.part_paid_count || 0).toLocaleString()}</td>
+            <td style="padding: 12px; color:#3b82f6; font-weight:700;">${(item.part_paid_count || 0).toLocaleString()}</td>
             <td style="padding: 12px; font-weight:700;">?${(item.total_amount_cr || 0).toFixed(2)} Cr</td>
         </tr>
     `).join("");
