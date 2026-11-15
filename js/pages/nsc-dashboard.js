@@ -220,7 +220,6 @@ function renderAnalysisTable(data, tabName) {
         return;
     }
 
-    // Sort data by count in descending order (Highest to Lowest)
     const sortedData = [...data].sort((a, b) => b.count - a.count);
 
     const total = sortedData.reduce((sum, item) => sum + item.count, 0);
@@ -257,10 +256,80 @@ function closeDrawer() {
     document.getElementById('drawer').classList.remove('show');
 }
 
-// Drawer Chart logic (just for now, using chart.js)
+// KPI Details Drawer Logic
+async function openDetailsDrawer(statusType) {
+    const overlay = document.getElementById('detailsDrawerOverlay');
+    const drawer = document.getElementById('detailsDrawer');
+    const titleEl = document.getElementById('drawerTitle');
+    const tbody = document.getElementById('detailsDrawerBody');
+
+    if (!overlay || !drawer || !tbody) return;
+
+    const titles = {
+        'pending_conn': 'Pending Connection Applications',
+        'avg_delay': 'All Open Cases (Avg Delay)',
+        'quotation_delay': 'Quotation Delay Applications',
+        'wo_delay': 'Work Order Delay Applications',
+        'pending_wo': 'Pending Work Order Applications'
+    };
+
+    if (titleEl) titleEl.textContent = titles[statusType] || 'Application Details';
+    
+    // CHANGE COLSPAN TO 6
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Loading applications...</td></tr>';
+
+    overlay.classList.add('show');
+    drawer.classList.add('show');
+
+    const zone = document.getElementById('filter_zone')?.value || '';
+    const reg = document.getElementById('filter_reg')?.value || '';
+    const divn_name = document.getElementById('filter_divn_name')?.value || '';
+    const ccc_code = document.getElementById('filter_ccc_code')?.value || '';
+    const conn_class = document.getElementById('filter_conn_class')?.value || '';
+    const applicant_type = document.getElementById('filter_applicant_type')?.value || '';
+
+    const query = `?status_type=${encodeURIComponent(statusType)}&zone=${encodeURIComponent(zone)}&reg=${encodeURIComponent(reg)}&divn_name=${encodeURIComponent(divn_name)}&ccc_code=${encodeURIComponent(ccc_code)}&conn_class=${encodeURIComponent(conn_class)}&applicant_type=${encodeURIComponent(applicant_type)}`;
+
+    try {
+        const res = await apiFetch(`/api/blocks/nsc_monitoring/pending-details${query}`);
+        const items = res.items || [];
+
+        tbody.innerHTML = '';
+        if (items.length === 0) {
+            // CHANGE COLSPAN TO 6
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #64748b;">No applications found</td></tr>';
+            return;
+        }
+
+        items.forEach(item => {
+            const woColor = item.wo_status === "Issued" ? "#10b981" : "#ef4444";
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                    <td style="padding: 12px 16px; font-weight: 600; color: #2563eb;">${item.appl_no || '-'}</td>
+                    <td style="padding: 12px 16px; color: #0f172a;">${item.name || '-'}</td>
+                    <td style="padding: 12px 16px; color: #475569;">${item.ccc || '-'}</td>
+                    <td style="padding: 12px 16px; color: #475569;">${item.agency_name || '-'}</td>
+                    <td style="padding: 12px 16px; font-weight: 600; color: ${woColor};">${item.wo_status || '-'}</td>
+                    <td style="padding: 12px 16px; font-weight: 600; color: ${item.delay_as_on_today > 30 ? '#dc2626' : '#0f172a'};">${item.delay_as_on_today || 0}</td>
+                </tr>
+            `;
+        });
+    } catch (err) {
+        console.error("Failed to load application details", err);
+        // CHANGE COLSPAN TO 6
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #dc2626;">Failed to load application details</td></tr>';
+    }
+}
+
+function closeDetailsDrawer() {
+    const overlay = document.getElementById('detailsDrawerOverlay');
+    const drawer = document.getElementById('detailsDrawer');
+    if (overlay) overlay.classList.remove('show');
+    if (drawer) drawer.classList.remove('show');
+}
+
+// Drawer Chart Logic (Restored)
 function renderChartInDrawer(regionData) {
-    // Optional: You can use this to draw a chart inside the drawer.
-    // For now, it just populates the drawer body with a table.
     const drawerBody = document.getElementById('drawerBody');
     if (!drawerBody) return;
 
@@ -271,5 +340,8 @@ function renderChartInDrawer(regionData) {
         tableHTML += `<tr><td>${r._id}</td><td>${r.count}</td></tr>`;
     });
     tableHTML += `</table>`;
-    drawerBody.innerHTML = tableHTML;
+    
+    if(drawerBody) {
+       drawerBody.innerHTML = tableHTML;
+    }
 }
