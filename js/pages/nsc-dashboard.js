@@ -6,6 +6,12 @@ let currentTab = 'reg'; // Default tab
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("🔥 NEW SCRIPT LOADED!");
+    const user = getCurrentUser();
+    const isSuperAdmin = user && user.username === "superadmin";
+    const uploadBtn = document.getElementById('btnUploadCsv');
+    if (uploadBtn && !isSuperAdmin) {
+        uploadBtn.style.display = 'none'; // Hide for non-superadmins
+    }
     loadOrgStructure();
     setupEventListeners();
 });
