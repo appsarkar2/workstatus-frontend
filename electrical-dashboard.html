@@ -8,6 +8,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
+    .btn { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; text-decoration: none; display: inline-block; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-light { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
+
     /* GLOBAL RESET & LIGHT THEME */
     * { box-sizing: border-box; }
     html, body { background-color: #f8fafc !important; color: #0f172a !important; font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh; width: 100%; overflow-x: hidden; }
@@ -98,7 +102,13 @@
     <div class="table-card">
         <div class="table-toolbar">
             <div class="toolbar-top">
-                <h2 class="table-title">Schemes Overview</h2>
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <h2 class="table-title">Schemes Overview</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btnViewCategory" class="btn btn-primary" onclick="switchView('category')">Category View</button>
+                        <button id="btnViewDivision" class="btn btn-light" onclick="switchView('division')">Division View</button>
+                    </div>
+                </div>
                 <div class="stat-boxes">
                     <div class="stat-card">
                         <h2 id="totalSchemes">0</h2>
@@ -122,6 +132,14 @@
 
                 <select id="filterSchemeHead" onchange="fetchOverviewTable()">
                     <option value="All">All Scheme Heads</option>
+                </select>
+
+                <select id="filterStatus" class="form-control" onchange="fetchOverviewTable()">
+                    <option value="">All Statuses</option>
+                    <option value="Planned">Planned</option>
+                    <option value="Proposal">Proposal</option>
+                    <option value="Working">Working</option>
+                    <option value="Completed">Completed</option>
                 </select>
                 
                 <select id="filterZone" onchange="updateFilterRegions()"><option value="">All Zones</option></select>
@@ -182,6 +200,28 @@
     let currentPhase = "All";
     let currentCategory = "All";
     let activeRow = null; 
+    let currentView = "category"; // "category" or "division"
+
+    function switchView(view) {
+        currentView = view;
+        const btnCat = document.getElementById("btnViewCategory");
+        const btnDiv = document.getElementById("btnViewDivision");
+        const filterSchemeHead = document.getElementById("filterSchemeHead");
+        const filterCategory = document.getElementById("filterCategory");
+
+        if (view === "category") {
+            btnCat.className = "btn btn-primary";
+            btnDiv.className = "btn btn-light";
+            if (filterSchemeHead) filterSchemeHead.style.display = "inline-block";
+            if (filterCategory) filterCategory.style.display = "inline-block";
+        } else {
+            btnDiv.className = "btn btn-primary";
+            btnCat.className = "btn btn-light";
+            if (filterSchemeHead) filterSchemeHead.style.display = "none";
+            if (filterCategory) filterCategory.style.display = "none";
+        }
+        fetchOverviewTable();
+    }
 
     const CATEGORY_MAPPING = {
         "Sub-station and PTR": ["New SS", "PTR Augmentation / New PTR"],
@@ -276,78 +316,137 @@
             const regionVal = document.getElementById("filterRegion").value;
             const divisionVal = document.getElementById("filterDivision").value;
             const headVal = document.getElementById("filterSchemeHead").value;
+            const statusVal = document.getElementById("filterStatus").value;
 
             const params = new URLSearchParams();
             if (currentPhase !== "All") params.append("phase", currentPhase);
             if (zoneVal) params.append("zone", zoneVal);
             if (regionVal) params.append("region", regionVal);
             if (divisionVal) params.append("division", divisionVal);
+            if (statusVal) params.append("status", statusVal);
             
-            const groupedData = await apiFetch(`/api/blocks/electrical_works/overview-table?${params.toString()}`);
-            
-            let filteredData = groupedData.filter(row => {
-                if (currentCategory !== "All") {
-                    const allowedHeads = CATEGORY_MAPPING[currentCategory];
-                    if (!allowedHeads || !allowedHeads.includes(row.scheme_head)) return false;
-                }
-                if (headVal !== "All" && row.scheme_head !== headVal) return false;
-                return true;
-            });
+            let endpoint = currentView === "division" 
+                ? `/api/blocks/electrical_works/division-overview?${params.toString()}`
+                : `/api/blocks/electrical_works/overview-table?${params.toString()}`;
 
-            if (headVal === "All" && currentCategory === "All") {
-                let existingHeads = filteredData.map(r => r.scheme_head);
-                MASTER_SCHEME_HEADS.forEach(item => {
-                    if (!existingHeads.includes(item.head)) {
-                        filteredData.push({
-                            scheme_head: item.head,
-                            division: divisionVal || "All / N/A",
-                            total: 0, completed: 0, in_progress: 0, pending: 0,
-                            progress_pct: 0,
-                            last_updated: "N/A"
-                        });
+            const groupedData = await apiFetch(endpoint);
+            
+            let filteredData = groupedData;
+            if (currentView === "category") {
+                filteredData = groupedData.filter(row => {
+                    if (currentCategory !== "All") {
+                        const allowedHeads = CATEGORY_MAPPING[currentCategory];
+                        if (!allowedHeads || !allowedHeads.includes(row.scheme_head)) return false;
                     }
+                    if (headVal !== "All" && row.scheme_head !== headVal) return false;
+                    return true;
                 });
-            }
 
-            filteredData.sort((a, b) => a.scheme_head.localeCompare(b.scheme_head));
+                if (headVal === "All" && currentCategory === "All") {
+                    let existingHeads = filteredData.map(r => r.scheme_head);
+                    MASTER_SCHEME_HEADS.forEach(item => {
+                        if (!existingHeads.includes(item.head)) {
+                            filteredData.push({
+                                scheme_head: item.head,
+                                division: divisionVal || "All / N/A",
+                                total: 0, completed: 0, in_progress: 0, pending: 0,
+                                progress_pct: 0,
+                                last_updated: "N/A"
+                            });
+                        }
+                    });
+                }
+                filteredData.sort((a, b) => a.scheme_head.localeCompare(b.scheme_head));
+            } else {
+                filteredData.sort((a, b) => (a.division || "").localeCompare(b.division || ""));
+            }
 
             const total = filteredData.reduce((sum, item) => sum + item.total, 0);
             const completed = filteredData.reduce((sum, item) => sum + item.completed, 0);
             document.getElementById("totalSchemes").innerText = total;
             document.getElementById("completedSchemes").innerText = completed;
 
+            // Update table headers
+            const theadTr = document.querySelector("table thead tr");
+            if (currentView === "division") {
+                theadTr.innerHTML = `
+                    <th>#</th>
+                    <th>Division</th>
+                    <th>Total</th>
+                    <th>Completed</th>
+                    <th>In Progress</th>
+                    <th>Pending</th>
+                    <th>Progress</th>
+                    <th>Last Updated</th>
+                `;
+            } else {
+                theadTr.innerHTML = `
+                    <th>#</th>
+                    <th>Scheme Category</th>
+                    <th>Division</th>
+                    <th>Total</th>
+                    <th>Completed</th>
+                    <th>In Progress</th>
+                    <th>Pending</th>
+                    <th>Progress</th>
+                    <th>Last Updated</th>
+                `;
+            }
+
             let html = "";
             let idx = 1;
             filteredData.forEach(row => {
                 const rowDataStr = encodeURIComponent(JSON.stringify(row));
                 
-                html += `
-                    <tr class="clickable-row" onclick="openDrawer('${rowDataStr}')">
-                        <td>${idx++}</td>
-                        <td style="font-weight:700;">${escapeHtml(row.scheme_head)}</td>
-                        <td style="font-weight:600; color:#475569;">${escapeHtml(row.division)}</td>
-                        <td>${row.total}</td>
-                        <td style="color:#10b981;">${row.completed}</td>
-                        <td style="color:#8b5cf6;">${row.in_progress}</td>
-                        <td style="color:#d97706;">${row.pending}</td>
-                        <td>
-                            <div class="progress-container">
-                                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${row.progress_pct}%;"></div></div>
-                                <span class="progress-text">${row.progress_pct}%</span>
-                            </div>
-                        </td>
-                        <td style="font-size:12px; color:#64748b;">${row.last_updated}</td>
-                    </tr>
-                `;
+                if (currentView === "division") {
+                    html += `
+                        <tr class="clickable-row" onclick="openDivisionDrawer('${rowDataStr}')">
+                            <td>${idx++}</td>
+                            <td style="font-weight:700;">${escapeHtml(row.division)}</td>
+                            <td>${row.total}</td>
+                            <td style="color:#10b981;">${row.completed}</td>
+                            <td style="color:#8b5cf6;">${row.in_progress}</td>
+                            <td style="color:#d97706;">${row.pending}</td>
+                            <td>
+                                <div class="progress-container">
+                                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${row.progress_pct}%;"></div></div>
+                                    <span class="progress-text">${row.progress_pct}%</span>
+                                </div>
+                            </td>
+                            <td style="font-size:12px; color:#64748b;">${row.last_updated}</td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr class="clickable-row" onclick="openDrawer('${rowDataStr}')">
+                            <td>${idx++}</td>
+                            <td style="font-weight:700;">${escapeHtml(row.scheme_head)}</td>
+                            <td style="font-weight:600; color:#475569;">${escapeHtml(row.division)}</td>
+                            <td>${row.total}</td>
+                            <td style="color:#10b981;">${row.completed}</td>
+                            <td style="color:#8b5cf6;">${row.in_progress}</td>
+                            <td style="color:#d97706;">${row.pending}</td>
+                            <td>
+                                <div class="progress-container">
+                                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${row.progress_pct}%;"></div></div>
+                                    <span class="progress-text">${row.progress_pct}%</span>
+                                </div>
+                            </td>
+                            <td style="font-size:12px; color:#64748b;">${row.last_updated}</td>
+                        </tr>
+                    `;
+                }
             });
 
             if (filteredData.length === 0) {
-                html = `<tr><td colspan="9" style="text-align:center; padding: 30px; color:#64748b;">No schemes match your current filters.</td></tr>`;
+                const colspan = currentView === "division" ? 8 : 9;
+                html = `<tr><td colspan="${colspan}" style="text-align:center; padding: 30px; color:#64748b;">No schemes match your current filters.</td></tr>`;
             } else {
                 const totalPct = Math.round((completed / total) * 100) || 0;
+                const colspanVal = currentView === "division" ? 2 : 3;
                 html += `
                     <tr class="grand-total-row">
-                        <td colspan="3">GRAND TOTAL</td>
+                        <td colspan="${colspanVal}">GRAND TOTAL</td>
                         <td>${total}</td>
                         <td style="color:#10b981;">${completed}</td>
                         <td style="color:#8b5cf6;">${filteredData.reduce((sum, item) => sum + item.in_progress, 0)}</td>
@@ -366,7 +465,8 @@
             document.getElementById("overviewTableBody").innerHTML = html;
 
         } catch (e) {
-            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
+            const colspan = currentView === "division" ? 8 : 9;
+            document.getElementById("overviewTableBody").innerHTML = `<tr><td colspan="${colspan}" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
         }
     }
 
@@ -428,6 +528,61 @@
         document.getElementById("drawerOverlay").classList.add("show");
         document.getElementById("sideDrawer").classList.add("show");
     }
+    function openDivisionDrawer(encodedData) {
+        activeRow = JSON.parse(decodeURIComponent(encodedData));
+        
+        // Set Header
+        document.getElementById("drawerTitle").innerText = `Division: ${activeRow.division}`;
+        document.getElementById("drawerSubTitle").innerText = `Total Schemes: ${activeRow.total}`;
+        
+        // Calculate status breakdown for this specific division
+        const statuses = {
+            "Proposal to Initiate": 0, 
+            "Approval pending": 0, 
+            "TAA issued, work yet to start": 0,
+            "Work in progress": 0, 
+            "Completed": 0, 
+            "Not updated": 0
+        };
+
+        const relevantSchemes = allSchemes.filter(s => s.division === activeRow.division);
+
+        relevantSchemes.forEach(s => {
+            if (s.status === "completed") statuses["Completed"]++;
+            else if (s.current_stage === 1) statuses["Proposal to Initiate"]++;
+            else if (s.current_stage === 2) statuses["Approval pending"]++;
+            else if (s.current_stage === 3) statuses["TAA issued, work yet to start"]++;
+            else if (s.current_stage === 4) statuses["Work in progress"]++;
+            else statuses["Not updated"]++;
+        });
+
+        // Build Drawer Body
+        let bodyHtml = `
+            <a href="/electrical-list.html?division=${encodeURIComponent(activeRow.division)}" class="status-menu-item all-item">
+                <span>View All Schemes</span>
+                <span class="count">${activeRow.total}</span>
+            </a>
+        `;
+
+        Object.keys(statuses).forEach(st => {
+            const count = statuses[st];
+            const url = `/electrical-list.html?division=${encodeURIComponent(activeRow.division)}&status=${encodeURIComponent(st)}`;
+            
+            bodyHtml += `
+                <a href="${url}" class="status-menu-item">
+                    <span>${st}</span>
+                    <span class="count">${count}</span>
+                </a>
+            `;
+        });
+
+        document.getElementById("drawerBody").innerHTML = bodyHtml;
+        
+        // Show Drawer
+        document.getElementById("drawerOverlay").classList.add("show");
+        document.getElementById("sideDrawer").classList.add("show");
+    }
+
 
     function closeDrawer() {
         document.getElementById("drawerOverlay").classList.remove("show");

@@ -88,15 +88,9 @@
           <div class="row">
             <div class="form-group col">
               <label>Scheme Head *</label>
-              <select id="schemeHead" class="form-control" required>
-                <option value="">Select Scheme Head...</option>
-                <option value="New SS">New SS</option>
-                <option value="Control Room Extension / Modification">Control Room Extension / Modification</option>
-                <option value="PTR Augmentation / New PTR">PTR Augmentation / New PTR</option>
-                <option value="33KV Second Source / Tapping Source">33KV Second Source / Tapping Source</option>
-                <option value="Augmentation of Conductor Size">Augmentation of Conductor Size</option>
-                <option value="Bifurcation of Feeders">Bifurcation of Feeders</option>
-                <option value="HT AB Cable Conversion">HT AB Cable Conversion</option>
+              <!-- Options will be populated dynamically from the backend -->
+              <select id="schemeHead" class="form-control" onchange="handleSchemeHeadChange()" required>
+                <option value="">Loading Scheme Heads...</option>
               </select>
             </div>
             <div class="form-group col">
@@ -115,11 +109,8 @@
           <h2 class="section-title">📋 Scheme Details</h2>
           <div class="form-group">
             <label>Name of Scheme *</label>
-            <!-- DataList for Autocomplete -->
             <input type="text" id="schemeName" class="form-control" list="schemeNames" placeholder="e.g. 2nd Source From Siliguri 132 KV to Housing Board Sub-Stn" required />
-            <datalist id="schemeNames">
-              <!-- Populated dynamically -->
-            </datalist>
+            <datalist id="schemeNames"></datalist>
           </div>
           <div class="row">
             <div class="form-group col">
@@ -203,16 +194,22 @@
   <script>
     let orgData = {};
     let allSchemes = [];
+    let schemeVoltageMap = {};
 
     document.addEventListener("DOMContentLoaded", async () => {
       try {
+        // Fetch Org Structure, Schemes, and the Block Config (for Scheme Heads)
         const results = await Promise.all([
           apiFetch("/api/org-structure"),
-          BlockAPI("electrical_works").list()
+          BlockAPI("electrical_works").list(),
+          BlockAPI("electrical_works").getConfig()
         ]);
         orgData = results[0];
         allSchemes = results[1].items || [];
+        const config = results[2];
+        schemeVoltageMap = config.scheme_voltage_map || {};
 
+        // Populate Zone
         const zoneSelect = document.getElementById("zone");
         if (orgData.zones) {
             zoneSelect.innerHTML = `<option value="">Select Zone...</option>`;
@@ -220,10 +217,29 @@
                 zoneSelect.innerHTML += `<option value="${zoneName}">${zoneName}</option>`;
             });
         }
+
+        // Populate Scheme Heads Dynamically from Config
+        const schemeHeadSelect = document.getElementById("schemeHead");
+        schemeHeadSelect.innerHTML = `<option value="">Select Scheme Head...</option>`;
+        if (config && config.categories) {
+            config.categories.forEach(cat => {
+                schemeHeadSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
       } catch (e) {
         showToast("Failed to load initial data", "error");
+        console.error(e);
       }
     });
+
+    function handleSchemeHeadChange() {
+      const schemeHead = document.getElementById("schemeHead").value;
+      const voltageLevel = document.getElementById("voltageLevel");
+      if (schemeVoltageMap && schemeVoltageMap[schemeHead]) {
+        voltageLevel.value = schemeVoltageMap[schemeHead];
+      }
+    }
 
     function updateRegions() {
       const zone = document.getElementById("zone").value;
@@ -295,7 +311,6 @@
       updateSchemeDatalist();
     }
 
-    // Populate Datalist based on Current Selection
     function updateSchemeDatalist() {
         const datalist = document.getElementById("schemeNames");
         datalist.innerHTML = "";
@@ -304,13 +319,11 @@
         const currentRegion = document.getElementById("region").value;
         const currentDivision = document.getElementById("division").value;
 
-        // Filter schemes based on current selections
         let filtered = allSchemes;
         if (currentZone) filtered = filtered.filter(s => s.zone === currentZone);
         if (currentRegion) filtered = filtered.filter(s => s.region === currentRegion);
         if (currentDivision) filtered = filtered.filter(s => s.division === currentDivision);
 
-        // Add unique scheme names to datalist
         const uniqueNames = new Set();
         filtered.forEach(s => { if(s.scheme_name) uniqueNames.add(s.scheme_name); });
 
