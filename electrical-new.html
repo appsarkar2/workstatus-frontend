@@ -56,6 +56,15 @@
           <h2 class="section-title">ℹ️ General Information</h2>
           
           <div class="row">
+          <div class="form-group">
+            <label for="status">Scheme Status *</label>
+            <select id="status" name="status" class="form-control" required onchange="handleStatusChange()">
+              <option value="Planned" selected>Planned</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Working">Working</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
             <div class="form-group col">
               <label>Zone *</label>
               <select id="zone" class="form-control" onchange="updateRegions()" required>
@@ -137,22 +146,14 @@
           <h2 class="section-title">⏱️ Timeline & Cost</h2>
           <div class="row">
             <div class="form-group col">
-              <label>Priority</label>
-              <select id="priority" class="form-control">
-                <option value="Phase-I">Phase-I</option>
-                <option value="Phase-II">Phase-II</option>
-              </select>
-            </div>
-            <div class="form-group col">
               <label>Target Date</label>
               <input type="date" id="targetDate" class="form-control" />
             </div>
-          </div>
-          <div class="row">
             <div class="form-group col">
               <label>TAA No.</label>
               <input type="text" id="taaNo" class="form-control" placeholder="TAA No." />
             </div>
+          </div>
             <div class="form-group col">
               <label>eOffice Ref.</label>
               <input type="text" id="eofficeRef" class="form-control" placeholder="eOffice Ref." />
@@ -168,9 +169,19 @@
               <input type="text" id="billedValue" class="form-control" placeholder="e.g. 2.10 Cr" />
             </div>
           </div>
+          <div class="row">
+            <div class="form-group col">
+              <label for="planning_date">Planning Date</label>
+              <input type="date" id="planning_date" name="planning_date" class="form-control" />
+            </div>
+            <div class="form-group col">
+              <label for="proposal_initiate_date">Proposal Initiate Date</label>
+              <input type="date" id="proposal_initiate_date" name="proposal_initiate_date" class="form-control" />
+            </div>
+          </div>
           <div class="form-group">
-            <label>Presently With</label>
-            <input type="text" id="presentlyWith" class="form-control" placeholder="e.g. P&E" />
+            <label for="presently_with">Presently With</label>
+            <input type="text" id="presently_with" name="presently_with" class="form-control" placeholder="e.g. Division Office / RE / CE" />
           </div>
           <div class="form-group">
             <label>Detail Work Status</label>
@@ -241,6 +252,25 @@
       }
     }
 
+    function handleStatusChange() {
+      const status = document.getElementById("status").value;
+      const advancedFields = [
+        "schemeName", "existingParam", "proposedParam", "loadingPeak",
+        "majorMaterial", "targetDate", "taaNo", "taaValue", "billedValue", "presentlyWith", "eofficeRef", "detailed_status"
+      ];
+      
+      const isPlanned = (status === "Planned");
+      advancedFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          if (isPlanned) {
+            el.removeAttribute("required");
+          } else {
+            // For Proposal, Working, or Completed, we can leave them optional or required as needed, but let's keep them flexible or ensure validation
+          }
+        }
+      });
+    }
     function updateRegions() {
       const zone = document.getElementById("zone").value;
       const regSelect = document.getElementById("region");
@@ -345,18 +375,20 @@
         division: document.getElementById("division").value,
         scheme_head: document.getElementById("schemeHead").value,
         voltage_level: document.getElementById("voltageLevel").value,
+        status: document.getElementById("status").value,
         related_ss: document.getElementById("relatedSs").value,
         scheme_name: document.getElementById("schemeName").value,
         existing_parameter: document.getElementById("existingParam").value,
         proposed_parameter: document.getElementById("proposedParam").value,
         loading_peak: document.getElementById("loadingPeak").value,
         major_material: document.getElementById("majorMaterial").value,
-        priority: document.getElementById("priority").value,
         target_date: document.getElementById("targetDate").value,
         taa_no: document.getElementById("taaNo").value,
         taa_value: document.getElementById("taaValue").value,
         billed_value: document.getElementById("billedValue").value,
-        presently_with: document.getElementById("presentlyWith").value,
+        planning_date: document.getElementById("planning_date").value,
+        proposal_initiate_date: document.getElementById("proposal_initiate_date").value,
+        presently_with: document.getElementById("presently_with").value,
         eoffice_ref: document.getElementById("eofficeRef").value,
         detailed_status: document.getElementById("detailedStatus").value
       };

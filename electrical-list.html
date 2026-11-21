@@ -96,20 +96,23 @@
       <table id="schemeTable">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Priority</th>
-            <th>Division</th>
-            <th>Scheme Head</th>
-            <th>Scheme Name</th>
-            <th>TAA No.</th>
-            <th>Overall Status</th>
-            <th>Target</th>
-            <th>Last Updated</th>
-            <th>Action</th>
+            <th style="width: 50px; cursor: pointer;" onclick="sortTable('sl_no')">SL NO <span id="sort-sl_no"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('region')">REGION <span id="sort-region"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('division')">DIVISION <span id="sort-division"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('scheme_head')">SCHEME HEAD <span id="sort-scheme_head"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('scheme_name')">SCHEME NAME <span id="sort-scheme_name"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('planning_date')">PLAN DT <span id="sort-planning_date"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('proposal_initiate_date')">PROP INIT DT <span id="sort-proposal_initiate_date"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('presently_with')">PRESENTLY WITH <span id="sort-presently_with"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('taa_no')">TAA NO. <span id="sort-taa_no"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('overall_status')">STATUS <span id="sort-overall_status"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('target_date')">TARGET DT <span id="sort-target_date"></span></th>
+            <th style="cursor: pointer;" onclick="sortTable('updated_at')">UPDATED <span id="sort-updated_at"></span></th>
+            <th style="text-align: center;">ACTION</th>
           </tr>
         </thead>
         <tbody id="listTableBody">
-            <tr><td colspan="10" style="text-align:center; padding: 30px;">Loading...</td></tr>
+            <tr><td colspan="13" style="text-align:center; padding: 30px;">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -174,17 +177,49 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const targetHead = params.get("head");
-    const targetDivision = params.get("division");
-    const targetStatus = params.get("status"); // <-- ADDED
-    
+    let headFilter = params.get("head");
+    let divisionFilter = params.get("division");
+    const targetStatus = params.get("status");
+
+    // Sanitize parameters
+    if (!headFilter || headFilter === 'undefined' || headFilter === 'null' || headFilter === 'all') {
+        headFilter = '';
+    }
+    if (!divisionFilter || divisionFilter === 'undefined' || divisionFilter === 'null' || divisionFilter === 'all' || divisionFilter === 'All Divisions') {
+        divisionFilter = '';
+    }
+
     let allSchemes = [];
     let currentFiltered = [];
+    let sortField = null;
+    let sortDirection = 'asc';
+
+    function sortTable(field) {
+        if (sortField === field) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = field;
+            sortDirection = 'asc';
+        }
+
+        // Reset indicator arrows
+        ['sl_no', 'region', 'division', 'scheme_head', 'scheme_name', 'planning_date', 'proposal_initiate_date', 'presently_with', 'taa_no', 'overall_status', 'target_date', 'updated_at'].forEach(f => {
+            const el = document.getElementById(`sort-${f}`);
+            if (el) el.innerText = '';
+        });
+
+        const activeIndicator = document.getElementById(`sort-${field}`);
+        if (activeIndicator) {
+            activeIndicator.innerText = sortDirection === 'asc' ? ' ▲' : ' ▼';
+        }
+
+        renderList();
+    }
 
     const user = getCurrentUser();
     const isAdmin = ["super_admin", "admin"].includes(user.role);
 
-    document.getElementById("pageTitle").innerText = targetHead || "All Schemes";
+    document.getElementById("pageTitle").innerText = headFilter || "All Schemes";
     if (targetStatus) {
         document.getElementById("pageTitle").innerText += ` - ${targetStatus}`;
     }
@@ -195,13 +230,13 @@
             allSchemes = res.items || [];
             
             // Filter by Head
-            if (targetHead) {
-                allSchemes = allSchemes.filter(s => (s.scheme_head || "Uncategorized") === targetHead);
+            if (headFilter) {
+                allSchemes = allSchemes.filter(s => (s.scheme_head || "Uncategorized") === headFilter);
             }
             
             // Filter by Division
-            if (targetDivision && targetDivision !== "All / N/A") {
-                allSchemes = allSchemes.filter(s => (s.division || "Unassigned") === targetDivision);
+            if (divisionFilter && divisionFilter !== "All / N/A") {
+                allSchemes = allSchemes.filter(s => (s.division || "Unassigned") === divisionFilter);
             }
 
             // Filter by Status (NEW)
@@ -232,20 +267,66 @@
     function renderList() {
         const term = document.getElementById("searchInput").value.toLowerCase();
         
-        currentFiltered = allSchemes.filter(s => {
+        let filtered = allSchemes.filter(s => {
             const name = (s.scheme_name || "").toLowerCase();
             const div = (s.division || "").toLowerCase();
-            return name.includes(term) || div.includes(term);
+            const head = (s.scheme_head || "").toLowerCase();
+            const reg = (s.region || "").toLowerCase();
+            const taa = (s.taa_no || "").toLowerCase();
+            return name.includes(term) || div.includes(term) || head.includes(term) || reg.includes(term) || taa.includes(term);
         });
 
+        // Apply sorting if sortField is set
+        if (sortField) {
+            filtered.sort((a, b) => {
+                let valA = '';
+                let valB = '';
+
+                if (sortField === 'sl_no') {
+                    valA = allSchemes.indexOf(a);
+                    valB = allSchemes.indexOf(b);
+                } else if (sortField === 'overall_status') {
+                    let statusA = "Proposal to Initiate";
+                    if (a.status === "completed") statusA = "Completed";
+                    else if (a.current_stage === 2) statusA = "Approval pending";
+                    else if (a.current_stage === 3) statusA = "TAA issued, work yet to start";
+                    else if (a.current_stage === 4) statusA = "Work in progress";
+
+                    let statusB = "Proposal to Initiate";
+                    if (b.status === "completed") statusB = "Completed";
+                    else if (b.current_stage === 2) statusB = "Approval pending";
+                    else if (b.current_stage === 3) statusB = "TAA issued, work yet to start";
+                    else if (b.current_stage === 4) statusB = "Work in progress";
+
+                    valA = statusA;
+                    valB = statusB;
+                } else {
+                    valA = a[sortField] || '';
+                    valB = b[sortField] || '';
+                }
+
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    return sortDirection === 'asc' ? valA - valB : valB - valA;
+                }
+
+                valA = String(valA).toLowerCase();
+                valB = String(valB).toLowerCase();
+
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        currentFiltered = filtered;
         document.getElementById("countBadge").innerText = `${currentFiltered.length} schemes found`;
 
         if (currentFiltered.length === 0) {
-            document.getElementById("listTableBody").innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 30px;">No schemes found for this filter.</td></tr>`;
+            document.getElementById("listTableBody").innerHTML = `<tr><td colspan="13" style="text-align:center; padding: 30px;">No schemes found for this filter.</td></tr>`;
             return;
         }
 
-        document.getElementById("listTableBody").innerHTML = currentFiltered.map(s => {
+        document.getElementById("listTableBody").innerHTML = currentFiltered.map((s, index) => {
             let statusLabel = "Proposal to Initiate";
             if (s.status === "completed") statusLabel = "Completed";
             else if (s.current_stage === 2) statusLabel = "Approval pending";
@@ -253,21 +334,24 @@
             else if (s.current_stage === 4) statusLabel = "Work in progress";
             
             const deleteBtn = isAdmin 
-                ? `<button class="btn-delete" onclick="deleteScheme('${s._id}', '${s.application_no}')">🗑️</button>` 
+                ? `<button class="btn-delete" onclick="deleteScheme('${s._id || s.id}', '${s.application_no || s._id}')">🗑️</button>` 
                 : '';
 
             return `
               <tr>
-                <td>${escapeHtml(s.application_no ? s.application_no.split('-').pop() : s._id.substring(0,4))}</td>
-                <td><span class="badge-phase">${escapeHtml(s.priority || "Phase-I")}</span></td>
+                <td style="font-weight: 700; color: #475569;">${index + 1}</td>
+                <td>${escapeHtml(s.region || "—")}</td>
                 <td>${escapeHtml(s.division || "Unassigned")}</td>
                 <td>${escapeHtml(s.scheme_head || "General")}</td>
-                <td style="white-space: normal; max-width: 250px; font-weight: 700;">${escapeHtml(s.scheme_name || "N/A")}</td>
+                <td style="white-space: normal; max-width: 220px; font-weight: 700;">${escapeHtml(s.scheme_name || "N/A")}</td>
+                <td>${escapeHtml(s.planning_date || "—")}</td>
+                <td>${escapeHtml(s.proposal_initiate_date || "—")}</td>
+                <td>${escapeHtml(s.presently_with || "—")}</td>
                 <td>${escapeHtml(s.taa_no || "—")}</td>
                 <td><span class="status-badge ${getStatusClass(s.status)}">${statusLabel}</span></td>
                 <td>${escapeHtml(s.target_date || "—")}</td>
                 <td style="color:#64748b; font-size:12px;">${formatDate(s.updated_at)}</td>
-                <td>
+                <td style="text-align: center; white-space: nowrap;">
                     <button class="btn-view" onclick='openModal(${JSON.stringify(s).replace(/'/g, "&#39;")})'>View</button>
                     ${deleteBtn}
                 </td>
@@ -314,51 +398,122 @@
     }
 
     async function deleteScheme(id, appNo) {
-        if (!confirm(`Are you sure you want to delete scheme ${appNo}?`)) return;
+        const confirmed = await showConfirm({
+            title: 'Delete Scheme',
+            message: `Are you sure you want to delete scheme ${appNo}?`
+        });
+        if (!confirmed) return;
         try {
             await apiFetch(`/api/blocks/electrical_works/${id}`, { method: 'DELETE' });
-            showToast("Scheme deleted successfully", "success");
-            allSchemes = allSchemes.filter(s => s._id !== id);
+            showToast('Scheme deleted successfully!', 'success');
+            allSchemes = allSchemes.filter(s => (s._id || s.id) !== id);
             renderList();
         } catch (err) { showToast(err.message || "Failed to delete", "error"); }
     }
 
     // Export functions
     function exportExcel() {
-        if (currentFiltered.length === 0) return showToast("No data to export", "error");
-        const exportData = currentFiltered.map(s => ({
-            "ID": s.application_no, "Priority": s.priority, "Division": s.division,
-            "Scheme Head": s.scheme_head, "Scheme Name": s.scheme_name,
-            "TAA No": s.taa_no, "TAA Value": s.taa_value, "Billed Value": s.billed_value,
-            "Status": s.status, "Target Date": s.target_date
-        }));
+        const schemesToExport = currentFiltered && currentFiltered.length > 0 ? currentFiltered : allSchemes;
+        if (!schemesToExport || schemesToExport.length === 0) {
+            return showToast("No data to export", "error");
+        }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetHead = urlParams.get('head') || window.currentSchemeHead || (typeof headFilter !== 'undefined' ? headFilter : '') || 'All_Schemes';
+        const safeHeadName = (targetHead || 'Schemes').replace(/[\/\\?%*:|"<> ]+/g, '_');
+
+        const exportData = schemesToExport.map((s, index) => {
+            let statusLabel = "Proposal to Initiate";
+            if (s.status === "completed") statusLabel = "Completed";
+            else if (s.current_stage === 2) statusLabel = "Approval pending";
+            else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
+            else if (s.current_stage === 4) statusLabel = "Work in progress";
+
+            return {
+                "SL NO": index + 1,
+                "REGION": s.region || "",
+                "DIVISION": s.division || "",
+                "SCHEME HEAD": s.scheme_head || "",
+                "SCHEME NAME": s.scheme_name || "",
+                "PLAN DT": s.planning_date || "",
+                "PROP INIT DT": s.proposal_initiate_date || "",
+                "PRESENTLY WITH": s.presently_with || "",
+                "TAA NO.": s.taa_no || "",
+                "STATUS": statusLabel,
+                "TARGET DT": s.target_date || "",
+                "UPDATED": formatDate(s.updated_at)
+            };
+        });
         const ws = XLSX.utils.json_to_sheet(exportData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Schemes");
-        XLSX.writeFile(wb, `Electrical_Schemes_${targetHead || 'All'}.xlsx`);
+        XLSX.writeFile(wb, `Electrical_Schemes_${safeHeadName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     }
 
     function exportPDF() {
-        if (currentFiltered.length === 0) return showToast("No data to export", "error");
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('landscape');
-        doc.text(`Electrical Schemes - ${targetHead || 'All'}`, 14, 15);
-        
-        const tableBody = currentFiltered.map(s => [
-            s.application_no || "—", s.division || "—", s.scheme_head || "—",
-            s.scheme_name || "—", s.taa_no || "—", s.taa_value || "—",
-            s.status || "—", s.target_date || "—"
-        ]);
+        const schemesToExport = currentFiltered && currentFiltered.length > 0 ? currentFiltered : allSchemes;
+        if (!schemesToExport || schemesToExport.length === 0) {
+            return showToast("No data to export", "error");
+        }
 
-        doc.autoTable({
-            startY: 25,
-            head: [['App No', 'Division', 'Scheme Head', 'Scheme Name', 'TAA No', 'TAA Value', 'Status', 'Target']],
-            body: tableBody,
-            styles: { fontSize: 8, cellPadding: 3 },
-            headStyles: { fillColor: [37, 99, 235] }
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetHead = urlParams.get('head') || window.currentSchemeHead || (typeof headFilter !== 'undefined' ? headFilter : '') || 'All_Schemes';
+        const safeHeadName = (targetHead || 'Schemes').replace(/[\/\\?%*:|"<> ]+/g, '_');
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        
+        doc.setFontSize(14);
+        doc.text(`Electrical Works Schemes - ${targetHead}`, 14, 12);
+        
+        const tableBody = schemesToExport.map((s, index) => {
+            let statusLabel = "Proposal to Initiate";
+            if (s.status === "completed") statusLabel = "Completed";
+            else if (s.current_stage === 2) statusLabel = "Approval pending";
+            else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
+            else if (s.current_stage === 4) statusLabel = "Work in progress";
+
+            return [
+                index + 1,
+                s.region || "—",
+                s.division || "—",
+                s.scheme_head || "—",
+                s.scheme_name || "—",
+                s.planning_date || "—",
+                s.proposal_initiate_date || "—",
+                s.presently_with || "—",
+                s.taa_no || "—",
+                statusLabel,
+                s.target_date || "—",
+                formatDate(s.updated_at)
+            ];
         });
 
-        doc.save(`Electrical_Schemes_${targetHead || 'All'}.pdf`);
+        doc.autoTable({
+            startY: 18,
+            head: [['SL NO', 'REGION', 'DIVISION', 'SCHEME HEAD', 'SCHEME NAME', 'PLAN DT', 'PROP INIT DT', 'PRESENTLY WITH', 'TAA NO.', 'STATUS', 'TARGET DT', 'UPDATED']],
+            body: tableBody,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', halign: 'left', valign: 'middle' },
+            headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+            columnStyles: {
+                0: { cellWidth: 14, halign: 'center' }, // SL NO
+                1: { cellWidth: 20 }, // REGION
+                2: { cellWidth: 22 }, // DIVISION
+                3: { cellWidth: 24 }, // SCHEME HEAD
+                4: { cellWidth: 42 }, // SCHEME NAME
+                5: { cellWidth: 18, halign: 'center' }, // PLAN DT
+                6: { cellWidth: 18, halign: 'center' }, // PROP INIT DT
+                7: { cellWidth: 26 }, // PRESENTLY WITH
+                8: { cellWidth: 20 }, // TAA NO.
+                9: { cellWidth: 26 }, // STATUS
+                10: { cellWidth: 18, halign: 'center' }, // TARGET DT
+                11: { cellWidth: 20, halign: 'center' }  // UPDATED
+            },
+            margin: { left: 10, right: 10, top: 18, bottom: 12 }
+        });
+
+        doc.save(`Electrical_Schemes_${safeHeadName}_${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
     init();
