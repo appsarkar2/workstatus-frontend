@@ -397,19 +397,37 @@
         document.getElementById("detailModal").classList.remove("show");
     }
 
-    async function deleteScheme(id, appNo) {
-        const confirmed = await showConfirm({
-            title: 'Delete Scheme',
-            message: `Are you sure you want to delete scheme ${appNo}?`
-        });
-        if (!confirmed) return;
-        try {
-            await apiFetch(`/api/blocks/electrical_works/${id}`, { method: 'DELETE' });
-            showToast('Scheme deleted successfully!', 'success');
-            allSchemes = allSchemes.filter(s => (s._id || s.id) !== id);
-            renderList();
-        } catch (err) { showToast(err.message || "Failed to delete", "error"); }
+    async function deleteScheme(id) {
+  if (!id || id === 'undefined') {
+    alert("Invalid scheme ID.");
+    return;
+  }
+
+  const confirmed = window.confirm("Are you sure you want to delete this scheme? This action cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE || 'http://localhost:8000'}/api/blocks/electrical_works/schemes/${id}`, {
+      method: 'DELETE',
+      headers: headers
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Failed to delete scheme (Status: ${res.status})`);
     }
+
+    alert("Scheme deleted successfully.");
+    window.location.reload();
+  } catch (err) {
+    console.error("Error deleting scheme:", err);
+    alert("Error deleting scheme: " + err.message);
+  }
+}
 
     // Export functions
     function exportExcel() {
