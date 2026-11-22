@@ -114,13 +114,13 @@
             <th style="cursor: pointer;" onclick="sortTable('division')">DIVISION <span id="sort-division"></span></th>
             <th style="cursor: pointer;" onclick="sortTable('scheme_head')">SCHEME HEAD <span id="sort-scheme_head"></span></th>
             <th style="cursor: pointer;" onclick="sortTable('scheme_name')">SCHEME NAME <span id="sort-scheme_name"></span></th>
-            <th style="cursor: pointer;" onclick="sortTable('planning_date')">PLAN DT <span id="sort-planning_date"></span></th>
-            <th style="cursor: pointer;" onclick="sortTable('proposal_initiate_date')">PROP INIT DT <span id="sort-proposal_initiate_date"></span></th>
+            <th style="cursor: pointer; white-space: nowrap; text-align: center;" onclick="sortTable('planning_date')">PLAN DT <span id="sort-planning_date"></span></th>
+            <th style="cursor: pointer; white-space: nowrap; text-align: center;" onclick="sortTable('proposal_initiate_date')">PROP INIT DT <span id="sort-proposal_initiate_date"></span></th>
             <th style="cursor: pointer;" onclick="sortTable('presently_with')">PRESENTLY WITH <span id="sort-presently_with"></span></th>
             <th style="cursor: pointer;" onclick="sortTable('taa_no')">TAA NO. <span id="sort-taa_no"></span></th>
             <th style="cursor: pointer;" onclick="sortTable('overall_status')">STATUS <span id="sort-overall_status"></span></th>
-            <th style="cursor: pointer;" onclick="sortTable('target_date')">TARGET DT <span id="sort-target_date"></span></th>
-            <th style="cursor: pointer;" onclick="sortTable('updated_at')">UPDATED <span id="sort-updated_at"></span></th>
+            <th style="cursor: pointer; white-space: nowrap; text-align: center;" onclick="sortTable('target_date')">TARGET DT <span id="sort-target_date"></span></th>
+            <th style="cursor: pointer; white-space: nowrap; text-align: center;" onclick="sortTable('updated_at')">UPDATED <span id="sort-updated_at"></span></th>
             <th style="text-align: center;">ACTION</th>
           </tr>
         </thead>
@@ -193,6 +193,31 @@
   <script src="/js/core/api.js"></script>
 
   <script>
+    function formatCompactDate(dateVal) {
+      if (!dateVal || dateVal === '-' || dateVal === '—') return '—';
+      try {
+        // Handle YYYY-MM-DD or ISO strings
+        let d = new Date(dateVal);
+        // If invalid Date object, attempt manual parse of YYYY-MM-DD
+        if (isNaN(d.getTime()) && typeof dateVal === 'string') {
+          const parts = dateVal.split('T')[0].split('-');
+          if (parts.length === 3) {
+            const y = parts[0].slice(-2);
+            const m = parts[1].padStart(2, '0');
+            const day = parts[2].padStart(2, '0');
+            return `${day}/${m}/${y}`;
+          }
+          return dateVal;
+        }
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = String(d.getFullYear()).slice(-2);
+        return `${day}/${month}/${year}`;
+      } catch (err) {
+        return dateVal || '—';
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
     let headFilter = params.get("head");
     let divisionFilter = params.get("division");
@@ -361,13 +386,13 @@
                 <td>${escapeHtml(s.division || "Unassigned")}</td>
                 <td>${escapeHtml(s.scheme_head || "General")}</td>
                 <td style="white-space: normal; max-width: 220px; font-weight: 700; color: #2563eb;">${escapeHtml(s.scheme_name || "N/A")}</td>
-                <td>${escapeHtml(s.planning_date || "—")}</td>
-                <td>${escapeHtml(s.proposal_initiate_date || "—")}</td>
+                <td style="white-space: nowrap; text-align: center;">${escapeHtml(formatCompactDate(s.planning_date))}</td>
+                <td style="white-space: nowrap; text-align: center;">${escapeHtml(formatCompactDate(s.proposal_initiate_date))}</td>
                 <td>${escapeHtml(s.presently_with || "—")}</td>
                 <td>${escapeHtml(s.taa_no || "—")}</td>
                 <td><span class="status-badge ${getStatusClass(s.status)}">${statusLabel}</span></td>
-                <td>${escapeHtml(s.target_date || "—")}</td>
-                <td style="color:#64748b; font-size:12px;">${formatDate(s.updated_at)}</td>
+                <td style="white-space: nowrap; text-align: center;">${escapeHtml(formatCompactDate(s.target_date))}</td>
+                <td style="color:#64748b; font-size:12px; white-space: nowrap; text-align: center;">${formatCompactDate(s.updated_at)}</td>
                 <td style="text-align: center; white-space: nowrap;" onclick="event.stopPropagation()">
                     ${deleteBtn}
                 </td>
@@ -482,7 +507,7 @@
         const currentStatus = scheme.status || scheme.overall_status || "Planning";
 
         document.getElementById("modalBodyContent").innerHTML = `
-            <form id="editSchemeForm" onsubmit="event.preventDefault(); saveSchemeEdit('${scheme._id || scheme.id}');">
+            <form id="editSchemeForm" onsubmit="saveSchemeEdit(event, '${scheme._id || scheme.id}');">
                 <div class="section-block">
                     <div class="section-block-header">✏️ Lifecycle Status & Planning</div>
                     <div class="edit-form-group">
@@ -525,6 +550,20 @@
                 </div>
 
                 <div class="section-block">
+                    <div class="section-block-header">💰 Cost & Financials (Values in ₹ Lakh / Cr)</div>
+                    <div class="grid-2">
+                        <div class="edit-form-group">
+                            <label>TAA Value</label>
+                            <input type="number" step="0.01" id="edit_taa_value" value="${scheme.taa_value !== undefined && scheme.taa_value !== null ? scheme.taa_value : ''}">
+                        </div>
+                        <div class="edit-form-group">
+                            <label>Billed Value Till Date</label>
+                            <input type="number" step="0.01" id="edit_billed_value" value="${scheme.billed_value !== undefined && scheme.billed_value !== null ? scheme.billed_value : ''}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-block">
                     <div class="section-block-header">⚙️ Technical Parameters & Remarks</div>
                     <div class="edit-form-group">
                         <label>Related Substation (SS)</label>
@@ -548,21 +587,34 @@
         `;
     }
 
-    async function saveSchemeEdit(schemeId) {
+    async function saveSchemeEdit(e, schemeId) {
+        if (e && e.preventDefault) e.preventDefault();
+
+        const getValue = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.value.trim() : null;
+        };
+
+        const getFloatValue = (id) => {
+            const val = getValue(id);
+            return val !== null && val !== "" ? parseFloat(val) : 0;
+        };
+
+        const statusVal = getValue('edit_status') || 'Planning';
         const payload = {
-            status: document.getElementById('edit_status').value,
-            overall_status: document.getElementById('edit_status').value,
-            planning_date: document.getElementById('edit_planning_date').value || null,
-            proposal_initiate_date: document.getElementById('edit_proposal_initiate_date').value || null,
-            target_date: document.getElementById('edit_target_date').value || null,
-            presently_with: document.getElementById('edit_presently_with').value || null,
-            taa_no: document.getElementById('edit_taa_no').value || null,
-            taa_date: document.getElementById('edit_taa_date').value || null,
-            taa_value: parseFloat(document.getElementById('edit_taa_value').value) || 0,
-            billed_value: parseFloat(document.getElementById('edit_billed_value').value) || 0,
-            related_ss: document.getElementById('edit_related_ss').value || null,
-            major_materials: document.getElementById('edit_major_materials').value || null,
-            work_status: document.getElementById('edit_work_status').value || null
+            status: statusVal,
+            overall_status: statusVal,
+            planning_date: getValue('edit_planning_date'),
+            proposal_initiate_date: getValue('edit_proposal_initiate_date'),
+            target_date: getValue('edit_target_date'),
+            presently_with: getValue('edit_presently_with'),
+            taa_no: getValue('edit_taa_no'),
+            taa_date: getValue('edit_taa_date'),
+            taa_value: getFloatValue('edit_taa_value'),
+            billed_value: getFloatValue('edit_billed_value'),
+            related_ss: getValue('edit_related_ss'),
+            major_materials: getValue('edit_major_materials'),
+            work_status: getValue('edit_work_status')
         };
 
         try {
@@ -650,13 +702,13 @@
                 "DIVISION": s.division || "",
                 "SCHEME HEAD": s.scheme_head || "",
                 "SCHEME NAME": s.scheme_name || "",
-                "PLAN DT": s.planning_date || "",
-                "PROP INIT DT": s.proposal_initiate_date || "",
+                "PLAN DT": formatCompactDate(s.planning_date),
+                "PROP INIT DT": formatCompactDate(s.proposal_initiate_date),
                 "PRESENTLY WITH": s.presently_with || "",
                 "TAA NO.": s.taa_no || "",
                 "STATUS": statusLabel,
-                "TARGET DT": s.target_date || "",
-                "UPDATED": formatDate(s.updated_at)
+                "TARGET DT": formatCompactDate(s.target_date),
+                "UPDATED": formatCompactDate(s.updated_at)
             };
         });
         const ws = XLSX.utils.json_to_sheet(exportData);
@@ -694,13 +746,13 @@
                 s.division || "—",
                 s.scheme_head || "—",
                 s.scheme_name || "—",
-                s.planning_date || "—",
-                s.proposal_initiate_date || "—",
+                formatCompactDate(s.planning_date),
+                formatCompactDate(s.proposal_initiate_date),
                 s.presently_with || "—",
                 s.taa_no || "—",
                 statusLabel,
-                s.target_date || "—",
-                formatDate(s.updated_at)
+                formatCompactDate(s.target_date),
+                formatCompactDate(s.updated_at)
             ];
         });
 
