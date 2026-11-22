@@ -47,6 +47,19 @@
     .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; z-index: 9999; opacity: 0; transition: opacity 0.3s; }
     .modal-overlay.show { display: flex; align-items: center; justify-content: center; opacity: 1; }
     .modal-box { background: white; border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; }
+    /* Edit Form Styles & Actions */
+    .edit-form-group { margin-bottom: 15px; }
+    .edit-form-group label { display: block; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 5px; }
+    .edit-form-group input, .edit-form-group select, .edit-form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif; }
+    .edit-form-group textarea { resize: vertical; min-height: 60px; }
+    .modal-footer { padding: 15px 25px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .btn-primary { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: white; border: 1px solid #cbd5e1; color: #334155; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .btn-secondary:hover { background: #f1f5f9; }
+    .btn-edit-mode { background: #d97706; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .btn-edit-mode:hover { background: #b45309; }
+
     
     .modal-header { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; }
     .modal-title h2 { font-size: 20px; font-weight: 800; margin: 0 0 5px 0; }
@@ -118,6 +131,7 @@
     </div>
   </div>
 
+
   <!-- MODAL -->
   <div id="detailModal" class="modal-overlay" onclick="closeModal()">
       <div class="modal-box" onclick="event.stopPropagation()">
@@ -127,10 +141,13 @@
                   <div style="font-size:12px; color:#64748b;">Last updated: <span id="modalLastUpdated"></span></div>
                   <div class="modal-meta" id="modalMetaBadges"></div>
               </div>
-              <button class="modal-close" onclick="closeModal()">✕</button>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                  <button id="modalEditBtn" onclick="toggleEditMode(true)" class="btn-edit-mode">✏️ Edit Scheme</button>
+                  <button onclick="closeModal()" class="modal-close">✕</button>
+              </div>
           </div>
           
-          <div class="modal-body">
+          <div class="modal-body" id="modalBodyContent">
               <!-- Identity & Planning -->
               <div class="section-block">
                   <div class="section-block-header">🆔 Identity & Planning</div>
@@ -165,8 +182,8 @@
               </div>
           </div>
           
-          <div style="padding: 15px 25px; border-top: 1px solid #e2e8f0; text-align: right;">
-              <button onclick="closeModal()" style="background:white; border:1px solid #cbd5e1; padding:10px 20px; border-radius:8px; font-weight:700; cursor:pointer;">Close</button>
+          <div class="modal-footer" id="modalFooter">
+              <button onclick="closeModal()" class="btn-secondary">Close</button>
           </div>
       </div>
   </div>
@@ -338,12 +355,12 @@
                 : '';
 
             return `
-              <tr>
+              <tr class="scheme-row" onclick='openModal(${JSON.stringify(s).replace(/'/g, "&#39;")})'>
                 <td style="font-weight: 700; color: #475569;">${index + 1}</td>
                 <td>${escapeHtml(s.region || "—")}</td>
                 <td>${escapeHtml(s.division || "Unassigned")}</td>
                 <td>${escapeHtml(s.scheme_head || "General")}</td>
-                <td style="white-space: normal; max-width: 220px; font-weight: 700;">${escapeHtml(s.scheme_name || "N/A")}</td>
+                <td style="white-space: normal; max-width: 220px; font-weight: 700; color: #2563eb;">${escapeHtml(s.scheme_name || "N/A")}</td>
                 <td>${escapeHtml(s.planning_date || "—")}</td>
                 <td>${escapeHtml(s.proposal_initiate_date || "—")}</td>
                 <td>${escapeHtml(s.presently_with || "—")}</td>
@@ -351,8 +368,7 @@
                 <td><span class="status-badge ${getStatusClass(s.status)}">${statusLabel}</span></td>
                 <td>${escapeHtml(s.target_date || "—")}</td>
                 <td style="color:#64748b; font-size:12px;">${formatDate(s.updated_at)}</td>
-                <td style="text-align: center; white-space: nowrap;">
-                    <button class="btn-view" onclick='openModal(${JSON.stringify(s).replace(/'/g, "&#39;")})'>View</button>
+                <td style="text-align: center; white-space: nowrap;" onclick="event.stopPropagation()">
                     ${deleteBtn}
                 </td>
               </tr>
@@ -360,37 +376,218 @@
         }).join("");
     }
 
-    // Modal Logic
+    let currentModalScheme = null;
+
     function openModal(scheme) {
-        document.getElementById("modalSchemeName").innerText = scheme.scheme_name || scheme.application_no;
-        document.getElementById("modalLastUpdated").innerText = formatDate(scheme.updated_at);
-        
-        let statusLabel = "Proposal to Initiate";
-        let statusClass = "meta-orange";
-        if (scheme.status === "completed") { statusLabel = "Completed"; statusClass = "meta-green"; }
-        else if (scheme.current_stage === 3) statusLabel = "TAA issued, work yet to start";
-        
-        document.getElementById("modalMetaBadges").innerHTML = `
-            <span class="meta-badge meta-red">${scheme.phase || "Phase-I"}</span>
-            <span class="meta-badge ${statusClass}">${statusLabel}</span>
-            <span class="meta-badge meta-gray">${scheme.region || ""}</span>
-            <span class="meta-badge meta-gray">${scheme.division || ""}</span>
+        currentModalScheme = scheme;
+        renderModalView(scheme);
+        const modal = document.getElementById("detailModal");
+        if (modal) modal.classList.add("show");
+    }
+
+    // Modal View Rendering Function (Read-Only)
+    function renderModalView(scheme) {
+
+        // Reset Header Edit button & title
+        const editBtn = document.getElementById("modalEditBtn");
+        if (editBtn) editBtn.style.display = "block";
+
+        const schemeNameEl = document.getElementById("modalSchemeName");
+        if (schemeNameEl) schemeNameEl.innerText = scheme.scheme_name || scheme.application_no || "Scheme Details";
+
+        const lastUpdatedEl = document.getElementById("modalLastUpdated");
+        if (lastUpdatedEl) lastUpdatedEl.innerText = formatDate(scheme.updated_at);
+
+        // Meta Badges
+        const metaBadgesEl = document.getElementById("modalMetaBadges");
+        if (metaBadgesEl) {
+            let statusLabel = "Planning";
+            if (scheme.status === "completed" || scheme.status === "Completed") statusLabel = "Completed";
+            else if (scheme.status === "Working" || scheme.status === "in_progress") statusLabel = "Working";
+            else if (scheme.status === "Proposal") statusLabel = "Proposal";
+
+            metaBadgesEl.innerHTML = `
+                <span class="meta-badge meta-gray">ID: ${escapeHtml(scheme.application_no || scheme._id || "—")}</span>
+                <span class="meta-badge meta-orange">Region: ${escapeHtml(scheme.region || "—")}</span>
+                <span class="meta-badge meta-gray">Division: ${escapeHtml(scheme.division || "—")}</span>
+                <span class="meta-badge meta-green">${escapeHtml(statusLabel)}</span>
+            `;
+        }
+
+        // Populate modal body content container
+        const bodyContentEl = document.getElementById("modalBodyContent");
+        if (bodyContentEl) {
+            bodyContentEl.innerHTML = `
+                <!-- Identity & Planning -->
+                <div class="section-block">
+                    <div class="section-block-header">🆔 Identity & Planning</div>
+                    <div class="grid-3">
+                        <div><div class="data-lbl">Scheme Head</div><div class="data-val" id="modalHead">${escapeHtml(scheme.scheme_head || "—")}</div></div>
+                        <div><div class="data-lbl">TAA Date</div><div class="data-val ${scheme.taa_date ? '' : 'gray'}" id="modalTaaDate">${escapeHtml(scheme.taa_date || "--")}</div></div>
+                        <div><div class="data-lbl">Target Date</div><div class="data-val ${scheme.target_date ? '' : 'gray'}" id="modalTargetDate">${escapeHtml(scheme.target_date || "--")}</div></div>
+                    </div>
+                    <div style="margin-top:15px;"><div class="data-lbl">Presently With</div><div class="data-val" id="modalPresentlyWith">${escapeHtml(scheme.presently_with || "—")}</div></div>
+                </div>
+
+                <!-- Cost -->
+                <div class="section-block">
+                    <div class="section-block-header">💰 Cost (Values in ₹ Lakh / Cr)</div>
+                    <div class="grid-3">
+                        <div><div class="data-lbl">TAA Value</div><div class="data-val" id="modalTaaValue">${scheme.taa_value !== undefined && scheme.taa_value !== null ? scheme.taa_value : '—'}</div></div>
+                        <div><div class="data-lbl">Billed Value Till Date</div><div class="data-val" id="modalBilledValue">${scheme.billed_value !== undefined && scheme.billed_value !== null ? scheme.billed_value : '—'}</div></div>
+                    </div>
+                </div>
+
+                <!-- Technical Parameters -->
+                <div class="section-block">
+                    <div class="section-block-header">⚙️ Technical Parameters</div>
+                    <div style="margin-bottom:15px;"><div class="data-lbl">Related SS</div><div class="data-val" id="modalRelatedSS">${escapeHtml(scheme.related_ss || scheme.substation || "—")}</div></div>
+                    <div><div class="data-lbl">Major Material Requirement</div><div class="data-val" id="modalMaterial">${escapeHtml(scheme.major_materials || scheme.major_material || "—")}</div></div>
+                </div>
+
+                <!-- Work Status -->
+                <div class="section-block">
+                    <div class="section-block-header">📈 Work Status</div>
+                    <div class="work-status-box" id="modalWorkStatus">${escapeHtml(scheme.work_status || scheme.detailed_status || "No remarks provided.")}</div>
+                </div>
+            `;
+        }
+
+        // Footer buttons for read-only view
+        const modalFooterEl = document.getElementById("modalFooter");
+        if (modalFooterEl) {
+            modalFooterEl.innerHTML = `
+                <button onclick="closeModal()" class="btn-secondary">Close</button>
+            `;
+        }
+    }
+
+    function closeModal() {
+        document.getElementById("detailModal").classList.remove("show");
+    }
+
+    function toggleEditMode(isEditing) {
+        console.log('[toggleEditMode] Invoked. Current scheme:', currentModalScheme, 'isEditing:', isEditing);
+        if (!currentModalScheme) return;
+        const scheme = currentModalScheme;
+
+        if (!isEditing) {
+            renderModalView(scheme);
+            return;
+        }
+
+        document.getElementById("modalEditBtn").style.display = "none";
+        document.getElementById("modalSchemeName").innerText = "Edit Scheme: " + (scheme.scheme_name || scheme.application_no);
+
+        const currentStatus = scheme.status || scheme.overall_status || "Planning";
+
+        document.getElementById("modalBodyContent").innerHTML = `
+            <form id="editSchemeForm" onsubmit="event.preventDefault(); saveSchemeEdit('${scheme._id || scheme.id}');">
+                <div class="section-block">
+                    <div class="section-block-header">✏️ Lifecycle Status & Planning</div>
+                    <div class="edit-form-group">
+                        <label>Scheme Status *</label>
+                        <select id="edit_status" class="form-select">
+                            <option value="Planning" ${currentStatus === 'Planning' ? 'selected' : ''}>Planning</option>
+                            <option value="Proposal" ${currentStatus === 'Proposal' ? 'selected' : ''}>Proposal</option>
+                            <option value="Working" ${currentStatus === 'Working' ? 'selected' : ''}>Working</option>
+                            <option value="Completed" ${currentStatus === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="grid-3" style="margin-top: 15px;">
+                        <div class="edit-form-group">
+                            <label>Planning Date</label>
+                            <input type="date" id="edit_planning_date" value="${scheme.planning_date || ''}">
+                        </div>
+                        <div class="edit-form-group">
+                            <label>Proposal Initiate Date</label>
+                            <input type="date" id="edit_proposal_initiate_date" value="${scheme.proposal_initiate_date || ''}">
+                        </div>
+                        <div class="edit-form-group">
+                            <label>Target Date of Completion</label>
+                            <input type="date" id="edit_target_date" value="${scheme.target_date || ''}">
+                        </div>
+                    </div>
+                    <div class="grid-3" style="margin-top: 15px;">
+                        <div class="edit-form-group">
+                            <label>TAA Date</label>
+                            <input type="date" id="edit_taa_date" value="${scheme.taa_date || ''}">
+                        </div>
+                        <div class="edit-form-group">
+                            <label>TAA No.</label>
+                            <input type="text" id="edit_taa_no" value="${scheme.taa_no || ''}">
+                        </div>
+                        <div class="edit-form-group">
+                            <label>Presently With</label>
+                            <input type="text" id="edit_presently_with" value="${scheme.presently_with || ''}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-block">
+                    <div class="section-block-header">⚙️ Technical Parameters & Remarks</div>
+                    <div class="edit-form-group">
+                        <label>Related Substation (SS)</label>
+                        <input type="text" id="edit_related_ss" value="${scheme.related_ss || scheme.substation || ''}">
+                    </div>
+                    <div class="edit-form-group">
+                        <label>Major Material Requirement</label>
+                        <textarea id="edit_major_materials" rows="2">${scheme.major_materials || scheme.major_material || ''}</textarea>
+                    </div>
+                    <div class="edit-form-group">
+                        <label>Work Status / Remarks</label>
+                        <textarea id="edit_work_status" rows="3">${scheme.work_status || scheme.detailed_status || ''}</textarea>
+                    </div>
+                </div>
+            </form>
         `;
 
-        document.getElementById("modalHead").innerText = scheme.scheme_head || "General";
-        document.getElementById("modalTaaDate").innerText = "--"; 
-        document.getElementById("modalTargetDate").innerText = scheme.target_date || "--";
-        document.getElementById("modalPresentlyWith").innerText = scheme.presently_with || "Not assigned";
+        document.getElementById("modalFooter").innerHTML = `
+            <button type="button" onclick="toggleEditMode(false)" class="btn-secondary">Cancel</button>
+            <button type="button" onclick="document.getElementById('editSchemeForm').requestSubmit()" class="btn-primary">💾 Save Changes</button>
+        `;
+    }
 
-        document.getElementById("modalTaaValue").innerText = scheme.taa_value || "Not entered";
-        document.getElementById("modalBilledValue").innerText = scheme.billed_value || "Not entered";
+    async function saveSchemeEdit(schemeId) {
+        const payload = {
+            status: document.getElementById('edit_status').value,
+            overall_status: document.getElementById('edit_status').value,
+            planning_date: document.getElementById('edit_planning_date').value || null,
+            proposal_initiate_date: document.getElementById('edit_proposal_initiate_date').value || null,
+            target_date: document.getElementById('edit_target_date').value || null,
+            presently_with: document.getElementById('edit_presently_with').value || null,
+            taa_no: document.getElementById('edit_taa_no').value || null,
+            taa_date: document.getElementById('edit_taa_date').value || null,
+            taa_value: parseFloat(document.getElementById('edit_taa_value').value) || 0,
+            billed_value: parseFloat(document.getElementById('edit_billed_value').value) || 0,
+            related_ss: document.getElementById('edit_related_ss').value || null,
+            major_materials: document.getElementById('edit_major_materials').value || null,
+            work_status: document.getElementById('edit_work_status').value || null
+        };
 
-        document.getElementById("modalRelatedSS").innerText = scheme.related_ss || "--";
-        document.getElementById("modalMaterial").innerText = scheme.major_material || "Not entered";
+        try {
+            const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        document.getElementById("modalWorkStatus").innerText = scheme.detailed_status || "No status update provided.";
+            const res = await fetch(`${API_BASE || 'http://localhost:8000'}/api/blocks/electrical_works/schemes/${schemeId}`, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
 
-        document.getElementById("detailModal").classList.add("show");
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Failed to save changes.');
+            }
+
+            alert("Scheme updated successfully!");
+            closeModal();
+            await init();
+        } catch (err) {
+            console.error("Save error:", err);
+            alert("Error saving scheme: " + err.message);
+        }
     }
 
     function closeModal() {
