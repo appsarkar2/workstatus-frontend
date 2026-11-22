@@ -73,6 +73,14 @@
         <div class="input-group"><label>CCC</label><select id="filter_ccc_code" class="input-field"><option value="">All CCCs</option></select></div>
         <div class="input-group"><label>Class</label><select id="filter_conn_class" class="input-field"><option value="">All Classes</option></select></div>
         <div class="input-group"><label>Applicant Type</label><select id="filter_applicant_type" class="input-field"><option value="">All Applicants</option></select></div>
+        <div class="input-group">
+          <label>Pole Type</label>
+          <select id="filter-pole-type" class="input-field">
+            <option value="all">All Cases</option>
+            <option value="pole">Pole Required</option>
+            <option value="non_pole">Non-Pole</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -81,6 +89,7 @@
       <div class="kpi-card" onclick="openDetailsDrawer('pending_conn')"><div class="kpi-title">Pending Connection</div><div class="kpi-value" id="kpi-total">0</div><div class="kpi-sub">Total open cases</div></div>
       <div class="kpi-card" onclick="openDetailsDrawer('pending_wo')"><div class="kpi-title">Pending WO</div><div class="kpi-value" id="kpi-pending-wo">0</div><div class="kpi-sub">No Work Order</div></div>
       <div class="kpi-card" onclick="openDetailsDrawer('pending_app')"><div class="kpi-title">Pending App</div><div class="kpi-value" id="kpi-pending-app">0</div><div class="kpi-sub">No Quotation</div></div>
+      <div class="kpi-card"><div class="kpi-title">Poles Required</div><div class="kpi-value" id="kpi-poles-required">0</div><div class="kpi-sub">Total poles sum</div></div>
       <div class="kpi-card" onclick="openDetailsDrawer('quotation_delay')"><div class="kpi-title">Quotation Delay</div><div class="kpi-value" id="kpi-qtndelay">0.00</div><div class="kpi-sub">Avg days</div></div>
       <div class="kpi-card" onclick="openDetailsDrawer('wo_delay')"><div class="kpi-title">WO Delay</div><div class="kpi-value" id="kpi-wodelay">0.00</div><div class="kpi-sub">Avg days</div></div>
     </div>

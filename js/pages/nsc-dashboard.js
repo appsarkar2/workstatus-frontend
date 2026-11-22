@@ -114,6 +114,9 @@ function setupEventListeners() {
     if (classSelect) classSelect.addEventListener('change', fetchDashboardData);
     if (cccSelect) cccSelect.addEventListener('change', fetchDashboardData);
     if (applicantTypeSelect) applicantTypeSelect.addEventListener('change', fetchDashboardData);
+    
+    const poleTypeSelect = document.getElementById('filter-pole-type');
+    if (poleTypeSelect) poleTypeSelect.addEventListener('change', fetchDashboardData);
 
     // CSV Upload
     const csvUploadInput = document.getElementById('csvUpload');
@@ -184,13 +187,20 @@ async function fetchDashboardData() {
         const ccc = document.getElementById("filter_ccc_code")?.value || ""; 
         const connClass = document.getElementById("filter_conn_class")?.value || "";
         const applicantType = document.getElementById("filter_applicant_type")?.value || "";
+        const poleType = document.getElementById("filter-pole-type")?.value || "all";
 
-        const query = `?zone=${zone}&reg=${reg}&divn_name=${divn}&ccc_code=${ccc}&conn_class=${connClass}&applicant_type=${applicantType}&group_by=${currentTab}`;
+        const query = `?zone=${zone}&reg=${reg}&divn_name=${divn}&ccc_code=${ccc}&conn_class=${connClass}&applicant_type=${applicantType}&pole_type=${poleType}&group_by=${currentTab}`;
 
         try {
             const data = await apiFetch(`/api/blocks/nsc_monitoring/kpi-dashboard${query}`);
             
             updateText("kpi-total", data.total_cases || 0);
+            
+            const polesEl = document.getElementById('kpi-poles-required');
+            if (polesEl) {
+              polesEl.textContent = Number(data.total_poles || 0).toLocaleString();
+            }
+
             updateText("kpi-avg-delay", (data.avg_delay || 0).toFixed(2));
             updateText("kpi-qtndelay", (data.quotation_delay || 0).toFixed(2));
             updateText("kpi-wodelay", (data.wo_delay || 0).toFixed(2));
@@ -293,8 +303,9 @@ async function openDetailsDrawer(statusType) {
     const ccc_code = document.getElementById('filter_ccc_code')?.value || '';
     const conn_class = document.getElementById('filter_conn_class')?.value || '';
     const applicant_type = document.getElementById('filter_applicant_type')?.value || '';
+    const pole_type = document.getElementById('filter-pole-type')?.value || 'all';
 
-    const query = `?status_type=${encodeURIComponent(statusType)}&zone=${encodeURIComponent(zone)}&reg=${encodeURIComponent(reg)}&divn_name=${encodeURIComponent(divn_name)}&ccc_code=${encodeURIComponent(ccc_code)}&conn_class=${encodeURIComponent(conn_class)}&applicant_type=${encodeURIComponent(applicant_type)}`;
+    const query = `?status_type=${encodeURIComponent(statusType)}&zone=${encodeURIComponent(zone)}&reg=${encodeURIComponent(reg)}&divn_name=${encodeURIComponent(divn_name)}&ccc_code=${encodeURIComponent(ccc_code)}&conn_class=${encodeURIComponent(conn_class)}&applicant_type=${encodeURIComponent(applicant_type)}&pole_type=${encodeURIComponent(pole_type)}`;
 
     try {
         const res = await apiFetch(`/api/blocks/nsc_monitoring/pending-details${query}`);
