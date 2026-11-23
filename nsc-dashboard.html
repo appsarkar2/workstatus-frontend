@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NSC Monitoring Dashboard</title>
+  <!-- Emoji Favicon to fix the 404 error -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,15 +23,17 @@
     .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
     .input-group label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
     .input-field { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a; background: #f8fafc; outline: none; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 24px; }
-    @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .filter-grid { grid-template-columns: 1fr; } }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+    @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .filter-grid { grid-template-columns: 1fr; } }
     .kpi-card { background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-left: 4px solid #3b82f6; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
     .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .kpi-card:nth-child(1) { border-left-color: #3b82f6; }
-    .kpi-card:nth-child(2) { border-left-color: #f97316; }
-    .kpi-card:nth-child(3) { border-left-color: #ef4444; }
-    .kpi-card:nth-child(4) { border-left-color: #8b5cf6; }
-    .kpi-card:nth-child(5) { border-left-color: #14b8a6; }
+    .kpi-card:nth-child(2) { border-left-color: #10b981; }
+    .kpi-card:nth-child(3) { border-left-color: #f97316; }
+    .kpi-card:nth-child(4) { border-left-color: #ef4444; }
+    .kpi-card:nth-child(5) { border-left-color: #8b5cf6; }
+    .kpi-card:nth-child(6) { border-left-color: #14b8a6; }
+    .kpi-card:nth-child(7) { border-left-color: #06b6d4; }
     .kpi-title { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase; }
     .kpi-value { font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1; }
     .kpi-sub { font-size: 12px; color: #94a3b8; margin-top: 6px; }
@@ -86,12 +90,56 @@
 
     <!-- KPI Cards -->
     <div class="kpi-grid">
-      <div class="kpi-card" onclick="openDetailsDrawer('pending_conn')"><div class="kpi-title">Pending Connection</div><div class="kpi-value" id="kpi-total">0</div><div class="kpi-sub">Total open cases</div></div>
+      <div class="kpi-card" onclick="openDetailsDrawer('pending_conn')"><div class="kpi-title">TOTAL PENDING CONNECTION</div><div class="kpi-value" id="kpi-total">0</div><div class="kpi-sub">Total open cases</div></div>
+      <div class="kpi-card" onclick="openDetailsDrawer('pending_conn_wo_issued')"><div class="kpi-title">PENDING CONNECTION WO ISSUED</div><div class="kpi-value" id="kpi-pending-conn-wo-issued">0</div><div class="kpi-sub">WO Issued Cases</div></div>
       <div class="kpi-card" onclick="openDetailsDrawer('pending_wo')"><div class="kpi-title">Pending WO</div><div class="kpi-value" id="kpi-pending-wo">0</div><div class="kpi-sub">No Work Order</div></div>
       <div class="kpi-card" onclick="openDetailsDrawer('pending_app')"><div class="kpi-title">Pending App</div><div class="kpi-value" id="kpi-pending-app">0</div><div class="kpi-sub">No Quotation</div></div>
       <div class="kpi-card"><div class="kpi-title">Poles Required</div><div class="kpi-value" id="kpi-poles-required">0</div><div class="kpi-sub">Total poles sum</div></div>
-      <div class="kpi-card" onclick="openDetailsDrawer('quotation_delay')"><div class="kpi-title">Quotation Delay</div><div class="kpi-value" id="kpi-qtndelay">0.00</div><div class="kpi-sub">Avg days</div></div>
-      <div class="kpi-card" onclick="openDetailsDrawer('wo_delay')"><div class="kpi-title">WO Delay</div><div class="kpi-value" id="kpi-wodelay">0.00</div><div class="kpi-sub">Avg days</div></div>
+      <div class="kpi-card" onclick="openDetailsDrawer('quotation_delay')"><div class="kpi-title">Quotation Delay</div><div class="kpi-value" id="kpi-qtndelay">0.0</div><div class="kpi-sub">Avg days</div></div>
+      <div class="kpi-card" onclick="openDetailsDrawer('wo_delay')"><div class="kpi-title">WO DELAY</div><div class="kpi-value" id="kpi-wo-delay">0.00</div><div class="kpi-sub">Avg days</div></div>
+    </div>
+
+    <!-- Payment Aging Tab/Pill Bar -->
+    <div class="card" style="margin-top: 20px; margin-bottom: 24px; padding: 20px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a;">
+          ⏱️ Payment Aging (from Money Deposit Date)
+        </h4>
+        <span id="aging-total-badge" style="background: #e2e8f0; color: #475569; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">0 Total Paid Cases</span>
+      </div>
+
+      <!-- Interactive Aging Bucket Tabs -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+        
+        <!-- Bucket 1: <= 3 Days -->
+        <div class="aging-tab" data-bucket="within_3" onclick="selectAgingBucket('within_3')" style="cursor: pointer; border: 2px solid #10b981; border-radius: 8px; padding: 12px; background: #ecfdf5; text-align: center; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+          <div style="font-size: 0.75rem; font-weight: 600; color: #047857; text-transform: uppercase;">Within 3 Days (≤ 3d)</div>
+          <div id="aging-count-within-3" style="font-size: 1.6rem; font-weight: 700; color: #065f46; margin: 4px 0;">0</div>
+          <div style="font-size: 0.7rem; color: #059669;">Freshly Deposited</div>
+        </div>
+
+        <!-- Bucket 2: 4 - 15 Days -->
+        <div class="aging-tab" data-bucket="4_to_15" onclick="selectAgingBucket('4_to_15')" style="cursor: pointer; border: 2px solid #3b82f6; border-radius: 8px; padding: 12px; background: #eff6ff; text-align: center; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+          <div style="font-size: 0.75rem; font-weight: 600; color: #1d4ed8; text-transform: uppercase;">4 – 15 Days</div>
+          <div id="aging-count-4-15" style="font-size: 1.6rem; font-weight: 700; color: #1e40af; margin: 4px 0;">0</div>
+          <div style="font-size: 0.7rem; color: #2563eb;">Within Normal SLA</div>
+        </div>
+
+        <!-- Bucket 3: 16 - 30 Days -->
+        <div class="aging-tab" data-bucket="16_to_30" onclick="selectAgingBucket('16_to_30')" style="cursor: pointer; border: 2px solid #f59e0b; border-radius: 8px; padding: 12px; background: #fffbeb; text-align: center; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+          <div style="font-size: 0.75rem; font-weight: 600; color: #b45309; text-transform: uppercase;">16 – 30 Days</div>
+          <div id="aging-count-16-30" style="font-size: 1.6rem; font-weight: 700; color: #92400e; margin: 4px 0;">0</div>
+          <div style="font-size: 0.7rem; color: #d97706;">Delayed Notice</div>
+        </div>
+
+        <!-- Bucket 4: > 30 Days -->
+        <div class="aging-tab" data-bucket="above_30" onclick="selectAgingBucket('above_30')" style="cursor: pointer; border: 2px solid #ef4444; border-radius: 8px; padding: 12px; background: #fef2f2; text-align: center; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+          <div style="font-size: 0.75rem; font-weight: 600; color: #b91c1c; text-transform: uppercase;">Above 30 Days (> 30d)</div>
+          <div id="aging-count-above-30" style="font-size: 1.6rem; font-weight: 700; color: #991b1b; margin: 4px 0;">0</div>
+          <div style="font-size: 0.7rem; color: #dc2626;">Critical Delay</div>
+        </div>
+
+      </div>
     </div>
 
     <!-- Detailed Analysis Table -->
@@ -160,6 +208,6 @@
   <script src="/js/core/api.js"></script>
   <script src="/js/ui/modals.js"></script>
   <script src="/js/ui/components.js"></script>
-  <script src="/js/pages/nsc-dashboard.js"></script>
+  <script src="/js/pages/nsc-dashboard.js?v=2"></script>
 </body>
 </html>

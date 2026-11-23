@@ -195,6 +195,7 @@ async function fetchDashboardData() {
             const data = await apiFetch(`/api/blocks/nsc_monitoring/kpi-dashboard${query}`);
             
             updateText("kpi-total", data.total_cases || 0);
+            updateText("kpi-pending-conn-wo-issued", data.pending_conn_wo_issued || 0);
             
             const polesEl = document.getElementById('kpi-poles-required');
             if (polesEl) {
@@ -202,13 +203,18 @@ async function fetchDashboardData() {
             }
 
             updateText("kpi-avg-delay", (data.avg_delay || 0).toFixed(2));
-            updateText("kpi-qtndelay", (data.quotation_delay || 0).toFixed(2));
-            updateText("kpi-wodelay", (data.wo_delay || 0).toFixed(2));
+            updateText("kpi-qtndelay", (data.quotation_delay || 0).toFixed(1));
+    const woDelayEl = document.getElementById('kpi-wo-delay') || document.getElementById('kpi-wodelay') || document.getElementById('wo-delay-val');
+    if (woDelayEl) {
+        const val = data.avg_wo_delay !== undefined ? data.avg_wo_delay : (data.wo_delay || 0);
+        woDelayEl.textContent = Number(val).toFixed(2);
+    }
             updateText("kpi-pending-wo", data.pending_wo || 0);
             updateText("kpi-pending-app", data.pending_application || 0);
 
             renderAnalysisTable(data.region_data || [], currentTab);
             renderChartInDrawer(data.region_data || []);
+            fetchCollectionAgingData();
         } catch (err) {
             console.error("Failed to fetch dashboard data", err);
             updateText("kpi-total", "0");
@@ -266,6 +272,68 @@ function openDrawer() {
     document.getElementById('drawerOverlay').classList.add('show');
     document.getElementById('drawer').classList.add('show');
 }
+function renderChartInDrawer(data) {
+    const chartCard = document.querySelector('.chart-card');
+    if (!chartCard) return;
+
+    // Check if canvas already exists, otherwise insert it
+    let canvasContainer = document.getElementById('nscChartContainer');
+    let chartCanvas = document.getElementById('nscBarChart');
+
+    if (!canvasContainer) {
+        canvasContainer = document.createElement('div');
+        canvasContainer.id = 'nscChartContainer';
+        canvasContainer.style.cssText = 'position: relative; height: 260px; width: 100%; margin-top: 20px;';
+        canvasContainer.innerHTML = '<canvas id="nscBarChart"></canvas>';
+        chartCard.appendChild(canvasContainer);
+        chartCanvas = document.getElementById('nscBarChart');
+    }
+
+    if (!chartCanvas) return;
+
+    const ctx = chartCanvas.getContext('2d');
+    if (barChartInstance) {
+        barChartInstance.destroy();
+        barChartInstance = null;
+    }
+
+    const sortedData = [...data].sort((a, b) => b.count - a.count).slice(0, 15); // Top 15 for readability
+    const labels = sortedData.map(item => item._id || 'Unknown');
+    const counts = sortedData.map(item => item.count || 0);
+    const pendingWos = sortedData.map(item => item.pending_wo || 0);
+
+    barChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Total Cases',
+                    data: counts,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Pending WO',
+                    data: pendingWos,
+                    backgroundColor: '#f97316',
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
 
 function closeDrawer() {
     document.getElementById('drawerOverlay').classList.remove('show');
@@ -282,7 +350,8 @@ async function openDetailsDrawer(statusType) {
     if (!overlay || !drawer || !tbody) return;
 
     const titles = {
-        'pending_conn': 'Pending Connection Applications',
+        'pending_conn': 'Total Pending Connection Applications',
+        'pending_conn_wo_issued': 'Pending Connection WO Issued Applications',
         'avg_delay': 'All Open Cases (Avg Delay)',
         'quotation_delay': 'Quotation Delay Applications',
         'wo_delay': 'Work Order Delay Applications',
@@ -345,20 +414,115 @@ function closeDetailsDrawer() {
     if (drawer) drawer.classList.remove('show');
 }
 
-// Drawer Chart Logic (Restored)
-function renderChartInDrawer(regionData) {
-    const drawerBody = document.getElementById('drawerBody');
-    if (!drawerBody) return;
+// --- PAYMENT AGING TAB LOGIC ---
+async function fetchCollectionAgingData() {
+    const zone = document.getElementById("filter_zone")?.value || "";
+    const reg = document.getElementById("filter_reg")?.value || "";
+    const divn = document.getElementById("filter_divn_name")?.value || "";
+    const ccc = document.getElementById("filter_ccc_code")?.value || ""; 
+    const poleType = document.getElementById("filter-pole-type")?.value || "all";
 
-    let tableHTML = `<table style="width:100%; border-collapse: collapse;">
-        <tr><th>Name</th><th>Count</th></tr>`;
+    const query = `?zone=${encodeURIComponent(zone)}&region=${encodeURIComponent(reg)}&division=${encodeURIComponent(divn)}&ccc=${encodeURIComponent(ccc)}&pole_type=${encodeURIComponent(poleType)}`;
 
-    regionData.forEach(r => {
-        tableHTML += `<tr><td>${r._id}</td><td>${r.count}</td></tr>`;
+    try {
+        const data = await apiFetch(`/api/blocks/nsc_monitoring/collection-aging${query}`);
+        
+        const totalCases = data.total_collected || 0;
+        const totalBadge = document.getElementById("aging-total-badge");
+        if (totalBadge) totalBadge.textContent = `${Number(totalCases).toLocaleString()} Total Paid Cases`;
+
+        const within3El = document.getElementById("aging-count-within-3");
+        const days4to15El = document.getElementById("aging-count-4-15");
+        const days16to30El = document.getElementById("aging-count-16-30");
+        const above30El = document.getElementById("aging-count-above-30");
+
+        if (within3El) within3El.textContent = Number(data.within_3_days || 0).toLocaleString();
+        if (days4to15El) days4to15El.textContent = Number(data.days_4_to_15 || 0).toLocaleString();
+        if (days16to30El) days16to30El.textContent = Number(data.days_16_to_30 || 0).toLocaleString();
+        if (above30El) above30El.textContent = Number(data.above_30_days || 0).toLocaleString();
+    } catch (err) {
+        console.error("Failed to fetch collection aging data", err);
+    }
+}
+
+function selectAgingBucket(bucketKey) {
+    document.querySelectorAll('.aging-tab').forEach(tab => {
+        tab.style.transform = 'translateY(0)';
+        tab.style.boxShadow = 'none';
     });
-    tableHTML += `</table>`;
+
+    const selectedTab = document.querySelector(`.aging-tab[data-bucket="${bucketKey}"]`);
+    if (selectedTab) {
+        selectedTab.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.4)';
+    }
+
+    openAgingDrawer(bucketKey);
+}
+
+async function openAgingDrawer(bucketKey) {
+    const overlay = document.getElementById('detailsDrawerOverlay');
+    const drawer = document.getElementById('detailsDrawer');
+    const titleEl = document.getElementById('drawerTitle');
+    const tbody = document.getElementById('detailsDrawerBody');
+
+    if (!overlay || !drawer || !tbody) return;
+
+    const titles = {
+        'within_3': 'Payment Aging: Within 3 Days (≤ 3d)',
+        '4_to_15': 'Payment Aging: 4 – 15 Days',
+        '16_to_30': 'Payment Aging: 16 – 30 Days',
+        'above_30': 'Payment Aging: Above 30 Days (> 30d)'
+    };
+
+    if (titleEl) titleEl.textContent = titles[bucketKey] || 'Payment Aging Details';
     
-    if(drawerBody) {
-       drawerBody.innerHTML = tableHTML;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Loading aging applications...</td></tr>';
+
+    overlay.classList.add('show');
+    drawer.classList.add('show');
+
+    const zone = document.getElementById('filter_zone')?.value || '';
+    const reg = document.getElementById('filter_reg')?.value || '';
+    const divn_name = document.getElementById('filter_divn_name')?.value || '';
+    const ccc_code = document.getElementById('filter_ccc_code')?.value || '';
+    const conn_class = document.getElementById('filter_conn_class')?.value || '';
+    const applicant_type = document.getElementById('filter_applicant_type')?.value || '';
+    const pole_type = document.getElementById('filter-pole-type')?.value || 'all';
+
+    const statusTypeMap = {
+        'within_3': 'aging_within_3',
+        '4_to_15': 'aging_4_to_15',
+        '16_to_30': 'aging_16_to_30',
+        'above_30': 'aging_above_30'
+    };
+
+    const query = `?status_type=${encodeURIComponent(statusTypeMap[bucketKey] || bucketKey)}&zone=${encodeURIComponent(zone)}&reg=${encodeURIComponent(reg)}&divn_name=${encodeURIComponent(divn_name)}&ccc_code=${encodeURIComponent(ccc_code)}&conn_class=${encodeURIComponent(conn_class)}&applicant_type=${encodeURIComponent(applicant_type)}&pole_type=${encodeURIComponent(pole_type)}`;
+
+    try {
+        const res = await apiFetch(`/api/blocks/nsc_monitoring/pending-details${query}`);
+        const items = res.items || [];
+
+        tbody.innerHTML = '';
+        if (items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #64748b;">No applications found in this aging bucket</td></tr>';
+            return;
+        }
+
+        items.forEach(item => {
+            const woColor = item.wo_status === "Issued" ? "#10b981" : "#ef4444";
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                    <td style="padding: 12px 16px; font-weight: 600; color: #2563eb;">${item.appl_no || '-'}</td>
+                    <td style="padding: 12px 16px; color: #0f172a;">${item.name || '-'}</td>
+                    <td style="padding: 12px 16px; color: #475569;">${item.ccc || '-'}</td>
+                    <td style="padding: 12px 16px; color: #475569;">${item.agency_name || '-'}</td>
+                    <td style="padding: 12px 16px; font-weight: 600; color: ${woColor};">${item.wo_status || '-'}</td>
+                    <td style="padding: 12px 16px; font-weight: 600; color: ${item.delay_as_on_today > 30 ? '#dc2626' : '#0f172a'};">${item.delay_as_on_today || 0}</td>
+                </tr>
+            `;
+        });
+    } catch (err) {
+        console.error("Failed to load aging application details", err);
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #dc2626;">Failed to load application details</td></tr>';
     }
 }
