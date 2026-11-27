@@ -115,6 +115,8 @@
               url = "/nsc-menu.html";
           } else if (b.id === "interruption_report") {
               url = "/interruption-dashboard.html";
+           } else if (b.id === "pm_surya_ghar") {
+              url = "/pm-surya-ghar-menu.html";
           }
             
           return `
@@ -134,6 +136,7 @@
       const map = {
         box: "📦", bolt: "⚡", plug: "🔌",
         wrench: "🔧", chart: "📊", upload: "📤",
+        sun: "☀️",
       };
       return map[b.icon] || "📁";
     }
