@@ -281,16 +281,11 @@
                 allSchemes = allSchemes.filter(s => (s.division || "Unassigned") === divisionFilter);
             }
 
-            // Filter by Status (NEW)
+            // Filter by Status
             if (targetStatus) {
                 allSchemes = allSchemes.filter(s => {
-                    let sLabel = "Not updated";
-                    if (s.status === "completed") sLabel = "Completed";
-                    else if (s.current_stage === 1) sLabel = "Proposal to Initiate";
-                    else if (s.current_stage === 2) sLabel = "Approval pending";
-                    else if (s.current_stage === 3) sLabel = "TAA issued, work yet to start";
-                    else if (s.current_stage === 4) sLabel = "Work in progress";
-                    return sLabel === targetStatus;
+                    let sLabel = getSchemeStatusLabel(s);
+                    return sLabel.toLowerCase() === targetStatus.toLowerCase();
                 });
             }
             
@@ -300,9 +295,24 @@
         }
     }
 
-    function getStatusClass(status) {
-        if (status === "completed") return "status-completed";
-        if (status === "in_progress") return "status-progress";
+    function getSchemeStatusLabel(s) {
+        if (!s) return "Planned";
+        if (s.status && s.status !== "in_progress" && s.status !== "pending") {
+            const raw = s.status.trim();
+            // Capitalize nicely if it's Planned, Proposal, Working, Completed, etc.
+            return raw.charAt(0).toUpperCase() + raw.slice(1);
+        }
+        if (s.status === "completed" || s.status === "Completed") return "Completed";
+        if (s.current_stage === 2 || s.status === "Approval pending") return "Approval pending";
+        if (s.current_stage === 3 || s.status === "TAA issued, work yet to start") return "TAA issued, work yet to start";
+        if (s.current_stage === 4 || s.status === "Working" || s.status === "in_progress" || s.status === "Work in progress") return "Working";
+        if (s.current_stage === 1 || s.status === "Proposal") return "Proposal";
+        return s.status ? (s.status.charAt(0).toUpperCase() + s.status.slice(1)) : "Planned";
+    }
+    function getStatusClass(statusLabel) {
+        const lower = (statusLabel || "").toLowerCase();
+        if (lower.includes("complet")) return "status-completed";
+        if (lower.includes("work") || lower.includes("progress")) return "status-progress";
         return "status-pending";
     }
 
@@ -328,17 +338,8 @@
                     valA = allSchemes.indexOf(a);
                     valB = allSchemes.indexOf(b);
                 } else if (sortField === 'overall_status') {
-                    let statusA = "Proposal to Initiate";
-                    if (a.status === "completed") statusA = "Completed";
-                    else if (a.current_stage === 2) statusA = "Approval pending";
-                    else if (a.current_stage === 3) statusA = "TAA issued, work yet to start";
-                    else if (a.current_stage === 4) statusA = "Work in progress";
-
-                    let statusB = "Proposal to Initiate";
-                    if (b.status === "completed") statusB = "Completed";
-                    else if (b.current_stage === 2) statusB = "Approval pending";
-                    else if (b.current_stage === 3) statusB = "TAA issued, work yet to start";
-                    else if (b.current_stage === 4) statusB = "Work in progress";
+                    let statusA = getSchemeStatusLabel(a);
+                    let statusB = getSchemeStatusLabel(b);
 
                     valA = statusA;
                     valB = statusB;
@@ -369,11 +370,7 @@
         }
 
         document.getElementById("listTableBody").innerHTML = currentFiltered.map((s, index) => {
-            let statusLabel = "Proposal to Initiate";
-            if (s.status === "completed") statusLabel = "Completed";
-            else if (s.current_stage === 2) statusLabel = "Approval pending";
-            else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
-            else if (s.current_stage === 4) statusLabel = "Work in progress";
+            let statusLabel = getSchemeStatusLabel(s);
             
             const deleteBtn = isAdmin 
                 ? `<button class="btn-delete" onclick="deleteScheme('${s._id || s.id}', '${s.application_no || s._id}')">🗑️</button>` 
@@ -390,7 +387,7 @@
                 <td style="white-space: nowrap; text-align: center;">${escapeHtml(formatCompactDate(s.proposal_initiate_date))}</td>
                 <td>${escapeHtml(s.presently_with || "—")}</td>
                 <td>${escapeHtml(s.taa_no || "—")}</td>
-                <td><span class="status-badge ${getStatusClass(s.status)}">${statusLabel}</span></td>
+                <td><span class="status-badge ${getStatusClass(statusLabel)}">${statusLabel}</span></td>
                 <td style="white-space: nowrap; text-align: center;">${escapeHtml(formatCompactDate(s.target_date))}</td>
                 <td style="color:#64748b; font-size:12px; white-space: nowrap; text-align: center;">${formatCompactDate(s.updated_at)}</td>
                 <td style="text-align: center; white-space: nowrap;" onclick="event.stopPropagation()">
@@ -690,11 +687,7 @@
         const safeHeadName = (targetHead || 'Schemes').replace(/[\/\\?%*:|"<> ]+/g, '_');
 
         const exportData = schemesToExport.map((s, index) => {
-            let statusLabel = "Proposal to Initiate";
-            if (s.status === "completed") statusLabel = "Completed";
-            else if (s.current_stage === 2) statusLabel = "Approval pending";
-            else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
-            else if (s.current_stage === 4) statusLabel = "Work in progress";
+            let statusLabel = getSchemeStatusLabel(s);
 
             return {
                 "SL NO": index + 1,
@@ -734,11 +727,7 @@
         doc.text(`Electrical Works Schemes - ${targetHead}`, 14, 12);
         
         const tableBody = schemesToExport.map((s, index) => {
-            let statusLabel = "Proposal to Initiate";
-            if (s.status === "completed") statusLabel = "Completed";
-            else if (s.current_stage === 2) statusLabel = "Approval pending";
-            else if (s.current_stage === 3) statusLabel = "TAA issued, work yet to start";
-            else if (s.current_stage === 4) statusLabel = "Work in progress";
+            let statusLabel = getSchemeStatusLabel(s);
 
             return [
                 index + 1,
